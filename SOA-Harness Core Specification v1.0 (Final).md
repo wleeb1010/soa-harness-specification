@@ -35,6 +35,7 @@
 22. Non-Goals
 23. Safety Constraints on Self-Improvement
 24. Error Code Taxonomy
+25. Threat Model (Informative)
 
 ---
 
@@ -150,6 +151,20 @@ The Agent Card signature chain terminates at a trust anchor published under `sec
 - **SDK-pinned.** The operator's SOA client SDK ships with a hard-coded `{publisher_kid, spki_sha256, issuer}` triple identifying the SOA-WG release-signing key. Runners loading an Agent Card whose `security.trustAnchors[].publisher_kid` does not match the SDK-pinned value MUST emit `HostHardeningInsufficient` (reason `bootstrap-missing`) and refuse to load the Card.
 - **Operator-bundled.** The operator distributes `initial-trust.json` (`{"publisher_kid": "...", "spki_sha256": "<64-hex>", "issuer": "CN=..."}`) via a trusted deployment channel (configuration management, signed-container base image, etc.). The Runner loads this file at startup before any Agent Card; absence fails startup with `HostHardeningInsufficient` (reason `bootstrap-missing`).
 - **DNSSEC-protected TXT record (production).** At `_soa-trust.<deployment-domain>`, a DNSSEC-validated TXT record publishes `publisher_kid=<id>; spki_sha256=<64-hex>; issuer="CN=..."`. The Runner resolves and DNSSEC-validates the record at startup; lookup failure, missing AD bit, or empty result fails startup with `HostHardeningInsufficient` (reason `bootstrap-missing`).
+
+#### 5.3.1 Bootstrap-Key Rotation and Compromise (Normative)
+
+The bootstrap-supplied key (the `publisher_kid` + SPKI hash delivered via SDK-pin, operator-bundled `initial-trust.json`, or DNSSEC TXT) is subject to the same lifecycle discipline as handler keys (§10.6), tightened for its bootstrap role:
+
+- **Scheduled rotation.** The release-signing key MUST rotate at least every **365 days**. Rotation overlap MUST be at least **30 days** — both the outgoing and incoming keys MUST be accepted simultaneously during this window so that in-flight deployments do not fail verification. The incoming key's `publisher_kid` + SPKI hash MUST be published through the SAME bootstrap channel used by the deployment (SDK update, operator-bundled file update, or new DNSSEC TXT entry) at least 30 days before the outgoing key is retired.
+- **Emergency compromise response.** On suspected compromise of the release-signing key:
+  1. The SOA-WG (or equivalent operator authority) MUST publish an emergency bootstrap update within **4 hours** of confirmed compromise. The update revokes the compromised `publisher_kid` and publishes a successor.
+  2. Runners MUST poll their bootstrap channel at a maximum interval of **24 hours** (SHOULD be 1 hour for DNSSEC TXT). On observing a revoked `publisher_kid`, the Runner MUST reject any Agent Card whose `security.trustAnchors[].publisher_kid` still references the revoked value, emit `HostHardeningInsufficient` (reason `bootstrap-revoked`), and halt self-improvement iterations until a successor anchor is observed.
+  3. Every `MANIFEST.json.jws` signed by the compromised `publisher_kid` and accepted within the 24 hours preceding revocation MUST be flagged `SuspectDecision` in the audit trail, parallel to the handler-key compromise rule in §10.6.
+- **Multi-party control (RECOMMENDED).** Production release-signing keys SHOULD be held under an M-of-N signing scheme (e.g., 2-of-3 HSM quorum, FROST/MuSig threshold signatures). v1.0 does not mandate a specific scheme; operators claiming `core+si` for high-value deployments SHOULD document their scheme in the operator manual referenced below.
+- **Storage.** Release-signing private keys MUST be held in an HSM or hardware-backed keystore. Plaintext on disk is forbidden, matching the handler-key rule in §10.6.
+
+Covered by `SV-BOOT-04`.
 
 Implementations MUST select exactly one bootstrap channel per deployment and document the choice in their operator manual. The bootstrap-supplied trust anchor serves two distinct verification paths, each with its own verification object:
 
@@ -1673,6 +1688,86 @@ Round-trip index for Core error codes that surface through the UI Gateway. UI Pr
 | `ManifestDigestMismatch` | `ui.gateway-config-invalid` | 500 | 4004 |
 | `HostHardeningInsufficient` | Operational alert only; never reaches UI envelopes | — | — |
 | `CardInvalid` / `CardSignatureFailed` / `CardVersionDrift` | `ui.gateway-config-invalid` | 500 | 4004 |
+
+---
+
+## 25. Threat Model (Informative)
+
+This appendix is **informative**. It names the adversaries v1.0 defends against, catalogs the attack surface, and cross-references the normative mitigations so operators can evaluate residual risk. Conformance does NOT require implementing anything from this section beyond what normative sections already mandate; this section exists so that operators can reason about whether the normative bar meets their deployment's threat level.
+
+### 25.1 Assets
+
+| Asset                                          | Why it matters                                                |
+| ---------------------------------------------- | ------------------------------------------------------------- |
+| Handler private keys (§10.6)                   | Forge `PermissionDecision`; bypass HITL; exfiltrate via `allow` |
+| Release-signing key (`publisher_kid`, §5.3.1)  | Forge MANIFEST; poison the entire release-bundle trust chain  |
+| Agent Card signing keys                        | Impersonate an agent; redirect handoffs; poison policy fields |
+| Session file + audit trail                     | Tamper with history; evade post-incident analysis             |
+| `program.md` (SI directive) + `/tasks/` tree   | Bend self-improvement loop to attacker-chosen outcomes        |
+| Runner bearer tokens (RFC 8693 stream scope)   | Subscribe to sessions the attacker is not authorized for     |
+| UI-side PDA credentials (WebAuthn/JWS)         | Forge user consent                                            |
+
+### 25.2 Adversaries (named, ordered by assumed sophistication)
+
+1. **Network adversary** — on-path MITM, replay, traffic analysis. Capabilities: read/modify/inject TCP streams; serve stale or attacker-chosen responses.
+2. **Compromised MCP tool** — a registered tool whose output is attacker-controlled. Capabilities: return malicious `ToolResult` content; attempt prompt injection into the model stream.
+3. **Compromised UI client** — an authenticated UI whose keys/DPoP are under attacker control, or a malicious browser extension injecting into a legitimate UI. Capabilities: submit arbitrary `PromptDecision` / commands within the UI's scope.
+4. **Rogue Gateway** — a Gateway operator attempting to violate the normative pass-through rules (remove/alter runner-emitted fields, fabricate essential events). Capabilities: full control of WS/SSE transport between UI and Runner.
+5. **Compromised handler key** — a specific `handler_kid` under attacker control (e.g., stolen HSM PIN, phished YubiKey). Capabilities: forge signed `PermissionDecision` for any prompt within the key's authorized scope.
+6. **Supply-chain attacker on `publisher_kid`** — attacker substitutes a valid-looking but attacker-signed MANIFEST. Capabilities: swap any release-bundle artifact with attacker-chosen bytes before the Runner digest-checks it.
+7. **Malicious peer agent over A2A** — a peer claiming to be an honest agent, making handoffs to the Runner. Capabilities: submit handoff offers with attacker-chosen messages/workflow state.
+8. **Insider with Runner-host access** — an operator with shell on the Runner host. Capabilities: read files, modify binaries, but NOT extract HSM keys. (Out of scope: HSM extraction; hardware side-channels; physical compromise.)
+9. **Prompt-injection / model-level adversary** — attempts to exfiltrate data or alter behavior by planting instructions in tool outputs, memory notes, or peer messages. (Partial scope: §15 content-safety mitigations; full model-alignment is explicitly §22 non-goal.)
+
+### 25.3 Attack-surface catalog with mitigations
+
+| Surface / vector                                  | Primary mitigation (normative)                                   |
+| ------------------------------------------------- | ---------------------------------------------------------------- |
+| HTTP transport tampering                          | TLS 1.3 required (§1, §2); mTLS for Runner↔Gateway + A2A (§14.3, §17.1) |
+| Agent Card swap at fetch time                     | Detached JWS + JCS canonicalization + `security.trustAnchors` pinning (§6.1, §6.1.1) |
+| MANIFEST swap                                     | `MANIFEST.json.jws` verified against §5.3 bootstrap anchor; `publisher_kid` pinning |
+| Release-signing key compromise                    | §5.3.1 rotation + 4h emergency revocation + `SuspectDecision` flagging |
+| Stolen handler key                                | §10.6 CRL (hourly refresh, ≤ 120 min end-to-end revocation SLA); §10.6.1 crl.json schema |
+| Replay of a valid PDA                             | UI §11.4.1 single-use `(session_id, nonce)` cache; Gateway-minted per-prompt `nonce` |
+| Replay of an A2A JWT                              | §17.1 `jti` replay cache (330 s retention)                       |
+| Cross-session PDA token reuse                     | `canonical_decision.session_id` + `handler_kid` equality checks (UI §11.4) |
+| Prompt-deadline bypass                            | Uniform `now() ≤ deadline + 30s` check on both PDA paths (UI §11.4.1) |
+| Scope elevation via `always-*` without user intent| §11.4 step-up: UV=1 on WebAuthn + `hardware_backed` OR Fresh-Auth Proof on JWS |
+| Tool-output prompt injection                      | `trust_class = tool-output` rendering + SAFELIST sanitizer + §15.4 no-resubmission rule (UI §15.1) |
+| Artifact-origin CSRF via cookies                  | Cookie-less artifact origin + CORP header + `UV-SESS-06a` topology probe (UI §5.1) |
+| Gateway pass-through violation                    | `PermissionPrompt` schema `additionalProperties:false` at Core §14.1.1; essential-flag enforced by UV-E-08 |
+| Gateway restart losing nonce state                | UI §11.4.1 web/mobile persistence MUST (Redis/WORM/fsync)        |
+| Runner impersonation by Gateway                   | `runner_mtls_ca_digest` pinning per §7.4 + `x5t#S256` in A2A JWT (§17.1) |
+| A2A peer forging a caller                         | §17.1 key-discovery rule (Agent Card signer kid OR mTLS SPKI); no other path accepted |
+| Stale Agent Card accepted                         | §17.1 `agent_card_etag` mismatch → `CardVersionDrift` + `-32051` |
+| `/tasks/` novelty gaming                          | §23 novelty quota + `tasks_fingerprint` + human-signed-commit unlock |
+| Audit tampering                                   | §10.5 WORM sink; canonical hash chain; `prev_hash` verification  |
+| Container escape during SI                        | §9.7 seccomp profile + cap-drop=ALL + `user.max_user_namespaces=0` + Docker/runc pinned versions |
+| `clone3(CLONE_NEWUSER)` namespace escape          | Host sysctl prerequisite (§9.7); §9.7.3 layered defense          |
+| UI-asset injection via Runner                     | UI §4 "Runner MUST NOT serve UI assets" + `UV-PRIN-01`           |
+| DNS hijack of bootstrap channel                   | DNSSEC required for the TXT-bootstrap channel (§5.3); AD bit enforced |
+| Stale CRL allowing revoked key                    | UI §7.3.1 fail-closed past `not_after` or > 2 h unreachable      |
+
+### 25.4 Out of scope / residual risk
+
+The following are explicitly NOT defended against by v1.0 and are declared §22 Non-Goals or accepted residual risk:
+
+- **Hardware / HSM extraction.** Physical attacks on HSMs and TPMs are out of scope; v1.0 assumes HSM private keys are extractable only by adversaries with physical access + hardware attack capability.
+- **Side-channel analysis** on handler keys (timing, power, speculative-execution exfiltration). Mitigation is HSM policy, not spec-level.
+- **Model alignment and prompt-injection-by-design.** Content-safety rules (§15) reduce damage per event, but the spec does not claim to prevent a sufficiently-crafted prompt injection from steering the agent. Model-level alignment is §22 non-goal.
+- **Availability / DoS at scale.** Rate limits (UI §17) bound per-session cost; volumetric DDoS defense at the network edge is operator responsibility.
+- **Insider with full HSM + root + audit-sink write access.** An adversary with simultaneous possession of the release key, host root, and audit-sink admin privileges can rewrite history. v1.0's compensating control is §25.1's M-of-N release signing (RECOMMENDED) + audit-sink WORM semantics (§10.5).
+- **Clock-skew attacks beyond the ±30 s / ±60 s windows** declared in §1. Operators deploying in environments without NTP MUST treat this as a deployment gap.
+
+### 25.5 Relationship to other sections
+
+- §1 clock-skew tolerances constrain the time windows for replay caches (§17.1 `jti`, UI §11.4.1 prompt nonce).
+- §5.3 + §5.3.1 establish the bootstrap root without which MANIFEST verification is circular.
+- §10 Permission System + §10.6 / §10.6.1 key management are the HITL backbone; compromises here are the highest-severity incidents.
+- §15 Content Safety + §15.4 Tool-Output Injection Defense handle model-adjacent risks within the stated scope.
+- §22 Non-Goals explicitly enumerates what v1.0 declines to defend against; operators whose threat model exceeds v1.0's scope MUST layer additional controls outside the harness.
+
+Threat-model updates are NOT breaking spec changes under §19.4 SemVer rules — they are informative revisions to this appendix. Normative tightening triggered by a new adversary class is a minor version bump; a new required mitigation is a major version bump.
 
 ---
 

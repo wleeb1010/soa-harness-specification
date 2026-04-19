@@ -188,6 +188,11 @@ for (const a of manifest.artifacts.supplementary_artifacts) {
 
 **Core profile (§18.3)** now includes §§4 and 5 so the lean-design / failure-path / primitive-testability / file-system-grounded / composition / stack-completeness MUSTs are formally in scope. `SV-PRIN-01..05` and `SV-STACK-01..02` cover them. UI §4 ("Runner MUST NOT serve UI assets") is exercised by `UV-PRIN-01`.
 
+## Security posture
+
+- **Trust bootstrap:** §5.3 (SDK-pinned / operator-bundled / DNSSEC TXT) + §5.3.1 rotation (≥ 365 d scheduled; ≤ 4 h emergency compromise response; ≥ 30 d overlap; M-of-N signing RECOMMENDED). Test: `SV-BOOT-04`.
+- **Threat model:** Core §25 (informative) catalogs 9 named adversary classes, 22 attack-surface vectors, and cross-references every normative mitigation. Out-of-scope / residual-risk items are explicit (HSM extraction, model-level prompt injection, volumetric DoS, ±30s clock-skew bound). Operators whose threat model exceeds v1.0 MUST layer additional controls outside the harness.
+
 ## Version
 
 `spec_version: "1.0"` — released `2026-04-18`.

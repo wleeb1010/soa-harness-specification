@@ -77,6 +77,7 @@
     "SV-BOOT-01":{ "name": "SDK-pinned bootstrap",        "section": "§5.3", "section_title": "External Bootstrap Root", "profile": "core", "severity": "critical", "assertion": "When the SDK-pinned channel is declared, the Runner refuses to load any Agent Card whose security.trustAnchors[].publisher_kid does not match the SDK-pinned value; HostHardeningInsufficient(reason=bootstrap-missing) emitted." },
     "SV-BOOT-02":{ "name": "Operator-bundled bootstrap",  "section": "§5.3", "section_title": "External Bootstrap Root", "profile": "core", "severity": "critical", "assertion": "When the operator-bundled channel is declared, initial-trust.json is loaded at startup before any Agent Card; absence fails startup with HostHardeningInsufficient(reason=bootstrap-missing)." },
     "SV-BOOT-03":{ "name": "DNSSEC TXT bootstrap",        "section": "§5.3", "section_title": "External Bootstrap Root", "profile": "core", "severity": "critical", "assertion": "When the DNSSEC channel is declared, the Runner resolves _soa-trust.<domain> TXT, requires the AD bit, and treats empty / unvalidated results as HostHardeningInsufficient(reason=bootstrap-missing)." },
+    "SV-BOOT-04":{ "name": "Bootstrap key rotation + compromise","section": "§5.3.1","section_title": "Bootstrap-Key Rotation and Compromise", "profile": "core", "severity": "critical", "assertion": "Runner polls bootstrap channel at ≤ 24 h interval; on revoked publisher_kid observation it rejects Agent Cards referencing the revoked value with HostHardeningInsufficient(reason=bootstrap-revoked), halts SI, and flags all MANIFEST JWS accepted in the preceding 24 h as SuspectDecision. Rotation overlap ≥ 30 d honored during transition." },
     "SV-SIGN-01":{ "name": "Agent Card JWS profile",      "section": "§6.1.1", "section_title": "Artifact Signing Profile", "profile": "core", "severity": "critical", "assertion": "Agent Card JWS uses detached serialization over JCS(agent-card.json), alg ∈ {EdDSA,ES256,RS256≥3072}, typ=soa-agent-card+jws, header carries kid and x5c; mismatch → CardSignatureFailed." },
     "SV-SIGN-02":{ "name": "program.md JWS profile",      "section": "§6.1.1", "section_title": "Artifact Signing Profile", "profile": "core+si", "severity": "critical", "assertion": "program.md JWS is detached over the raw UTF-8 bytes (NOT JCS), alg ∈ {EdDSA,ES256}, typ=soa-program+jws." },
     "SV-SIGN-03":{ "name": "MANIFEST JWS profile",        "section": "§6.1.1, §9.7.1", "section_title": "Artifact Signing Profile", "profile": "core", "severity": "critical", "assertion": "MANIFEST.json.jws is detached over JCS(MANIFEST.json), alg ∈ {EdDSA,ES256} (RS256 forbidden), typ=soa-manifest+jws, header.kid equals the configured publisher_kid." },
@@ -274,7 +275,7 @@
     "SV-A2A":    ["SV-A2A-01","SV-A2A-02","SV-A2A-03","SV-A2A-04","SV-A2A-05","SV-A2A-06","SV-A2A-07","SV-A2A-08","SV-A2A-09","SV-A2A-10","SV-A2A-11","SV-A2A-12","SV-A2A-13","SV-A2A-14"],
     "SV-PRIN":   ["SV-PRIN-01","SV-PRIN-02","SV-PRIN-03","SV-PRIN-04","SV-PRIN-05"],
     "SV-STACK":  ["SV-STACK-01","SV-STACK-02"],
-    "SV-BOOT":   ["SV-BOOT-01","SV-BOOT-02","SV-BOOT-03"],
+    "SV-BOOT":   ["SV-BOOT-01","SV-BOOT-02","SV-BOOT-03","SV-BOOT-04"],
     "SV-SIGN":   ["SV-SIGN-01","SV-SIGN-02","SV-SIGN-03"],
     "SV-GOV":    ["SV-GOV-01","SV-GOV-02","SV-GOV-03","SV-GOV-04","SV-GOV-05","SV-GOV-06","SV-GOV-07"],
     "SV-CLUS":   ["SV-CLUS-01","SV-CLUS-02","SV-CLUS-03","SV-CLUS-04"],
@@ -300,6 +301,7 @@
     "§4#principles":     { "title": "Core Principles",              "tests": ["SV-PRIN-01","SV-PRIN-02","SV-PRIN-03","SV-PRIN-04","SV-PRIN-05"] },
     "§5#stack":          { "title": "Required stack + primitives",  "tests": ["SV-STACK-01","SV-STACK-02"] },
     "§5.3#bootstrap":    { "title": "External bootstrap root",      "tests": ["SV-BOOT-01","SV-BOOT-02","SV-BOOT-03"] },
+    "§5.3.1#rotation":   { "title": "Bootstrap-key rotation + compromise","tests": ["SV-BOOT-04"] },
     "§6.1.1#signing":    { "title": "Per-artifact JWS signing profile","tests": ["SV-SIGN-01","SV-SIGN-02","SV-SIGN-03"] },
     "§17.1#jwt":         { "title": "A2A JWT algorithm, key discovery, replay, etag","tests": ["SV-A2A-10","SV-A2A-11","SV-A2A-12","SV-A2A-13"] },
     "§6.2#schema":       { "title": "Card schema validation",       "tests": ["SV-CARD-05"] },
@@ -369,7 +371,7 @@
   "execution_order": {
     "notes": "Tests ordered by dependency: encoding/static configuration first, then security headers, auth, enrollment; envelope and subscribe require auth; content safety and prompts require envelope; handoff and SI are terminal phases. Every ID listed below is literal — no glob or range expansion.",
     "phases": [
-      { "phase": 1, "name": "Encoding & Static Hygiene", "tests": ["SV-ENC-01","SV-ENC-02","SV-ENC-03","SV-ENC-04","SV-ENC-05","SV-ENC-06","SV-ENC-07","SV-GOV-07","SV-PRIN-01","SV-PRIN-02","SV-PRIN-03","SV-PRIN-04","SV-PRIN-05","SV-STACK-01","SV-STACK-02","SV-BOOT-01","SV-BOOT-02","SV-BOOT-03"] },
+      { "phase": 1, "name": "Encoding & Static Hygiene", "tests": ["SV-ENC-01","SV-ENC-02","SV-ENC-03","SV-ENC-04","SV-ENC-05","SV-ENC-06","SV-ENC-07","SV-GOV-07","SV-PRIN-01","SV-PRIN-02","SV-PRIN-03","SV-PRIN-04","SV-PRIN-05","SV-STACK-01","SV-STACK-02","SV-BOOT-01","SV-BOOT-02","SV-BOOT-03","SV-BOOT-04"] },
       { "phase": 2, "name": "Agent Card Discovery & Schema", "tests": ["SV-CARD-01","SV-CARD-02","SV-CARD-03","SV-CARD-04","SV-CARD-05","SV-CARD-06","SV-CARD-07","SV-CARD-08","SV-CARD-09","SV-CARD-10","SV-CARD-11","SV-SIGN-01","SV-SIGN-02","SV-SIGN-03"] },
       { "phase": 3, "name": "Static Configuration (AGENTS.md, Registry, Governance — includes SI-gated static checks)",
         "tests": ["SV-AGENTS-01","SV-AGENTS-02","SV-AGENTS-03","SV-AGENTS-04","SV-AGENTS-05","SV-AGENTS-06","SV-AGENTS-07","SV-AGENTS-08",
