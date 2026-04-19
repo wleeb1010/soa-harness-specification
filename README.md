@@ -49,12 +49,35 @@ The UI Gateway publishes its configuration at `https://<gateway>/.well-known/soa
 - `ws_endpoint`, optional `sse_endpoint`, `rest_base`, optional `local_ipc` — transport surfaces
 - `scopes_supported`, `supported_profiles`, `attestation_formats_supported`, `webauthn_rp_id` — capability declaration
 - `replay` — buffer sizing (`buffer_events ≥ 10 000`, `buffer_seconds ≥ 1800`, `max_backfill ≤ 5000`, `grace_seconds ≥ 600`)
-- `artifacts_origin` — cookie-less origin for tool-output artifacts; MUST differ from the UI origin by eTLD+1 (Core §5.1 MUST; `UV-SESS-06a`)
-- `runner_endpoint`, `runner_mtls_ca_digest`, `stream_scope_template` — upstream Runner discovery for non-co-hosted deployments (`UV-A-16`); co-hosted deployments MAY use the `runner_endpoint: "loopback"` sentinel
+- `artifacts_origin` — cookie-less origin for tool-output artifacts; MUST differ from the UI origin by eTLD+1 (UI §5.1 MUST; `UV-SESS-06a`)
+- `runner_endpoint` — Runner base URL; either `^https://…` or the literal `"loopback"` sentinel declaring co-hosted deployment. When `loopback`, UI §7.4 requires routing via `127.0.0.0/8` / `::1/128` / a UNIX domain socket, matching process-identity check (`SO_PEERCRED` / `LOCAL_PEEREID` / `GetNamedPipeClientProcessId`), and an OTel `soa_ui_cohost_mode=true` span label.
+- `runner_mtls_ca_digest` — SHA-256 of the DER-encoded CA root; Gateway MUST verify on every outbound mTLS handshake to the Runner; mismatch fails the handshake with `ui.runner-mtls-failed`.
+- `stream_scope_template` — RFC 6570 Level 1 template (pattern-validated by the schema) for the token-exchange scope. Default: `stream:read:{session_id}`. Admin consumers MAY use `stream:read:all`.
+
+All three runner fields are covered by `UV-A-16`.
 
 ## Diagnostic counters vs error envelopes
 
 UI §21 is a closed set of **emitted** error codes (`ui.auth-required`, `ui.replay-gap`, ...). §21.1 covers **diagnostic counters** that appear in observability metrics but never surface as error envelopes. `UV-ERR-01` tests the closed set; counters are explicitly excluded.
+
+## Handler-key revocation
+
+Handler keys enrolled at the Gateway (§7.3) are revoked through the Core §10.6.1 trust-anchor CRL — no separate UI-side CRL schema. The Gateway's local cache is governed by UI §7.3.1 (`UV-P-16`):
+
+- Refresh at least **once per hour** per trust anchor.
+- Past `crl.not_after` with no successful refresh → reject every `PermissionDecision` under that anchor with `ui.prompt-signature-invalid` (reason `crl-stale`).
+- After **> 2 hours** of fetch failure → emit `ui.gateway-config-invalid` (reason `crl-unreachable`) and reject new decisions until recovery.
+- Expose `soa_ui_crl_cache_age_seconds` and `soa_ui_crl_refresh_failures_total` metrics.
+
+## Test vectors as normative artifacts
+
+Per Core §19, the following vectors are **required** release-bundle content — conformance tools MUST consume them either from the canonical URL under `https://soa-harness.org/test-vectors/v1.0/` or from a locally unpacked bundle. Digest mismatch versus MANIFEST.json fails conformance with `ManifestDigestMismatch` (§24); removal of an existing vector is SemVer-breaking (§19.4).
+
+| Vector | Covers |
+|---|---|
+| `test-vectors/agent-card.{json,json.jws}` | `SV-CARD-03`, `HR-12` |
+| `test-vectors/topology-probe.md` | `UV-SESS-06†`, `UV-SESS-06a` |
+| `test-vectors/tasks-fingerprint/` + `compute.mjs` | `SV-GOOD-07` (Core §23 novelty quota) |
 
 ## Conformance stance
 
