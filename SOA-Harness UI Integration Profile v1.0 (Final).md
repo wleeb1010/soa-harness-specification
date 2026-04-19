@@ -97,7 +97,7 @@ Transport, auth + enrollment + attestation, event envelope, prompt flow, handoff
 
 ## 4. Design Principles
 
-- **Backend stays backend.** The Runner MUST NOT serve UI assets.
+- **Backend stays backend.** The Runner MUST NOT serve UI assets. (ui-validate: UV-PRIN-01)
 - **UI is an untrusted renderer.** UI enforces no security-critical invariant; the Runner and Gateway enforce.
 - **Read-mostly by default.** UIs subscribe to events; writes are the enumerated command set (§10).
 - **Trust-class is explicit.** Every content chunk carries a `trust_class` marker; no chunk renders without one.

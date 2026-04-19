@@ -9,7 +9,8 @@
     "url",
     "protocolVersion",
     "agentType",
-    "permissions"
+    "permissions",
+    "security"
   ],
   "additionalProperties": false,
   "properties": {

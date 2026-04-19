@@ -43,7 +43,9 @@ The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **
 - All timestamps MUST be RFC 3339 strings with an explicit timezone offset (UTC is RECOMMENDED) and at least millisecond precision.
 - All JSON MUST conform to RFC 8259 and MUST use LF (`\n`) as the line separator in persisted forms.
 - Durations in configuration fields MUST be ISO-8601 durations (e.g., `P30D`, `PT5M`).
-- Any JSON that is the signing input for a signature (Agent Card JWS, `program.md` JWS, PDA, audit-record canonical hash) MUST be canonicalized per RFC 8785 (JCS) before hashing or signing. Verifiers MUST re-canonicalize the received object and compare against the provided digest or signature. Full RFC 8785 conformance, including the number-serialization rules (ECMAScript `Number.prototype.toString` for all numeric values, distinguishing negative zero, exponent thresholds), is REQUIRED for production signing paths — subsets that handle only integers and strings are acceptable in build tooling that never encounters floats, but any signed or digest-pinned artifact that may contain a non-integer number MUST use a library-grade RFC 8785 implementation (reference implementations: `@filen/rfc8785` for JavaScript, `canonicaljson-go`, Python `rfc8785`).
+- **JSON signing inputs** (Agent Card JWS, MANIFEST JWS, `canonical_decision` PDA, audit-record canonical hash) MUST be canonicalized per RFC 8785 (JCS) before hashing or signing. Verifiers MUST re-canonicalize the received object and compare against the provided digest or signature. Full RFC 8785 conformance, including the number-serialization rules (ECMAScript `Number.prototype.toString` for all numeric values, distinguishing negative zero, exponent thresholds), is REQUIRED for production signing paths — subsets that handle only integers and strings are acceptable in build tooling that never encounters floats, but any signed or digest-pinned artifact that may contain a non-integer number MUST use a library-grade RFC 8785 implementation (reference implementations: `@filen/rfc8785` for JavaScript, `canonicaljson-go`, Python `rfc8785`).
+- **Non-JSON signing inputs** (`program.md` Markdown bytes, seccomp profile raw companion bytes, and any future text-format artifact) MUST be signed over the raw UTF-8 / raw byte content. JCS does NOT apply. Verifiers MUST compare byte-for-byte against the signed content.
+- Per-artifact JWS serialization, allowed algorithms, and required header fields are normatively specified in §6.1.1.
 - **Clock-skew tolerances (normative):**
   - JWT / A2A token validation: ±30 seconds between `iat`/`exp` and verifier clock.
   - PDA `not_before` / `not_after` windows: ±60 seconds between the verifier clock and the declared window edges; `not_after - not_before` MUST be ≤ 15 minutes.
@@ -142,6 +144,16 @@ Primitives P1–P10 and P12–P14 are REQUIRED for every `core`-profile Runner. 
 
 ## 6. Agent Card
 
+### 6.0 External Bootstrap Root (Normative)
+
+The Agent Card signature chain terminates at a trust anchor published under `security.trustAnchors`. The trust anchor itself is not discoverable from any artifact in this bundle — doing so would be circular. v1.0 therefore REQUIRES that the initial trust root be delivered *out of band* via exactly ONE of the following channels per deployment:
+
+- **SDK-pinned.** The operator's SOA client SDK ships with a hard-coded `{publisher_kid, spki_sha256, issuer}` triple identifying the SOA-WG release-signing key. Runners loading an Agent Card whose `security.trustAnchors[].publisher_kid` does not match the SDK-pinned value MUST emit `HostHardeningInsufficient` (reason `bootstrap-missing`) and refuse to load the Card.
+- **Operator-bundled.** The operator distributes `initial-trust.json` (`{"publisher_kid": "...", "spki_sha256": "<64-hex>", "issuer": "CN=..."}`) via a trusted deployment channel (configuration management, signed-container base image, etc.). The Runner loads this file at startup before any Agent Card; absence fails startup with `HostHardeningInsufficient` (reason `bootstrap-missing`).
+- **DNSSEC-protected TXT record (production).** At `_soa-trust.<deployment-domain>`, a DNSSEC-validated TXT record publishes `publisher_kid=<id>; spki_sha256=<64-hex>; issuer="CN=..."`. The Runner resolves and DNSSEC-validates the record at startup; lookup failure, missing AD bit, or empty result fails startup with `HostHardeningInsufficient` (reason `bootstrap-missing`).
+
+Implementations MUST select exactly one bootstrap channel per deployment and document the choice in their operator manual. The bootstrap provides the initial trust anchor that verifies the `MANIFEST.json.jws` release-manifest signature; the verified manifest then pins digests for subsequent `agent-card.jws` verification. Covered by `SV-BOOT-01..03`.
+
 ### 6.1 Discovery and Transport
 
 - The Agent Card MUST be served at `https://<origin>/.well-known/agent-card.json`.
@@ -152,6 +164,23 @@ Primitives P1–P10 and P12–P14 are REQUIRED for every `core`-profile Runner. 
 - Clients MUST verify the signature before trusting any policy-bearing field (`permissions.*`, `self_improvement.*`, `security.*`). On verification failure the client MUST fail closed (treat Agent as unreachable) and emit `CardSignatureFailed` (§24).
 - `Cache-Control: max-age` MUST NOT exceed 300 seconds unless the signer explicitly sets a longer value.
 
+### 6.1.1 Artifact Signing Profile (Normative)
+
+All signed artifacts in the SOA-Harness v1.0 bundle MUST conform to the following per-artifact profile. Verifiers MUST reject any JWS whose `alg` is not in the allowlist, whose `typ` does not match the artifact class, or whose required header fields are absent.
+
+| Artifact | Serialization | Signing input | Allowed `alg` | Required `typ` | Required header fields |
+|---|---|---|---|---|---|
+| Agent Card JWS (`.well-known/agent-card.jws`) | detached JWS (RFC 7515) | JCS(agent-card.json) bytes | EdDSA, ES256, RS256 (≥ 3072) | `soa-agent-card+jws` | `alg`, `kid`, `x5c` |
+| `program.md` JWS (`program.md.jws`) | detached JWS | raw UTF-8 bytes of `program.md` | EdDSA, ES256 | `soa-program+jws` | `alg`, `kid` |
+| MANIFEST JWS (`MANIFEST.json.jws`) | detached JWS | JCS(MANIFEST.json) bytes | EdDSA, ES256 | `soa-manifest+jws` | `alg`, `kid` (MUST equal the configured `publisher_kid`) |
+| PDA-JWS (UI §11.4) | compact JWS | BASE64URL(JCS(canonical_decision)) | EdDSA, ES256, RS256 (≥ 3072) | `soa-pda+jws` | `alg`, `kid` |
+
+Notes:
+- **Agent Card JWS** carries `x5c` so the signer's chain is verifiable against `security.trustAnchors` without an extra fetch.
+- **MANIFEST JWS** intentionally forbids RS256 — manifest verification is a bootstrap-critical path and RSA adds no value over Ed25519 at that layer.
+- **`program.md` JWS** signs raw Markdown bytes (not JCS-canonicalized anything); Markdown is not JSON and has no canonicalization rule.
+- All verifiers MUST reject JWS with an absent or unknown `typ` as a category error (`CardSignatureFailed` for Agent Card, `ManifestDigestMismatch` for MANIFEST, `ui.prompt-signature-invalid` for PDA-JWS, appropriate equivalent for `program.md`).
+
 ### 6.2 Normative JSON Schema
 
 The Agent Card MUST validate against the JSON Schema 2020-12 document below.
@@ -161,7 +190,7 @@ The Agent Card MUST validate against the JSON Schema 2020-12 document below.
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://soa-harness.org/schemas/v1.0/agent-card.schema.json",
   "type": "object",
-  "required": ["soaHarnessVersion", "name", "version", "url", "protocolVersion", "agentType", "permissions"],
+  "required": ["soaHarnessVersion", "name", "version", "url", "protocolVersion", "agentType", "permissions", "security"],
   "additionalProperties": false,
   "properties": {
     "soaHarnessVersion": { "type": "string", "const": "1.0" },
@@ -1316,6 +1345,16 @@ Termination reasons are the closed `StopReason` enum (§13.4).
 - A2A JSON-RPC 2.0 endpoint: `https://<origin>/a2a/v1`.
 - Transport: HTTPS (TLS 1.3+). Mutual TLS is REQUIRED by default; server certs chain to the peer's `security.trustAnchors`.
 - Each request MUST carry a signed JWT in `Authorization: Bearer <jwt>`. JWT claims: `iss` (caller's `name`), `sub` (caller's URL), `aud` (callee's URL), `iat`, `exp` (≤ 300 s from `iat`), `jti` (nonce), `agent_card_etag`.
+
+  **A2A JWT normative profile:**
+  1. **Algorithm allowlist.** `alg ∈ {EdDSA, ES256, RS256}`. RS256 requires key size ≥ 3072 bits. Any other `alg` MUST be rejected with `HandoffRejected` (reason `bad-alg`). (SV-A2A-10)
+  2. **Signing-key discovery.** The signing key MUST match ONE of:
+     - The caller's Agent Card JWS signer `kid` — same trust anchor, same SPKI as the `agent-card.jws` header. Default when the transport is not mutually authenticated.
+     - The SPKI of the caller's mTLS client certificate when the handoff is served behind mTLS. The JWT header MUST carry `x5t#S256` (RFC 7515 §4.1.8) whose value matches the SHA-256 of the DER-encoded client certificate presented at the TLS handshake.
+     No other discovery mechanism is permitted; a JWT whose signing key cannot be resolved via either path MUST be rejected with `HandoffRejected` (reason `key-not-found`). (SV-A2A-11)
+  3. **`jti` replay cache.** Receiver MUST reject a repeated `jti` within a retention window of `exp + 30 s = 330 s` from first observation with `HandoffRejected` (reason `jti-replay`). Cache MAY be per-connection (mTLS-scoped) or per-(`iss`,`aud`) keyed. (SV-A2A-12)
+  4. **`agent_card_etag` mismatch.** Receiver MUST fetch the caller's Agent Card at the URL declared in `sub`, compute its JWS digest, and compare with the presented `agent_card_etag`. On mismatch the receiver MUST emit `CardVersionDrift` (§24) and respond JSON-RPC error `-32051` (`HandoffRejected`). Fetched etags MAY be cached for up to 60 seconds to amortize per-request fetches. (SV-A2A-13)
+  Absence or malformation of any required claim or header MUST produce JSON-RPC error `-32002` (`AuthFailed`).
 
 ### 17.2 Methods
 

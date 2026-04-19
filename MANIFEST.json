@@ -22,13 +22,13 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "86a65d335be62e2524d5fc79a011551d42f496b05da75b7092c52b29fe738be4",
+        "sha256": "1f15a6587835b59e6142565ab18ab5446ae2d7b51882538bd5ed2034592b5ea8",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "SOA-Harness UI Integration Profile v1.0 (Final).md",
         "path": "SOA-Harness UI Integration Profile v1.0 (Final).md",
-        "sha256": "ab5cc67309a24e79f1a655a788e8d4a85e83291d2b07aac3f3b97ad415e39103",
+        "sha256": "b8a967e91bedb0e0aa385921710f92d0165e8c8cad0b66a6684c6877131c97f4",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,19 +40,19 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "6483cc6a36be77bb3c2130288810d5906aac0e09f4a15994c79ba1c6061bc942",
+        "sha256": "536d26824dcfa6b6867cb0090d11a1e30b0c95476ae8b4e4aa5bc877abfef253",
         "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": "ui-validate-must-map.json",
         "path": "ui-validate-must-map.json",
-        "sha256": "d4a352b78a2923b04a3fab3970bc0344bfe55cfe0b42fb61787b0db07a3c7d09",
+        "sha256": "6d5c2f210bc9383345f15f67c25fd030250ed404f91cc47d4bb03780a2ff804c",
         "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": "agent-card.schema.json",
         "path": "schemas/agent-card.schema.json",
-        "sha256": "6ef077ab55505f0e3c298b2cf06fd61bd2689da737134af1336f2ed507f375c2",
+        "sha256": "f49df8b9fa29f4d4ff01d704077e354d7eb7cefbfcd1a310981c334730b43de5",
         "canonicalization": "JCS-RFC-8785"
       },
       {
