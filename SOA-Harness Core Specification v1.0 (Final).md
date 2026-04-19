@@ -727,11 +727,25 @@ Each benchmark task container MUST be launched with the following settings.
         { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"soa-validate-must-map.json"}}, "required":["path"] } } } },
         { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"ui-validate-must-map.json"}}, "required":["path"] } } } },
         { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/agent-card.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/canonical-decision.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/crl.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/gateway-config.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/harbor-task.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/locale-map.schema.json"}}, "required":["path"] } } } },
         { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/release-manifest.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/session.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/stream-event.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/stream-event-payloads.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/ui-derived-payloads.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/ui-envelope.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/wcag-addendum.schema.json"}}, "required":["path"] } } } },
         { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"test-vectors/agent-card.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"test-vectors/agent-card.json.jws"}}, "required":["path"] } } } },
         { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"test-vectors/topology-probe.md"}}, "required":["path"] } } } },
         { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"test-vectors/tasks-fingerprint/README.md"}}, "required":["path"] } } } },
-        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"test-vectors/permission-prompt/README.md"}}, "required":["path"] } } } }
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"test-vectors/permission-prompt/README.md"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"test-vectors/permission-prompt/permission-prompt.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"test-vectors/permission-prompt/canonical-decision.json"}}, "required":["path"] } } } }
       ],
       "properties": {
         "supplementary_artifacts": {
@@ -1466,15 +1480,15 @@ The SOA-Harness specification is maintained by the **SOA-Harness Working Group**
 
 Runner MUST reject any MANIFEST whose JWS `kid` does not equal the `publisher_kid` field of a configured trust anchor.
 
-**Release bundle contents (normative).** Every v1.0 release MUST ship the following artifact classes, all listed in MANIFEST.json with digests:
-1. **Normative specifications** — the Core Markdown, the UI Integration Profile, the companion seccomp profile JSON, and both conformance must-maps.
-2. **Extracted JSON Schemas** under `schemas/` — one file per `$id` URI referenced in the specs. Conformance tooling resolves `$id` lookups against this directory or the canonical HTTPS URL.
-3. **Test vectors** under `test-vectors/` — first-class conformance inputs. The vectors currently REQUIRED to be present:
+**Release bundle contents (normative).** Every v1.0 release MUST ship the artifact classes below. Classes 1–3 are enumerated inside `MANIFEST.json` with digests; class 4 is the manifest itself and its detached JWS — the manifest cannot list its own digest without circularity, so its integrity is established by the JWS chain (verified against the §5.3 bootstrap anchor), not by a self-entry.
+1. **Normative specifications** — the Core Markdown, the UI Integration Profile, the companion seccomp profile JSON, and both conformance must-maps. All MUST appear in `MANIFEST.json.artifacts.supplementary_artifacts`.
+2. **Extracted JSON Schemas** under `schemas/` — one file per `$id` URI referenced in the specs. All MUST appear in `supplementary_artifacts`. Conformance tooling resolves `$id` lookups against this directory or the canonical HTTPS URL.
+3. **Test vectors** under `test-vectors/` — first-class conformance inputs. All MUST appear in `supplementary_artifacts`. The vectors currently REQUIRED to be present:
    - `test-vectors/agent-card.{json,json.jws}` — exercised by `SV-CARD-03` / `HR-12` (§6.3).
    - `test-vectors/topology-probe.md` — recipe consumed by `UV-SESS-06†` / `UV-SESS-06a` (UI §5.1).
    - `test-vectors/tasks-fingerprint/` — two-task `/tasks/` fixture + `compute.mjs` producing the canonical `tasks_fingerprint` string; exercised by `SV-GOOD-07` (§23 novelty quota).
    - `test-vectors/permission-prompt/` — paired `PermissionPrompt` + `canonical_decision` + detached PDA-JWS (placeholder signature) demonstrating the §14.1.1 nonce field and the UI §11.4.1 replay/deadline rules; exercised by `UV-P-17..20`.
-4. **MANIFEST.json + MANIFEST.json.jws** — canonical digest set, signed by the release key pinned in §9.7.1.
+4. **MANIFEST.json + MANIFEST.json.jws** — the canonical digest set and its detached JWS, signed by the release key identified by `publisher_kid` per §5.3 bootstrap. These two files are the **root** of the digest chain and are therefore NOT listed inside `supplementary_artifacts`; their integrity is established by verifying `MANIFEST.json.jws` against the bootstrap-supplied trust anchor before any other digest is trusted.
 
 Conformance tools (`soa-validate`, `ui-validate`) MUST consume test vectors from the release bundle unambiguously: either by fetching the canonical URL under `https://soa-harness.org/test-vectors/v1.0/` or by reading the mirrored copies in a locally-unpacked bundle. Mismatch between the vector's computed digest and the MANIFEST entry fails conformance with `ManifestDigestMismatch` (§24). New vectors added in patch releases MUST appear in `supplementary_artifacts` of MANIFEST.json; removal of an existing vector is a breaking change subject to §19.4 SemVer rules.
 

@@ -238,8 +238,25 @@ The discovery document served at `/.well-known/soa-ui-config.json` MUST validate
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://soa-harness.org/schemas/ui/v1.0/gateway-config.schema.json",
   "type": "object",
-  "required": ["soa_ui_profile_version","issuer","authorization_endpoint","token_endpoint","scopes_supported","agents_supported","ws_endpoint","rest_base","enroll_endpoint","attestation_formats_supported","max_event_bytes","supported_profiles","replay"],
+  "required": ["soa_ui_profile_version","issuer","authorization_endpoint","token_endpoint","scopes_supported","agents_supported","ws_endpoint","rest_base","enroll_endpoint","attestation_formats_supported","max_event_bytes","supported_profiles","replay","artifacts_origin","runner_endpoint","stream_scope_template"],
   "additionalProperties": false,
+  "allOf": [
+    {
+      "description": "WebAuthn RP ID is REQUIRED when any of the WebAuthn-capable profiles (web/ide/mobile) is supported; cli-only deployments MAY omit.",
+      "if":   { "properties": { "supported_profiles": { "contains": { "enum": ["web","ide","mobile"] } } } },
+      "then": { "required": ["webauthn_rp_id"] }
+    },
+    {
+      "description": "local_ipc is REQUIRED when cli or ide is supported; it MAY appear otherwise.",
+      "if":   { "properties": { "supported_profiles": { "contains": { "enum": ["cli","ide"] } } } },
+      "then": { "required": ["local_ipc"] }
+    },
+    {
+      "description": "runner_mtls_ca_digest is REQUIRED when runner_endpoint is an https URL; the `loopback` sentinel (co-hosted deployments per §7.4) MAY omit it because kernel-enforced process identity replaces the CA pin.",
+      "if":   { "properties": { "runner_endpoint": { "pattern": "^https://" } } },
+      "then": { "required": ["runner_mtls_ca_digest"] }
+    }
+  ],
   "properties": {
     "soa_ui_profile_version":          { "type": "string", "const": "1.0" },
     "issuer":                          { "type": "string", "format": "uri", "pattern": "^https://" },

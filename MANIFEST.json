@@ -22,13 +22,13 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "419a4772568979849e004696382f6c8f9a861ffcbe634af62c101ae6c2d72933",
+        "sha256": "549ba6d912511181efff340d3a60cb9b10ee43426586390c0af64bf3470d3c9a",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "SOA-Harness UI Integration Profile v1.0 (Final).md",
         "path": "SOA-Harness UI Integration Profile v1.0 (Final).md",
-        "sha256": "a0c59285a97826cc9416af13123ac1d1a56532a14607e5bbded3f296df301d73",
+        "sha256": "bbb5df7821d8b9daffb110d6a174aae6ec5bc122f05ad6807b40a6a3399d8df7",
         "canonicalization": "raw-utf8"
       },
       {
@@ -70,7 +70,7 @@
       {
         "name": "gateway-config.schema.json",
         "path": "schemas/gateway-config.schema.json",
-        "sha256": "55c16c27dbcc1e1ec0dc5481020d084816810a57224fd36c4a6157fe886b7a19",
+        "sha256": "12f2eb75a1fecde7fc70a262e0e5bcda9a56d8516df0d1a26a249ab70d2c5920",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -88,7 +88,7 @@
       {
         "name": "release-manifest.schema.json",
         "path": "schemas/release-manifest.schema.json",
-        "sha256": "b72df2d02ca2977ba0aac3d6f11e3f56a2e5a49ed9f1516f0df63283c0ec48cd",
+        "sha256": "5829f7f37a7a9c36e6a55fa57dc3cf6cb1cce13feec504d9a4814d43ee306a85",
         "canonicalization": "JCS-RFC-8785"
       },
       {

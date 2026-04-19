@@ -43,7 +43,7 @@ The bundle is self-contained: every MUST in the spec has a corresponding test ID
 
 ## Gateway discovery document
 
-The UI Gateway publishes its configuration at `https://<gateway>/.well-known/soa-ui-config.json` (validates against [`schemas/gateway-config.schema.json`](./schemas/gateway-config.schema.json)). Required load-bearing fields include:
+The UI Gateway publishes its configuration at `https://<gateway>/.well-known/soa-ui-config.json` (validates against [`schemas/gateway-config.schema.json`](./schemas/gateway-config.schema.json)). The schema's top-level `required` list now includes every load-bearing discovery field (plus two conditional requirements covered by `if/then`). Required fields:
 
 - `issuer`, `authorization_endpoint`, `token_endpoint` — OAuth 2.1 metadata
 - `ws_endpoint`, optional `sse_endpoint`, `rest_base`, optional `local_ipc` — transport surfaces

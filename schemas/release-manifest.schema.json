@@ -123,6 +123,91 @@
                 "type": "object",
                 "properties": {
                   "path": {
+                    "const": "schemas/canonical-decision.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "schemas/crl.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "schemas/gateway-config.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "schemas/harbor-task.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "schemas/locale-map.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
                     "const": "schemas/release-manifest.schema.json"
                   }
                 },
@@ -140,7 +225,126 @@
                 "type": "object",
                 "properties": {
                   "path": {
+                    "const": "schemas/session.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "schemas/stream-event.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "schemas/stream-event-payloads.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "schemas/ui-derived-payloads.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "schemas/ui-envelope.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "schemas/wcag-addendum.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
                     "const": "test-vectors/agent-card.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "test-vectors/agent-card.json.jws"
                   }
                 },
                 "required": [
@@ -192,6 +396,40 @@
                 "properties": {
                   "path": {
                     "const": "test-vectors/permission-prompt/README.md"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "test-vectors/permission-prompt/permission-prompt.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "test-vectors/permission-prompt/canonical-decision.json"
                   }
                 },
                 "required": [
