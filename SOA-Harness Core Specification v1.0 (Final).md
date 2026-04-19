@@ -50,7 +50,7 @@ The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **
 - All timestamps MUST be RFC 3339 strings with an explicit timezone offset (UTC is RECOMMENDED) and at least millisecond precision.
 - All JSON MUST conform to RFC 8259 and MUST use LF (`\n`) as the line separator in persisted forms.
 - Durations in configuration fields MUST be ISO-8601 durations (e.g., `P30D`, `PT5M`).
-- **JSON signing inputs** (Agent Card JWS, MANIFEST JWS, `canonical_decision` PDA, audit-record canonical hash) MUST be canonicalized per RFC 8785 (JCS) before hashing or signing. Verifiers MUST re-canonicalize the received object and compare against the provided digest or signature. Full RFC 8785 conformance, including the number-serialization rules (ECMAScript `Number.prototype.toString` for all numeric values, distinguishing negative zero, exponent thresholds), is REQUIRED for production signing paths — subsets that handle only integers and strings are acceptable in build tooling that never encounters floats, but any signed or digest-pinned artifact that may contain a non-integer number MUST use a library-grade RFC 8785 implementation (reference implementations: `@filen/rfc8785` for JavaScript, `canonicaljson-go`, Python `rfc8785`).
+- **JSON signing inputs** (Agent Card JWS, MANIFEST JWS, `canonical_decision` PDA, audit-record canonical hash) MUST be canonicalized per RFC 8785 (JCS) before hashing or signing. Verifiers MUST re-canonicalize the received object and compare against the provided digest or signature. Full RFC 8785 conformance, including the number-serialization rules (ECMAScript `Number.prototype.toString` for all numeric values — which serializes `-0` as the string `"0"` per ES Abstract Operation `Number::toString`, and applies the exponent/precision thresholds of §7.1.17), is REQUIRED for production signing paths. Implementations MUST NOT attempt to preserve `-0` as a distinct canonical output; doing so produces signatures incompatible with other conformant verifiers. Subsets that handle only integers and strings are acceptable in build tooling that never encounters floats, but any signed or digest-pinned artifact that may contain a non-integer number MUST use a library-grade RFC 8785 implementation (reference implementations: `@filen/rfc8785` for JavaScript, `canonicaljson-go`, Python `rfc8785`).
 - **Non-JSON signing inputs** (`program.md` Markdown bytes, seccomp profile raw companion bytes, and any future text-format artifact) MUST be signed over the raw UTF-8 / raw byte content. JCS does NOT apply. Verifiers MUST compare byte-for-byte against the signed content.
 - Per-artifact JWS serialization, allowed algorithms, and required header fields are normatively specified in §6.1.1.
 - **Clock-skew tolerances (normative):**
@@ -967,8 +967,8 @@ For each tool invocation the Runner MUST resolve `(capability, control, handler)
 ### 10.5 Audit Trail
 
 - Every permission decision, every self-edit, and every handoff MUST be appended to `/audit/permissions.log`.
-- Each record is a JSON line: `id`, `timestamp`, `session_id`, `tool`, `args_digest`, `capability`, `control`, `handler`, `decision`, `reason`, `signer_key_id`, `prev_hash`, `this_hash`.
-- `this_hash = SHA-256(prev_hash || canonical_json_of_record_without_this_hash)`. First record: `prev_hash = "GENESIS"`.
+- Each record is a JSON line with the following REQUIRED fields: `id`, `timestamp`, `session_id`, `subject_id`, `tool`, `args_digest`, `capability`, `control`, `handler`, `decision`, `reason`, `signer_key_id`, `prev_hash`, `this_hash`. The `subject_id` field carries the stable identifier of the data subject (if any) whose personal data is implicated by the decision — drawn from the UI caller's `user_sub` claim when the operation is user-initiated, from the tool's declared subject binding (§10.7 `data_class` tagging) when the operation is agent-initiated, or the literal string `"none"` when no personal data is touched. The `subject_id` field is the authoritative linkage between audit and the §10.7.1 `privacy.export_subject` / `privacy.delete_subject` tools; absence or malformation fails `SV-PERM-05`.
+- `this_hash = SHA-256(prev_hash || canonical_json_of_record_without_this_hash)` where `canonical_json_of_record_without_this_hash` MUST include `subject_id` (it is part of the signed/hashed body, not metadata). First record: `prev_hash = "GENESIS"`.
 - The Runner MUST additionally ship every record to an **external WORM sink** satisfying:
   1. **Append-only**: once written, records MUST NOT be mutable or deletable by credentials available to the Runner.
   2. **Tamper-evident**: the sink MUST preserve the record's `this_hash` chain; independent verification MUST be possible without Runner cooperation.
@@ -977,6 +977,20 @@ For each tool invocation the Runner MUST resolve `(capability, control, handler)
   5. **Audit-reader access**: a verifier with read-only credentials MUST be able to list and read records without write authority.
 
   Conforming backends (non-exhaustive): AWS S3 with Object Lock (compliance mode), Azure Blob immutable storage, GCS bucket with retention policy, on-premises append-only log server with signed receipts, or a filesystem with per-record immutable attribute and privilege-separated writer. The sink endpoint is declared at `security.auditSink`.
+
+#### 10.5.1 Runtime Audit-Sink Failure (Normative)
+
+Readiness rules at §5.4 prevent a Runner from accepting new traffic when the sink is unreachable at startup. This subsection defines behavior when the sink becomes unreachable **during an active session** after readiness was previously green. The Runner MUST operate a three-state degradation model:
+
+| State | Trigger | Behavior |
+|---|---|---|
+| `healthy` | Sink ship-acknowledged within 1 s for the most recent record | Normal operation; no events emitted |
+| `degraded-buffering` | Sink ship failed or timed out for ≤ 60 s OR local buffer < 1000 records since last successful ship | Continue operation; buffer audit records in an fsync-backed local queue (`/audit/pending/`); emit a single `AuditSinkDegraded` StreamEvent per state-transition with `{first_failed_at, buffered_records}`; retry with exponential backoff (1s → 30s ceiling); `/ready` remains 200 in this state |
+| `unreachable-halt` | Sink ship has failed continuously > 60 s OR local buffer exceeds 1000 records | (1) REFUSE any new tool invocation whose `risk_class ∈ {Mutating, Destructive}` with `PermissionDenied` (reason `audit-sink-unreachable`); (2) permit `ReadOnly` tools to continue; (3) emit `AuditSinkUnreachable` StreamEvent with `{unreachable_since, buffered_records}`; (4) `/ready` flips to 503 (reason `audit-sink-unreachable`) so orchestrators drain the Runner; (5) on sink recovery, flush the local buffer in order, verify the external sink's `this_hash` chain resumes correctly, emit `AuditSinkRecovered`, and return to `healthy` |
+
+Local buffer MUST be on the same file-system as `/audit/permissions.log` and MUST use atomic writes per §12.3 so a crash during buffering does not lose records. Buffered records retain their original `timestamp`; the sink-issued timestamp (§10.5 rule 3) is applied on ship, not at buffer time.
+
+New error codes introduced by this subsection: `AuditSinkDegraded`, `AuditSinkUnreachable`, `AuditSinkRecovered` (all under the `Audit` category in §24). Covered by `SV-PERM-19`.
 
 ### 10.6 Handler Key Management
 
@@ -1044,7 +1058,13 @@ SOA-Harness emits three classes of persistent records that MAY carry personal da
 
 #### 10.7.2 Cross-Border and Residency
 
-5. **Residency pinning.** Deployments that require data residency MUST declare the allowed set of geographic regions in Agent Card `security.data_residency` (array of ISO-3166 alpha-2 country codes). The Runner MUST refuse any MCP tool invocation whose resolved endpoint (DNS + TLS SNI + reverse lookup) does not map to one of the declared regions and emit `PermissionDenied` (reason `residency-violation`). Absence of `security.data_residency` MUST be treated as "no residency constraint"; strict deployments SHOULD declare it explicitly.
+5. **Residency pinning.** Deployments that require data residency MUST declare the allowed set of geographic regions in Agent Card `security.data_residency` (array of ISO-3166 alpha-2 country codes). Enforcement is a **layered defence**; no single signal below is authoritative, but ALL declared layers MUST agree before the Runner permits a tool invocation:
+   - **Tool-declared processing location (primary).** Every MCP tool MUST expose a `data_processing_location` manifest field (closed enum of ISO-3166 alpha-2 codes covering the regions where the tool actually stores, processes, or transits personal data). The Runner MUST reject any invocation whose declared location intersects empty set with `security.data_residency` with `PermissionDenied` (reason `residency-violation`, sub-reason `tool-declaration-mismatch`). Tools that cannot declare this field MUST be treated as region `"*"` (unknown) and rejected by any deployment with a non-empty residency pin.
+   - **Cryptographic attestation (when available).** When the tool's MCP server signs its responses with a key enrolled under `security.trustAnchors`, the signature MUST assert the `data_processing_location` value. Mismatch between signed attestation and manifest claim → `PermissionDenied` (reason `residency-violation`, sub-reason `attestation-mismatch`).
+   - **Network-signal cross-check (supporting evidence only).** The Runner MAY additionally verify that DNS + TLS SNI + reverse-lookup of the tool's endpoint map to a region in `security.data_residency`. Network signals are inherently spoofable (anycast, CDN fronting, BGP hijack); they are corroborating evidence only. A deployment relying solely on network signals to enforce residency is NON-CONFORMANT; conformance requires at least the tool-declared primary signal.
+   - **Audit record.** Every residency-gated decision (accept or reject) MUST emit an audit record carrying `{ tool, declared_location, attested_location, network_signal_regions, decision }` so downstream compliance review can see which layers agreed.
+
+   Absence of `security.data_residency` MUST be treated as "no residency constraint"; strict deployments SHOULD declare it explicitly. (`SV-PRIV-05`)
 
 #### 10.7.3 Retention
 
@@ -1143,7 +1163,16 @@ Persistence is **bracketed** around each significant event. For each significant
 2. Execute.
 3. Persist `phase = committed` with `result_digest` AFTER successful execution, OR `phase = compensated` on failure followed by the compensating action.
 
-This gives **at-least-once** semantics on resume: `pending` tools are replayed; `committed` are not. Each tool MUST accept an `X-Soa-Idempotency-Key` header (for HTTP-like tools) or MCP equivalent and MUST dedupe on it. Tools without idempotency support MUST be classified `risk_class = Destructive` and run only under `control = Prompt` with a re-prompt on resume.
+This gives **at-least-once** semantics on resume: `pending` tools are replayed; `committed` are not. Each tool MUST accept an `X-Soa-Idempotency-Key` header (for HTTP-like tools) or MCP equivalent and MUST dedupe on it.
+
+**Tool-side retention window (normative).** The tool's dedupe cache for a given `idempotency_key` MUST retain the committed result for at least the longer of:
+- **1 hour** (absolute minimum floor — covers routine restart windows), OR
+- The session's declared resume-grace window (§14.3; minimum 10 minutes for UI transports, Runner session TTL for headless), OR
+- The session's maximum lifetime as declared in Agent Card `compaction.triggerTokens`-derived session-age cap (24 hours cap).
+
+A tool whose dedupe horizon is shorter than this floor MUST be classified `risk_class = Destructive` (alongside the no-idempotency rule) because a late replay could re-execute the action. Tools declare their actual retention horizon in their MCP manifest as `idempotency_retention_seconds`; a tool declaring < 3600 seconds whose `risk_class` is not `Destructive` MUST be rejected by the Runner at tool-pool assembly with `ToolPoolStale` (reason `idempotency-retention-insufficient`). (`SV-SESS-11`)
+
+Tools without any idempotency support MUST be classified `risk_class = Destructive` and run only under `control = Prompt` with a re-prompt on resume.
 
 ### 12.3 Atomic Writes
 
@@ -1780,6 +1809,7 @@ Note: `PermissionPrompt` is a StreamEvent type, not an error code (§14.1); earl
 **Budget**: `BudgetExhausted`, `BillingTagMismatch`
 **Hook**: `HookAbnormalExit`, `HookReentrancy`
 **Observability**: `ObservabilityBackpressure`
+**Audit**: `AuditSinkDegraded`, `AuditSinkUnreachable`, `AuditSinkRecovered`
 **A2A**: `HandoffBusy`, `HandoffRejected`, `HandoffStateIncompatible`, `TrustAnchorMismatch`
 **Cluster**: `SelfImproveFencingViolation`
 **Host**: `HostHardeningInsufficient`

@@ -204,7 +204,7 @@
     },
     "webauthn_rp_id": {
       "type": "string",
-      "description": "Registrable-domain suffix for WebAuthn RP ID per §7.3; typically eTLD+1 shared by UI and Gateway origins."
+      "description": "Registrable-domain suffix of the UI origin, used as WebAuthn RP ID per §7.3. The Gateway origin does NOT need to share this suffix; Gateway validates clientDataJSON.origin against a configured UI-origin allowlist sharing this rp.id."
     },
     "artifacts_origin": {
       "type": "string",

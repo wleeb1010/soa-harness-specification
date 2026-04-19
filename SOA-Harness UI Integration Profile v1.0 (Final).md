@@ -278,7 +278,7 @@ The discovery document served at `/.well-known/soa-ui-config.json` MUST validate
     "dpop_required_for_public_clients":{ "type": "boolean", "default": true },
     "max_event_bytes":                 { "type": "integer", "minimum": 1024, "maximum": 1048576 },
     "supported_profiles":              { "type": "array", "items": { "type": "string", "enum": ["web","ide","mobile","cli"] }, "uniqueItems": true, "minItems": 1 },
-    "webauthn_rp_id":                  { "type": "string", "description": "Registrable-domain suffix for WebAuthn RP ID per §7.3; typically eTLD+1 shared by UI and Gateway origins." },
+    "webauthn_rp_id":                  { "type": "string", "description": "Registrable-domain suffix of the UI origin, used as WebAuthn RP ID per §7.3. The Gateway origin does NOT need to share this suffix; Gateway validates clientDataJSON.origin against a configured UI-origin allowlist sharing this rp.id." },
     "artifacts_origin":                { "type": "string", "format": "uri", "pattern": "^https://", "description": "Base URL (scheme + registrable-domain host) from which the Gateway serves tool-output artifacts. MUST differ from the UI origin by eTLD+1 per §5.1 (UV-SESS-06†). The topology probe at test-vectors/topology-probe.md reads this field." },
     "runner_endpoint":                 { "type": "string", "oneOf": [ { "format": "uri", "pattern": "^https://" }, { "const": "loopback" } ], "description": "Base URL of the upstream SOA-Harness Runner the Gateway brokers for (§5, §14.3). Gateway composes `${runner_endpoint}/stream/v1/{session_id}` for SSE subscription. The literal value `loopback` declares co-hosted deployment (Gateway and Runner on the same host, routed over the loopback interface); in that mode outbound mTLS and the CA-digest pin MAY be omitted — see §7.4 for the exact co-host contract. REQUIRED when Gateway is not co-hosted with Runner." },
     "runner_mtls_ca_digest":           { "type": "string", "pattern": "^sha256:[A-Fa-f0-9]{64}$", "description": "SHA-256 of the mTLS CA bundle (DER-encoded root certificate) that the Gateway uses to authenticate the Runner. Gateway MUST verify this digest against its configured CA bundle at every outbound mTLS handshake to the Runner; mismatch fails the handshake with `ui.runner-mtls-failed` and triggers CA-rotation reconciliation before any further stream attempts. REQUIRED when `runner_endpoint` is an https URL." },
@@ -361,7 +361,7 @@ Enrollment flow (`POST /ui/v1/enroll`):
 2. Client requests a `challenge` from `/ui/v1/enroll` (`{ op: "begin", user_sub }`).
 3. Client produces a credential:
    - **JWS path**: generate an Ed25519 or ES256 keypair in the platform keystore; the Gateway accepts the raw public key (JWK) or an X.509 chain terminating in a trust anchor from the agent's `security.trustAnchors`. The challenge is signed to prove possession.
-   - **WebAuthn path**: invoke `navigator.credentials.create({publicKey: {...}})` with the Gateway's `challenge`, `rp.id` = the **registrable-domain suffix** shared by the UI origin and the Gateway origin (per WebAuthn L3 §5.1.7 — typically the eTLD+1, e.g., `example.com` when UI is `ui.example.com` and Gateway is `gateway.example.com`), `user` = user sub, `authenticatorSelection.userVerification: "required"`, `attestation: "direct"`. The published `rp.id` MUST appear in the Gateway discovery document (§7.1) as `webauthn_rp_id` so UIs can construct the call without ambiguity. POST the resulting `PublicKeyCredential` to `/ui/v1/enroll` (`{ op: "finish", credential_json, challenge }`).
+   - **WebAuthn path**: invoke `navigator.credentials.create({publicKey: {...}})` with the Gateway's `challenge`, `rp.id` = a **registrable-domain suffix of the UI origin** (WebAuthn L3 §5.1.3; a browser enforces this — the ceremony fails client-side if `rp.id` is not a suffix of the calling origin). The Gateway is not a party to the browser ceremony and its origin is NOT required to share the registrable domain; deployments where UI and Gateway live on unrelated parent domains (e.g., UI at `ui.example.com`, Gateway at `gw.example-api.net`) are conformant. The deployment chooses `rp.id` based on where it wants cross-subdomain credential reuse — most commonly the UI's eTLD+1. Set `user` = user sub, `authenticatorSelection.userVerification: "required"`, `attestation: "direct"`. The Gateway publishes its chosen `rp.id` in the discovery document (§7.1) as `webauthn_rp_id` so UIs can construct the call without ambiguity. The Gateway MUST validate incoming `clientDataJSON.origin` against a Gateway-configured allowlist of UI origins sharing the `rp.id`; requests whose `origin` is not on the allowlist MUST be rejected with `ui.prompt-signature-invalid` (reason `origin-not-allowlisted`). POST the resulting `PublicKeyCredential` to `/ui/v1/enroll` (`{ op: "finish", credential_json, challenge }`).
 4. Gateway validates possession, verifies attestation (WebAuthn: chain to an accepted Root CA list; JWS: trust-anchor chain per Core §10.6), assigns a stable `kid`, records `{ kid, user_sub, format, algo, public_key_or_cred_id, enrolled_at, not_after }` in the audit trail.
 5. Gateway returns `{ kid, not_after }`. Lifetime ≤ 90 days; rotation is a re-enrollment with a 24-hour overlap window. (UV-P-11)
 
@@ -383,6 +383,21 @@ Covered by `UV-P-16`.
 ### 7.4 Token Exchange (Gateway → Runner)
 
 Gateway MUST exchange the UI token for a short-lived Runner credential via RFC 8693. UI MUST NOT receive, forward, or inspect Runner credentials. (UV-A-08)
+
+**RFC 8693 parameter profile (normative).** "Do token exchange" is insufficient for cross-implementation equivalence; the Gateway's token-exchange request MUST carry:
+
+| Parameter | Required value |
+|---|---|
+| `grant_type` | `urn:ietf:params:oauth:grant-type:token-exchange` |
+| `subject_token` | The UI caller's OAuth access token (the token that reached the Gateway) |
+| `subject_token_type` | `urn:ietf:params:oauth:token-type:access_token` |
+| `actor_token` | The Gateway's own service-principal token, proving to the AS that the exchange is delegated through the Gateway and not impersonated by a rogue caller |
+| `actor_token_type` | `urn:ietf:params:oauth:token-type:access_token` |
+| `requested_token_type` | `urn:ietf:params:oauth:token-type:access_token` (RFC 8693 §2.1) — JWT-formatted access token. `jwt` and `saml2` types MUST NOT be requested |
+| `audience` | The Runner endpoint URL declared in discovery `runner_endpoint` (or the literal `loopback` sentinel for co-hosted deployments). The AS MUST refuse any other audience |
+| `scope` | Produced by expanding `stream_scope_template` against the active `session_id`; no broader scope is permitted |
+
+The semantic model is **delegation** (RFC 8693 §1.3), not impersonation: the issued token MUST carry an `act` claim (RFC 8693 §4.1) whose value is an object naming the Gateway as actor (`act.sub = gateway client_id`, `act.iss = authorization server`). A token missing `act`, or whose `act.sub` differs from the Gateway's registered client_id, MUST be rejected by the Runner with `AuthFailed` (reason `delegation-missing`). **Minimum claim set on the issued token:** `iss`, `sub` (= original UI user), `aud` (= `runner_endpoint`), `exp` (≤ 300 s from `iat`), `iat`, `scope`, `act`, and `soa_core_version` (§19.4.1). Missing any of these claims MUST be treated as `AuthFailed` (reason `claim-missing`). (UV-A-08a)
 
 **Runner discovery (normative, UV-A-16).** The Gateway's upstream Runner is declared in the discovery document (§7.1) via three fields:
 - `runner_endpoint` — base URL the Gateway brokers for. The Gateway MUST compose the Runner SSE subscription URL as `${runner_endpoint}/stream/v1/{session_id}` per Core §14.3.
@@ -418,6 +433,17 @@ On `/ui/v1/connect` attach, Gateway MUST mint a per-session capability token wit
   1. mTLS `cnf` thumbprint (RFC 8705) when the client presents a client certificate;
   2. **DPoP** (RFC 9449) for public clients that cannot mTLS (browsers, mobile web views); Gateway MUST require DPoP proof on every command endpoint when mTLS is unavailable and `dpop_required_for_public_clients=true`. (UV-A-10)
 - Revocable via `POST /ui/v1/revoke`. (UV-A-11)
+
+**Possession proof across transports (normative, UV-A-10a).** DPoP as written in RFC 9449 targets HTTP. The UI profile spans WebSocket, SSE, REST, and loopback IPC. To preserve equivalent proof-of-possession across those surfaces when mTLS is unavailable, the Gateway MUST enforce:
+
+| Transport | Possession-proof requirement |
+|---|---|
+| REST (`POST /ui/v1/commands/*`, uploads, enroll) | `DPoP` HTTP header on every request carrying a command or state-changing intent. Gateway verifies per RFC 9449 (alg allowlist EdDSA/ES256, `htu`/`htm` match, `jti` single-use per (key, 5 min)) |
+| Server-Sent Events (`GET /ui/v1/stream`) | `DPoP` HTTP header on the initial subscribe request; the long-lived stream inherits the proof because SSE commands flow back over REST |
+| WebSocket (`GET /ui/v1/connect`) | `DPoP` HTTP header on the upgrade handshake (bound to the original HTTP `GET` per RFC 9449). After upgrade, each WebSocket command frame MUST carry a `dpop` field containing a fresh DPoP JWT with `htm=WS-COMMAND`, `htu=<command.type>`, and a `jti` single-use per (key, 5 min). Gateway MUST reject frames missing the `dpop` field or re-using `jti` with `ui.dpop-invalid` close code 4007 |
+| Loopback IPC (Unix socket, Windows named pipe) | Possession is established by kernel-enforced peer credentials (`SO_PEERCRED`, `GetNamedPipeClientProcessId`) matching the enrolled operator identity. DPoP is NOT required on IPC; the IPC file-system permissions replace it. Gateway MUST verify peer-cred on EVERY command, not just first attach |
+
+Any command-bearing frame that the Gateway cannot tie to an mTLS thumbprint, a valid DPoP proof, or a verified IPC peer-cred MUST be rejected with `ui.dpop-invalid` (HTTP 401 / WS 4007 / IPC: connection close). The metric `soa_ui_possession_proof_mode` MUST carry the string `mtls | dpop-rest | dpop-ws | ipc-peercred` for the active session.
 
 ---
 

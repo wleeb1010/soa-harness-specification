@@ -197,6 +197,10 @@ for (const a of manifest.artifacts.supplementary_artifacts) {
 - **Operational probes:** §5.4 pins `/health` (liveness) and `/ready` (readiness) endpoints on Runner and Gateway with explicit not-ready reason codes (`SV-OPS-01..02`).
 - **Release gate:** §19.1.1 requires CI to re-run schema extraction + MANIFEST build before any release tag; drift against the committed bundle fails the release (`SV-GOV-11`).
 - **`program.md` signing:** §6.1.1 now pins a two-step signer resolution — `x5t#S256` binds the end-entity cert, `security.trustAnchors[].spki_sha256` binds the chain root, and `x5c` is now a required header so the verifier has the full chain (`SV-SIGN-05`).
+- **Token exchange + possession proof:** UI §7.4 pins RFC 8693 to delegation semantics (`act` claim with Gateway as actor), REQUIRED audience and claim set (`UV-A-08a`); §7.6 extends possession proof across REST/SSE/WS/IPC transports (`UV-A-10a`).
+- **Audit runtime:** Core §10.5 now records `subject_id` on every audit line (tied to §10.7 privacy exports); §10.5.1 pins a three-state degradation model (healthy / degraded-buffering / unreachable-halt) with `AuditSink*` error codes (`SV-PERM-19`).
+- **Residency:** §10.7.2 enforces layered defence — tool-declared `data_processing_location` is primary; network signals (DNS/SNI/reverse-lookup) are supporting evidence only (`SV-PRIV-05`).
+- **Tool idempotency:** Core §12.2 requires tools to retain dedupe state ≥ 1 h OR ≥ session-resume grace, whichever is longer; non-conformant tools rejected at pool assembly (`SV-SESS-11`).
 - **Threat model:** Core §25 (informative) catalogs 9 named adversary classes, 22 attack-surface vectors, and cross-references every normative mitigation. Out-of-scope / residual-risk items are explicit (HSM extraction, model-level prompt injection, volumetric DoS, ±30s clock-skew bound). Operators whose threat model exceeds v1.0 MUST layer additional controls outside the harness.
 
 ## Version
