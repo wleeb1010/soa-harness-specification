@@ -22,13 +22,13 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "98bfa0e3b5810d558c5d51068bec9a2db43792484063a54f0cf6076db22eb3d1",
+        "sha256": "86a65d335be62e2524d5fc79a011551d42f496b05da75b7092c52b29fe738be4",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "SOA-Harness UI Integration Profile v1.0 (Final).md",
         "path": "SOA-Harness UI Integration Profile v1.0 (Final).md",
-        "sha256": "2a7e1aeb8016884446cadabb28c635296da7f054516dd5e5290c0e03d7d5dcfb",
+        "sha256": "ab5cc67309a24e79f1a655a788e8d4a85e83291d2b07aac3f3b97ad415e39103",
         "canonicalization": "raw-utf8"
       },
       {
@@ -46,7 +46,7 @@
       {
         "name": "ui-validate-must-map.json",
         "path": "ui-validate-must-map.json",
-        "sha256": "493d0fadebd1ff986d724e5b025f06bab041df1cd1a39e6ddac70faad51dda6e",
+        "sha256": "d4a352b78a2923b04a3fab3970bc0344bfe55cfe0b42fb61787b0db07a3c7d09",
         "canonicalization": "JCS-RFC-8785"
       },
       {

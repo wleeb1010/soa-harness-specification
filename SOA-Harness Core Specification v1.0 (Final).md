@@ -1367,7 +1367,7 @@ Every MUST in this specification is assigned at least one test ID. The mapping f
 
 Every profile (including the Self-Improvement and Handoff add-ons) inherits the universal preamble: **§1 Conventions**, **§2 Normative References**, **§19 Governance**, **§22 Non-Goals**, **§24 Error Taxonomy**. These are not optional.
 
-- **Core (required)**: preamble + §6, §7, §8, §10, §11, §12, §13, §14, §15, §16, §18.
+- **Core (required)**: preamble + §4, §5, §6, §7, §8, §10, §11, §12, §13, §14, §15, §16, §18. (§§4–5 added so their normative MUSTs — lean design, failure-path definition, primitive unit-testability, file-system grounding, composition — are inside formal coverage; corresponding tests are `SV-PRIN-01..05` and `SV-STACK-01..02` in the must-map.)
 - **Self-Improvement (optional)**: Core + §9, §23. An implementation without self-improvement advertises `self_improvement.enabled = false` and skips §9 tests.
 - **Handoff (optional)**: Core + §17. An implementation without A2A advertises no `/a2a/v1` endpoint; `agent.describe` via Card fetch is still required.
 

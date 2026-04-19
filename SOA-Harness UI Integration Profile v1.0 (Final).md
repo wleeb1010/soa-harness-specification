@@ -703,6 +703,13 @@ header = { "alg": "EdDSA"|"ES256"|"RS256", "kid": "<kid>", "typ": "soa-pda+jws" 
 
 RSA keys MUST be ≥ 3072 bits (Core §10.6); Gateway rejects PDA-JWS with RSA modulus < 3072 as `ui.prompt-signature-invalid`.
 
+**Signer-identity equality (normative).** Three `kid` values exist in the PDA flow: `canonical_decision.handler_kid` (inside the signed payload), the PDA-JWS `header.kid` (on the JWS), and the PDA-WebAuthn wrapper `handler_kid` (on the wrapper). Gateway MUST enforce:
+- **PDA-JWS**: `canonical_decision.handler_kid === header.kid`.
+- **PDA-WebAuthn**: `canonical_decision.handler_kid === wrapper.handler_kid === the kid bound to the verified credentialId in the enrolled-credential store`.
+- **Audit authority**: `canonical_decision.handler_kid` is the single authoritative identifier for audit, revocation lookups, and downstream authorization.
+
+Mismatch on any of these comparisons MUST be rejected with `ui.prompt-signature-invalid` (reason `signer-identity-mismatch`). Covered by `UV-CMD-06`.
+
 **PDA-WebAuthn** (used by browsers):
 ```json
 {
