@@ -1210,20 +1210,36 @@ The inlined schemas below constitute `stream-event-payloads.schema.json`. Every 
 
 This table normatively binds each `StreamEvent.type` to its rendering trust class (see UI Integration Profile §15 for render rules). Profiles that surface events to humans MUST honor this mapping; Gateways MUST reject outbound envelopes that label content against this table.
 
-| StreamEvent.type | Trust class | Notes |
-|---|---|---|
-| `SessionStart`, `SessionEnd` | `system` | Session chrome. |
-| `MessageStart`, `MessageEnd` | `user` when `payload.role == "user"`; `tool-output` when `role == "tool"`; `system` when `role == "system"`; `model` otherwise | Derived exhaustively from the `role` enum (§14.1.1). |
-| `ContentBlockStart`, `ContentBlockDelta`, `ContentBlockEnd` | `model` while `workflow.status ∈ {Planning, Executing, Optimizing, Blocked, Succeeded, Failed, Cancelled}`; `agent-peer` while `workflow.status == Handoff` | Deterministic from session state, not from payload inspection. All three event sub-types receive the same class. Closed coverage over the full `workflow.status` enum (§12.1). |
-| `ToolInputStart`, `ToolInputDelta`, `ToolInputEnd` | `model` while `workflow.status ∈ {Planning, Executing, Optimizing, Blocked, Succeeded, Failed, Cancelled}`; `agent-peer` while `workflow.status == Handoff` | Tool-call construction belongs to whichever agent is currently speaking. Closed coverage over the full `workflow.status` enum. |
-| `ToolResult`, `ToolError` | `tool-output` | Always `tool-output` — deterministic. The UI MAY additionally apply untrusted-content rendering (per UI §15.1 `untrusted` class) based on local policy, but the envelope-level `trust_class` MUST remain `tool-output`. |
-| `PermissionPrompt` | `system` | Always. |
-| `PermissionDecision` | `system` if signer is local `Interactive`/`Coordinator`/`Autonomous`; `agent-peer` if the `PermissionDecision` is delivered as part of an inbound handoff payload (`workflow.status == Handoff` AND signer_kid is outside the local trust anchor set) | Decisions from peer agents retain peer-origin semantics. |
-| `CompactionStart`, `CompactionEnd` | `system` | Runner chrome. |
-| `MemoryLoad` | `system` | Runner chrome. |
-| `HandoffStart`, `HandoffComplete`, `HandoffFailed` | `system` | Handoff chrome. |
-| `SelfImprovementStart`/`Accepted`/`Rejected`/`Orphaned` | `system` | Runner chrome. |
-| `CrashEvent` | `system` | Terminal chrome. |
+| StreamEvent.type                                           | Trust class                   | Source of truth |
+| ---------------------------------------------------------- | ----------------------------- | --------------- |
+| `SessionStart`, `SessionEnd`                               | `system`                      | Session chrome  |
+| `MessageStart`, `MessageEnd`                               | per `role` (see note 1)       | `payload.role`  |
+| `ContentBlockStart`/`Delta`/`End`                          | per `workflow.status` (note 2)| session state   |
+| `ToolInputStart`/`Delta`/`End`                             | per `workflow.status` (note 2)| session state   |
+| `ToolResult`, `ToolError`                                  | `tool-output`                 | deterministic   |
+| `PermissionPrompt`                                         | `system`                      | always          |
+| `PermissionDecision`                                       | per signer origin (note 3)    | signer_kid      |
+| `CompactionStart`, `CompactionEnd`                         | `system`                      | Runner chrome   |
+| `MemoryLoad`                                               | `system`                      | Runner chrome   |
+| `HandoffStart`, `HandoffComplete`, `HandoffFailed`         | `system`                      | Handoff chrome  |
+| `SelfImprovementStart`/`Accepted`/`Rejected`/`Orphaned`    | `system`                      | Runner chrome   |
+| `CrashEvent`                                               | `system`                      | Terminal chrome |
+
+Notes on the table:
+
+1. **`MessageStart` / `MessageEnd` role mapping (derived exhaustively from §14.1.1 `role` enum):**
+   - `role == "user"` → `user`
+   - `role == "tool"` → `tool-output`
+   - `role == "system"` → `system`
+   - otherwise → `model`
+2. **`ContentBlock*` and `ToolInput*` workflow-status mapping (closed coverage over §12.1 `workflow.status` enum):**
+   - `status ∈ {Planning, Executing, Optimizing, Blocked, Succeeded, Failed, Cancelled}` → `model` (for `ContentBlock*`) or `model` (for `ToolInput*`)
+   - `status == Handoff` → `agent-peer`
+   - The class is deterministic from session state; Gateways MUST NOT inspect payload contents.
+3. **`PermissionDecision` signer mapping:**
+   - Signer is local `Interactive`/`Coordinator`/`Autonomous` → `system`
+   - Decision delivered as part of an inbound handoff payload (`workflow.status == Handoff` AND `signer_kid` outside the local trust-anchor set) → `agent-peer` (peer-origin semantics preserved)
+4. **`ToolResult`/`ToolError`** is always `tool-output`. The UI MAY additionally apply the UI §15.1 `untrusted` class based on local policy, but the envelope-level `trust_class` MUST remain `tool-output`.
 
 ### 14.2 System Event Log
 
@@ -1349,18 +1365,26 @@ Termination reasons are the closed `StopReason` enum (§13.4).
 
 ### 16.2 Cross-Interaction Matrix (Normative Resolutions)
 
-| Interaction | Resolution |
-|---|---|
-| A2A handoff during self-improvement | If `workflow.status == Optimizing`, the Runner MUST reject incoming handoff with `HandoffBusy` (-32050). Outgoing handoffs are not initiated while Optimizing. |
-| Resume during self-improvement (mid-regression) | On resume with `status=Optimizing`, staging worktree is discarded, iteration emits `SelfImprovementRejected` (reason `Aborted`) via StreamEvent; the `SelfImprovementAborted` code in §24 is the terminal-outcome label logged to the audit trail, not a StreamEvent type. Runner returns to `status=Succeeded` prior to Optimizing. `main` unchanged (stage-activate guarantee). |
-| Self-improvement during budget exhaustion | Self-improvement iterations consume their own dedicated budget (MUST be ≤ 10% of `maxTokensPerRun` unless Agent Card sets `self_improvement.budget`). Exhaustion causes `SelfImprovementRejected` (reason `BudgetExhausted`) via StreamEvent and logs `SelfImprovementAborted` to the audit trail with no partial accept. |
-| Compaction during streaming | Compaction MUST NOT run while a `ContentBlockDelta` sequence is open. Deferred to next `MessageEnd`. Emit `CompactionDeferred` if triggered mid-stream. |
-| Nested hook invocation | A PreToolUse or PostToolUse hook MUST NOT invoke Runner tools. Reentrancy is NOT supported; session terminates with `HookReentrancy`. |
-| Workflow state transfer in handoff | Handoff transfers: conversation messages, Workflow State (task_id, status=`Handoff`, side_effects phase=committed only), billing tag, correlation IDs. NOT transferred: Memory MCP content, session file location, audit prev_hash. See §17.4. |
-| Agent Card changes mid-session | Not permitted to affect in-flight sessions. `CardVersionDrift` terminates on next turn. New sessions pick up new Card. |
-| OTel exporter failure | Buffer up to 10,000 spans; drop oldest with `ObservabilityBackpressure`. Runner MUST NOT halt. |
-| `soa-validate` self-compliance | `soa-validate` itself is NOT required to be a compliant harness; it is a validator. It MAY be distributed as a stateless CLI. |
-| Concurrent self-improvement | Cluster-wide advisory lock (§12.4). One meta-agent at a time; others block up to 30s then `SelfImproveLockBusy`. |
+| Interaction                                     | Summary                                          |
+| ----------------------------------------------- | ------------------------------------------------ |
+| A2A handoff during self-improvement             | Reject incoming; no outgoing (note 1)            |
+| Resume during self-improvement (mid-regression) | Discard staging; emit rejected; return (note 2)  |
+| Self-improvement during budget exhaustion       | Rejected (reason `BudgetExhausted`) (note 3)     |
+| Compaction during streaming                     | Defer to next `MessageEnd` (note 4)              |
+| Nested hook invocation                          | Forbidden; session terminates `HookReentrancy`   |
+| Workflow state transfer in handoff              | Messages + WF state + tags only (note 5)         |
+| Agent Card changes mid-session                  | `CardVersionDrift` on next turn; new sessions OK |
+| OTel exporter failure                           | Buffer 10k spans; drop oldest (`ObservabilityBackpressure`); Runner does not halt |
+| `soa-validate` self-compliance                  | Validator is not itself a conformant harness; may ship as stateless CLI |
+| Concurrent self-improvement                     | Cluster-wide §12.4 lock; wait ≤ 30 s then `SelfImproveLockBusy` |
+
+Notes on the table:
+
+1. **A2A handoff during self-improvement** — If `workflow.status == Optimizing`, the Runner MUST reject incoming handoff with `HandoffBusy` (`-32050`). Outgoing handoffs are not initiated while `Optimizing`.
+2. **Resume during self-improvement (mid-regression)** — On resume with `status == Optimizing`, the staging worktree is discarded and the iteration emits `SelfImprovementRejected` (reason `Aborted`) via StreamEvent. The `SelfImprovementAborted` code in §24 is the terminal-outcome label logged to the audit trail, not a StreamEvent type. Runner returns to `status == Succeeded` (the state prior to Optimizing). `main` is unchanged — the stage-activate protocol guarantees this.
+3. **Self-improvement during budget exhaustion** — SI iterations consume a dedicated budget (MUST be ≤ 10% of `maxTokensPerRun` unless the Agent Card sets `self_improvement.budget`). Exhaustion emits `SelfImprovementRejected` (reason `BudgetExhausted`) via StreamEvent and logs `SelfImprovementAborted` to the audit trail; no partial accept.
+4. **Compaction during streaming** — Compaction MUST NOT run while a `ContentBlockDelta` sequence is open. It is deferred to the next `MessageEnd`. If triggered mid-stream, the Runner emits `CompactionDeferred`.
+5. **Workflow state transfer in handoff** — Transferred: conversation messages, Workflow State (`task_id`, `status == Handoff`, `side_effects` where `phase == committed` only), billing tag, correlation IDs. NOT transferred: Memory MCP content, session file location, audit `prev_hash`. See §17.4.
 
 ---
 

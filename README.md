@@ -8,31 +8,42 @@ The bundle is self-contained: every MUST in the spec has a corresponding test ID
 
 ### Normative specs (Markdown)
 
-| File | Purpose |
-|---|---|
-| [`SOA-Harness Core Specification v1.0 (Final).md`](./SOA-Harness%20Core%20Specification%20v1.0%20%28Final%29.md) | Runner-side normative spec: Agent Card, Permission System, Session Persistence, StreamEvent envelope, Self-Improvement loop, Audit Trail, Host Hardening, A2A Handoff, Error Taxonomy. |
-| [`SOA-Harness UI Integration Profile v1.0 (Final).md`](./SOA-Harness%20UI%20Integration%20Profile%20v1.0%20%28Final%29.md) | UI Gateway normative profile: transport (WebSocket / SSE / REST / Local IPC), OAuth + DPoP + WebAuthn enrollment, envelope wrapping, content safety, Permission Decision Attestation (JWS + WebAuthn), per-UI replay, accessibility. |
-| [`SOA UI Gateway Reference Implementation Sketch.md`](./SOA%20UI%20Gateway%20Reference%20Implementation%20Sketch.md) | Non-normative reference sketch of a compliant UI Gateway in TypeScript — load-bearing paths only. |
+| File                                                                                                   | Role                       |
+| ------------------------------------------------------------------------------------------------------ | -------------------------- |
+| [Core Spec](./SOA-Harness%20Core%20Specification%20v1.0%20%28Final%29.md)                              | Runner normative spec      |
+| [UI Integration Profile](./SOA-Harness%20UI%20Integration%20Profile%20v1.0%20%28Final%29.md)           | Gateway normative spec     |
+| [UI Gateway Reference Sketch](./SOA%20UI%20Gateway%20Reference%20Implementation%20Sketch.md)           | Non-normative TS reference |
+
+- **Core spec** — Agent Card, Permission System, Session Persistence, StreamEvent envelope, Self-Improvement loop, Audit Trail, Host Hardening, A2A Handoff, Error Taxonomy.
+- **UI profile** — transport (WebSocket / SSE / REST / Local IPC), OAuth + DPoP + WebAuthn enrollment, envelope wrapping, content safety, PDA (JWS + WebAuthn), per-UI replay, accessibility.
+- **Reference sketch** — illustrative TypeScript covering load-bearing Gateway paths only.
 
 ### Conformance must-maps (JSON)
 
-| File | Purpose |
-|---|---|
-| [`soa-validate-must-map.json`](./soa-validate-must-map.json) | Core conformance map: every Core MUST → test ID → execution phase. |
-| [`ui-validate-must-map.json`](./ui-validate-must-map.json) | UI Profile conformance map: every UI MUST → test ID → execution phase. |
+| File                                                         | Role                              |
+| ------------------------------------------------------------ | --------------------------------- |
+| [`soa-validate-must-map.json`](./soa-validate-must-map.json) | Core MUST → test ID → phase       |
+| [`ui-validate-must-map.json`](./ui-validate-must-map.json)   | UI MUST → test ID → phase         |
 
 ### Companion artifacts
 
-| File | Purpose |
-|---|---|
-| [`soa-harness-profile-v1.json`](./soa-harness-profile-v1.json) | Docker seccomp profile enforcing the §9.7 deny-by-default allowlist; baseline applies on x86_64 / aarch64 / riscv64 / s390x / ppc64le, with the clone-arg filter gated to the first three via `includes.arches`. |
-| [`schemas/`](./schemas/) | 13 extracted JSON Schema 2020-12 files matching the `$id` URIs used in the spec: `agent-card`, `session`, `stream-event`, `stream-event-payloads`, `harbor-task`, `release-manifest`, `crl`, `gateway-config`, `ui-envelope`, `ui-derived-payloads`, `canonical-decision`, `locale-map`, `wcag-addendum`. |
-| [`MANIFEST.json`](./MANIFEST.json) | Release manifest listing every artifact with SHA-256 digests + canonicalization rule. Validates against `schemas/release-manifest.schema.json`. |
-| [`MANIFEST.json.jws`](./MANIFEST.json.jws) | Detached JWS over the manifest (placeholder signature; real signing key is issued per §9.7.1 `publisher_kid`). |
-| [`test-vectors/agent-card.json`](./test-vectors/agent-card.json) + [`.jws`](./test-vectors/agent-card.json.jws) | Reference Agent Card + detached JWS for `SV-CARD-03` / `HR-12` test setup. |
-| [`test-vectors/topology-probe.md`](./test-vectors/topology-probe.md) | Recipe for the `UV-SESS-06†` / `UV-SESS-06a` topology probe (artifacts-origin separation, read from the `artifacts_origin` discovery field). |
-| [`test-vectors/tasks-fingerprint/`](./test-vectors/tasks-fingerprint/) | Two-task `/tasks/` fixture + [`compute.mjs`](./test-vectors/tasks-fingerprint/compute.mjs) producing the published `tasks_fingerprint` for `SV-GOOD-07` (Core §23 novelty quota). |
-| [`build-manifest.mjs`](./build-manifest.mjs), [`extract-schemas.mjs`](./extract-schemas.mjs) | Build tools: re-extract schemas from the MDs and rebuild `MANIFEST.json` after spec edits. Requires Node ≥ 18. Run from the repo root or set `SOA_BUNDLE_ROOT`. |
+| File                                                           | Role                            |
+| -------------------------------------------------------------- | ------------------------------- |
+| [`soa-harness-profile-v1.json`](./soa-harness-profile-v1.json) | §9.7 Docker seccomp profile     |
+| [`schemas/`](./schemas/)                                       | 13 standalone JSON Schemas      |
+| [`MANIFEST.json`](./MANIFEST.json)                             | Release digest set              |
+| [`MANIFEST.json.jws`](./MANIFEST.json.jws)                     | Detached MANIFEST signature     |
+| [`test-vectors/agent-card.{json,json.jws}`](./test-vectors/)   | SV-CARD-03 / HR-12 vector       |
+| [`test-vectors/topology-probe.md`](./test-vectors/topology-probe.md) | UV-SESS-06† / 06a recipe  |
+| [`test-vectors/tasks-fingerprint/`](./test-vectors/tasks-fingerprint/) | SV-GOOD-07 fixture        |
+| [`build-manifest.mjs`](./build-manifest.mjs), [`extract-schemas.mjs`](./extract-schemas.mjs) | Node ≥ 18 build tools |
+
+Notes on the artifact table:
+- **`soa-harness-profile-v1.json`** enforces the §9.7 deny-by-default allowlist. Baseline applies on `x86_64`, `aarch64`, `riscv64`, `s390x`, `ppc64le`; the `CLONE_NEW*` arg filter is gated to the first three via `includes.arches`.
+- **`schemas/`** contains: `agent-card`, `session`, `stream-event`, `stream-event-payloads`, `harbor-task`, `release-manifest`, `crl`, `gateway-config`, `ui-envelope`, `ui-derived-payloads`, `canonical-decision`, `locale-map`, `wcag-addendum`.
+- **`MANIFEST.json`** lists every artifact with SHA-256 digest + canonicalization rule; validates against `schemas/release-manifest.schema.json`.
+- **`MANIFEST.json.jws`** currently ships a placeholder signature; the real SOA-WG release key is distributed per §9.7.1 `publisher_kid`.
+- **Build tools** run from the repo root or with `SOA_BUNDLE_ROOT` set; they regenerate `schemas/` and `MANIFEST.json` after any spec edit.
 
 ## Conformance profiles
 

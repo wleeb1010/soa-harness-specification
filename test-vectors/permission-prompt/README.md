@@ -4,11 +4,16 @@ Reference flow demonstrating the prompt-nonce + replay-cache + deadline rules fr
 
 ## Files
 
-| File | Purpose |
-|---|---|
-| [`permission-prompt.json`](./permission-prompt.json) | Example `PermissionPrompt` as the Gateway would emit it — carries the REQUIRED `payload.nonce` field minted fresh by the Gateway. |
-| [`canonical-decision.json`](./canonical-decision.json) | Matching `canonical_decision` that echoes the `prompt_id`, `session_id`, and the same `nonce` back. |
-| [`pda.jws`](./pda.jws) | Detached PDA-JWS demonstrating the compact serialization `BASE64URL(header) . BASE64URL(JCS(canonical_decision)) . BASE64URL(sig)`. Placeholder Ed25519 signature (all-zero); real signing requires a handler keystore. |
+| File                                                     | Role                          |
+| -------------------------------------------------------- | ----------------------------- |
+| [`permission-prompt.json`](./permission-prompt.json)     | Example `PermissionPrompt`    |
+| [`canonical-decision.json`](./canonical-decision.json)   | Matching `canonical_decision` |
+| [`pda.jws`](./pda.jws)                                   | Detached PDA-JWS              |
+
+Notes on the files:
+- **`permission-prompt.json`** is the Gateway-emitted prompt. Carries the REQUIRED `payload.nonce` field (minted fresh by the Gateway per §14.1.1).
+- **`canonical-decision.json`** echoes the `prompt_id`, `session_id`, and the same `nonce` back into the signed decision.
+- **`pda.jws`** demonstrates the compact serialization `BASE64URL(header) . BASE64URL(JCS(canonical_decision)) . BASE64URL(sig)`. The signature is a placeholder (all-zero); real signing requires a handler keystore.
 
 ## Expected bytes
 

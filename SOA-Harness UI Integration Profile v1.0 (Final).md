@@ -926,14 +926,20 @@ Gateway MAY emit, only to `ui.admin`:
 
 ### 15.1 Six Trust Classes (Unified Rendering Rules)
 
-| trust_class | Rendering rule (Web/IDE/Mobile) |
-|---|---|
-| `system` | UI chrome; Markdown + rich UI permitted. **MUST NOT** be applied to any content produced by a tool, model, or peer agent. Gateway MUST reject outbound envelopes that label tool/model/peer content as `system`. (UV-SC-01) |
-| `user` | User input echo; HTML-escaped |
-| `model` | Markdown through SAFELIST sanitizer: allowed tags `p, ul, ol, li, code, pre, em, strong, a, blockquote, h1-h6, hr, table, thead, tbody, tr, th, td`. Links MUST have `rel="noopener noreferrer nofollow"`. No inline styles, no raw HTML, no `<script>`, `<iframe>`, `<object>`, `<embed>`, `<form>`, no `javascript:` / `vbscript:` / unvetted `data:` URIs. |
-| `tool-output` | Same safelist as `model`, PLUS a visible "Tool Output" banner, PLUS `<details>` collapsed by default, PLUS `max-height` with scroll, PLUS "copy" affordance is explicit. |
-| `untrusted` | Plain text only; all markup escaped; no link auto-detection. |
-| `agent-peer` | `model` rules + "From Agent X" attribution line. |
+| trust_class  | Rendering rule (Web/IDE/Mobile)                   |
+| ------------ | ------------------------------------------------- |
+| `system`     | UI chrome; Markdown + rich UI permitted (note 1)  |
+| `user`       | User input echo; HTML-escaped                     |
+| `model`      | Markdown through SAFELIST sanitizer (note 2)      |
+| `tool-output`| `model` safelist + banner + collapsible (note 3)  |
+| `untrusted`  | Plain text only; all markup escaped; no auto-link |
+| `agent-peer` | `model` rules + "From Agent X" attribution line   |
+
+Notes on the table:
+
+1. **`system`** is reserved for Gateway/Runner UI chrome. It **MUST NOT** be applied to any content produced by a tool, model, or peer agent. Gateway MUST reject outbound envelopes that label tool/model/peer content as `system`. (UV-SC-01)
+2. **`model` safelist.** Allowed tags: `p, ul, ol, li, code, pre, em, strong, a, blockquote, h1-h6, hr, table, thead, tbody, tr, th, td`. Links MUST carry `rel="noopener noreferrer nofollow"`. No inline styles, no raw HTML, no `<script>`, `<iframe>`, `<object>`, `<embed>`, `<form>`. No `javascript:` / `vbscript:` / unvetted `data:` URIs.
+3. **`tool-output` delta over `model`.** Same safelist, PLUS a visible "Tool Output" banner, PLUS wrapped in `<details>` collapsed by default, PLUS `max-height` with scroll, PLUS an explicit "copy" affordance.
 
 (UV-SC-02..UV-SC-07)
 
@@ -1238,15 +1244,20 @@ All UI-surface errors use stable `ui.*` codes.
 
 These identifiers appear in observability dashboards and OTel metrics but are NOT emitted as UI-surface error envelopes and are NOT part of the §21 closed set for `UV-ERR-01` compliance. They are documented here so that implementers share a vocabulary.
 
-| Identifier | Surface | Meaning |
-|---|---|---|
-| `ui.backpressure` | Metric counter; OTel `soa_ui_backpressure_total` | Gateway is shedding non-essential events under load (§17.3). Emitted to the observability pipeline at most once per minute per session; never appears in a UI-visible error envelope. |
+| Identifier          | Surface                                            | Meaning                                         |
+| ------------------- | -------------------------------------------------- | ----------------------------------------------- |
+| `ui.backpressure`   | Metric counter; OTel `soa_ui_backpressure_total`   | Gateway is shedding non-essential events (note) |
+
+Notes on the table:
+- **`ui.backpressure`** fires when the Gateway is shedding non-essential events under load (§17.3). The counter increments at most once per minute per session; it never appears in a UI-visible error envelope, so `UV-ERR-01` excludes it from the closed error set.
 
 ---
 
 ## 22. Appendix A — UI vs Gateway MUST Matrix
 
 Rows are grouped by spec section; columns mark who owns the MUST.
+
+(†) The 7.3 row's footnote: handler-key revocation uses the Core §10.6.1 trust-anchor CRL. The Gateway caches it per §7.3.1 — hourly refresh, fail-closed past `not_after` or after 2 h unreachable; no separate UI-side CRL.
 
 | § | MUST summary | UI | GW |
 |---|---|---|---|
@@ -1257,7 +1268,7 @@ Rows are grouped by spec section; columns mark who owns the MUST.
 | 6.5 | CSP L3, HSTS, frame-ancestors, memory-only tokens | ✓ | ✓ (headers) |
 | 7.1 | Discovery doc published |  | ✓ |
 | 7.2 | Access-token hygiene, refresh PKCE | ✓ |  |
-| 7.3 | Enrollment flow (JWS or WebAuthn) accepted; `kid` assigned; handler-key revocation via the Core §10.6.1 trust-anchor CRL (Gateway caches per §7.3.1 — hourly refresh, fail-closed past `not_after` or after 2h unreachable; no separate UI CRL) | ✓ (produce) | ✓ (validate, store) |
+| 7.3 | Enrollment flow (JWS or WebAuthn); `kid` assigned; CRL cache per §7.3.1 (†) | ✓ (produce) | ✓ (validate, store) |
 | 7.4 | Token-exchange UI→Runner |  | ✓ |
 | 7.5 | Scope filtering per session; stub-prompt for `ui.read` |  | ✓ |
 | 7.6 | Capability token with mTLS or DPoP binding | ✓ (DPoP) | ✓ |
