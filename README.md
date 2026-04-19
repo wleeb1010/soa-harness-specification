@@ -2,7 +2,7 @@
 
 Normative specification bundle for **Self-Operating Agents (SOA)** — a conformance-testable harness for agentic runtimes and their UI gateways.
 
-The bundle is self-contained: every MUST in the spec has a corresponding test ID in one of the two `*-validate` must-maps, every referenced JSON Schema is published as a standalone `.schema.json` under [`schemas/`](./schemas/), and every artifact is digest-pinned in [`MANIFEST.json`](./MANIFEST.json) with JCS-RFC-8785 canonicalization for JSON and raw-utf8 for Markdown.
+The bundle is self-contained: every MUST in the spec has a corresponding test ID in one of the two `*-validate` must-maps, every referenced JSON Schema is published as a standalone `.schema.json` under [`schemas/`](./schemas/), and every enumerated artifact is digest-pinned in [`MANIFEST.json`](./MANIFEST.json) (JCS-RFC-8785 for JSON, raw-utf8 for Markdown). `MANIFEST.json` itself is the root of the digest chain — per Core §19.1 it is not self-listed; its integrity is established by the detached JWS [`MANIFEST.json.jws`](./MANIFEST.json.jws) verified against the §5.3 bootstrap anchor.
 
 ## Artifacts
 

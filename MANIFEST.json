@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "b1df62eb199bdf9a250b2568244a1fb847214bb1b501750615d0d48069a419d4",
+        "sha256": "22630659f7a35bdb16d11e909cb08c5ccab17677067718bf42ea797efc8b4027",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "ada2351000f5601116feec5e6810e74a47cfb7f4c81bb7524d9e4d39b7a77a24",
+        "sha256": "2871f1b181523ca55302c43b8b1e22fa8b626b51b5c9804fa4910bbe2939f16b",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -52,7 +52,7 @@
       {
         "name": "agent-card.schema.json",
         "path": "schemas/agent-card.schema.json",
-        "sha256": "f49df8b9fa29f4d4ff01d704077e354d7eb7cefbfcd1a310981c334730b43de5",
+        "sha256": "bd04bad88bb1ac98a70e4afd4be8e900abee33c162c24cf94aacba9dcacf19b1",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -130,7 +130,7 @@
       {
         "name": "agent-card.json",
         "path": "test-vectors/agent-card.json",
-        "sha256": "426505c59bee8d582cb9c6932f3f84d86d2b39877a02235a1f111c111b323044",
+        "sha256": "127733f1928e42de56f334702a428d792e2c9613484e2abfdd457054d8ed56d7",
         "canonicalization": "JCS-RFC-8785"
       },
       {

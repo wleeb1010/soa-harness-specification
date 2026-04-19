@@ -13,6 +13,9 @@
 3. Abstract and Scope
 4. Core Principles
 5. Required Stack and Primitives
+   - 5.1 Stack Table
+   - 5.2 Primitives Enumerated
+   - 5.3 External Bootstrap Root (Normative)
 6. Agent Card
 7. AGENTS.md
 8. Memory Layer
@@ -165,7 +168,7 @@ Covered by `SV-BOOT-01..03`.
 - TLS 1.3 or higher is REQUIRED. Plain `http` is NOT permitted.
 - Response `Content-Type` MUST be `application/json; charset=utf-8`.
 - Response MUST include an `ETag` header and respect `If-None-Match`.
-- A detached JWS signature (RFC 7515) of the Agent Card bytes MUST be served at `https://<origin>/.well-known/agent-card.jws`. The signing key's x5c certificate chain MUST chain to an issuer advertised in `security.trustAnchors`.
+- A detached JWS signature (RFC 7515) of the Agent Card JSON MUST be served at `https://<origin>/.well-known/agent-card.jws`. The signing input is the **JCS-canonicalized bytes** of `agent-card.json` per §1 and the per-artifact signing profile in §6.1.1 — verifiers MUST re-canonicalize the received object with RFC 8785 JCS before computing the digest; they MUST NOT sign or verify the raw fetched bytes directly (HTTP transport may introduce whitespace or key-order drift). The signing key's `x5c` certificate chain MUST chain to an issuer advertised in `security.trustAnchors`.
 - Clients MUST verify the signature before trusting any policy-bearing field (`permissions.*`, `self_improvement.*`, `security.*`). On verification failure the client MUST fail closed (treat Agent as unreachable) and emit `CardSignatureFailed` (§24).
 - `Cache-Control: max-age` MUST NOT exceed 300 seconds. v1.0 does not define a signed TTL extension; any longer cache lifetime observed on the wire is presumed to originate from an unsigned intermediary (proxy, CDN) and MUST be ignored by the client (client MUST refresh no later than 300 s).
 
@@ -176,14 +179,14 @@ All signed artifacts in the SOA-Harness v1.0 bundle MUST conform to the followin
 | Artifact | Serialization | Signing input | Allowed `alg` | Required `typ` | Required header fields |
 |---|---|---|---|---|---|
 | Agent Card JWS (`.well-known/agent-card.jws`) | detached JWS (RFC 7515) | JCS(agent-card.json) bytes | EdDSA, ES256, RS256 (≥ 3072) | `soa-agent-card+jws` | `alg`, `kid`, `x5c` |
-| `program.md` JWS (`program.md.jws`) | detached JWS | raw UTF-8 bytes of `program.md` | EdDSA, ES256 | `soa-program+jws` | `alg`, `kid` |
+| `program.md` JWS (`program.md.jws`) | detached JWS | raw UTF-8 bytes of `program.md` | EdDSA, ES256 | `soa-program+jws` | `alg`, `kid`, `x5t#S256` |
 | MANIFEST JWS (`MANIFEST.json.jws`) | detached JWS | JCS(MANIFEST.json) bytes | EdDSA, ES256 | `soa-manifest+jws` | `alg`, `kid` (MUST equal the configured `publisher_kid`) |
 | PDA-JWS (UI §11.4) | compact JWS | BASE64URL(JCS(canonical_decision)) | EdDSA, ES256, RS256 (≥ 3072) | `soa-pda+jws` | `alg`, `kid` |
 
 Notes:
 - **Agent Card JWS** carries `x5c` so the signer's chain is verifiable against `security.trustAnchors` without an extra fetch.
 - **MANIFEST JWS** intentionally forbids RS256 — manifest verification is a bootstrap-critical path and RSA adds no value over Ed25519 at that layer.
-- **`program.md` JWS** signs raw Markdown bytes (not JCS-canonicalized anything); Markdown is not JSON and has no canonicalization rule.
+- **`program.md` JWS** signs raw Markdown bytes (not JCS-canonicalized anything); Markdown is not JSON and has no canonicalization rule. **Signer key resolution:** the required header `x5t#S256` (RFC 7515 §4.1.8) carries the SHA-256 of the signer's DER-encoded X.509 certificate. Verifiers MUST locate the matching public key under the Agent Card's `security.trustAnchors` by computing the SPKI SHA-256 of each anchor's issuing chain and matching against `x5t#S256`; a signer whose SPKI does not chain to any anchor in `security.trustAnchors` MUST be rejected (`CardSignatureFailed`). `program.md` JWS is NOT signed by the `publisher_kid` release key — that key signs MANIFEST only. The adoption-checklist wording in §20 has been corrected to reflect this.
 - All verifiers MUST reject JWS with an absent or unknown `typ` as a category error (`CardSignatureFailed` for Agent Card, `ManifestDigestMismatch` for MANIFEST, `ui.prompt-signature-invalid` for PDA-JWS, appropriate equivalent for `program.md`).
 
 ### 6.2 Normative JSON Schema
@@ -334,6 +337,11 @@ The Agent Card MUST validate against the JSON Schema 2020-12 document below.
         "trustAnchors": {
           "type": "array",
           "minItems": 1,
+          "description": "Agent Card trust anchors. At least one entry MUST carry publisher_kid: that entry identifies the release-signing anchor used by the §5.3 bootstrap to verify MANIFEST.json.jws. Cards published into a deployment that does not run soa-validate locally MAY omit publisher_kid on all anchors IF and ONLY IF no §9 self-improvement loop is active; §5.3 bootstrap and any core+si deployment requires at least one publisher_kid-carrying anchor.",
+          "contains": {
+            "type": "object",
+            "required": ["publisher_kid"]
+          },
           "items": {
             "type": "object",
             "required": ["issuer", "spki_sha256", "uri"],
@@ -342,7 +350,7 @@ The Agent Card MUST validate against the JSON Schema 2020-12 document below.
               "issuer":      { "type": "string" },
               "spki_sha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
               "uri":         { "type": "string", "format": "uri", "pattern": "^https://", "description": "Base URI for trust-anchor artifacts; CRL MUST resolve at <uri>/crl.json" },
-              "publisher_kid": { "type": "string", "description": "Present only on the trust anchor authorized to sign the soa-validate release manifest (§9.7.1); kid matches the JWS header of MANIFEST.json.jws" }
+              "publisher_kid": { "type": "string", "description": "Present only on the trust anchor authorized to sign the soa-validate release manifest (§9.7.1); kid matches the JWS header of MANIFEST.json.jws. At least one trustAnchors entry MUST carry this field (enforced by the contains constraint)." }
             }
           }
         },
@@ -389,7 +397,7 @@ The Agent Card MUST validate against the JSON Schema 2020-12 document below.
   "compaction": { "preserveRecentTurns": 4, "triggerTokens": 80000, "targetTokens": 40000 },
   "tokenBudget": { "maxTokensPerRun": 200000, "billingTag": "project-spreadsheet" },
   "observability": { "otelExporter": "https://otel.internal/ingest" },
-  "security": { "oauthScopes": ["read:files", "write:artifacts"], "trustAnchors": [{"issuer":"CN=SOA Internal CA","spki_sha256":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","uri":"https://ca.example.com/soa-internal"}], "auditSink": "https://audit.example.com/worm" }
+  "security": { "oauthScopes": ["read:files", "write:artifacts"], "trustAnchors": [{"issuer":"CN=SOA Internal CA","spki_sha256":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","uri":"https://ca.example.com/soa-internal","publisher_kid":"soa-release-v1.0"}], "auditSink": "https://audit.example.com/worm" }
 }
 ```
 
@@ -1565,7 +1573,7 @@ All fields are **Stable** unless noted otherwise in `stability-tiers.md`.
 - [ ] MCP servers: tools + memory + benchmarks, with scopes declared.
 - [ ] `AGENTS.md` with required H2 headings in order; bounded `@import`.
 - [ ] `program.md` + `program.md.jws` if `self_improvement.enabled = true`.
-- [ ] `program.md` JWS verifiable against a trust anchor with `publisher_kid` (§9.2).
+- [ ] `program.md` JWS verifiable against a trust anchor in `security.trustAnchors` via the `x5t#S256` header per §6.1.1 (NOT the `publisher_kid` release key — that key signs MANIFEST only).
 - [ ] `security.auditSink` configured and reachable (§10.5).
 - [ ] `security.coordinationEndpoint` configured if `SOA_COORD_MODE=distributed` (§12.4).
 - [ ] `/tasks/` with Harbor-format tasks (pinned images).

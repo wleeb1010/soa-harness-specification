@@ -406,6 +406,13 @@
         "trustAnchors": {
           "type": "array",
           "minItems": 1,
+          "description": "Agent Card trust anchors. At least one entry MUST carry publisher_kid: that entry identifies the release-signing anchor used by the §5.3 bootstrap to verify MANIFEST.json.jws. Cards published into a deployment that does not run soa-validate locally MAY omit publisher_kid on all anchors IF and ONLY IF no §9 self-improvement loop is active; §5.3 bootstrap and any core+si deployment requires at least one publisher_kid-carrying anchor.",
+          "contains": {
+            "type": "object",
+            "required": [
+              "publisher_kid"
+            ]
+          },
           "items": {
             "type": "object",
             "required": [
@@ -430,7 +437,7 @@
               },
               "publisher_kid": {
                 "type": "string",
-                "description": "Present only on the trust anchor authorized to sign the soa-validate release manifest (§9.7.1); kid matches the JWS header of MANIFEST.json.jws"
+                "description": "Present only on the trust anchor authorized to sign the soa-validate release manifest (§9.7.1); kid matches the JWS header of MANIFEST.json.jws. At least one trustAnchors entry MUST carry this field (enforced by the contains constraint)."
               }
             }
           }

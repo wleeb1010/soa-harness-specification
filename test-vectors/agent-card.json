@@ -35,7 +35,8 @@
       {
         "issuer": "CN=SOA Internal CA",
         "spki_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-        "uri": "https://ca.example.com/soa-internal"
+        "uri": "https://ca.example.com/soa-internal",
+        "publisher_kid": "soa-release-v1.0"
       }
     ],
     "auditSink": "https://audit.example.com/worm"
