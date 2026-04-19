@@ -26,13 +26,186 @@
       "required": [
         "seccomp",
         "soa_validate_binary",
-        "ui_validate_binary"
+        "ui_validate_binary",
+        "supplementary_artifacts"
       ],
       "additionalProperties": false,
+      "allOf": [
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "SOA-Harness Core Specification v1.0 (Final).md"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "SOA-Harness UI Integration Profile v1.0 (Final).md"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "soa-validate-must-map.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "ui-validate-must-map.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "schemas/agent-card.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "schemas/release-manifest.schema.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "test-vectors/agent-card.json"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "test-vectors/topology-probe.md"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "test-vectors/tasks-fingerprint/README.md"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "supplementary_artifacts": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "const": "test-vectors/permission-prompt/README.md"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        }
+      ],
       "properties": {
         "supplementary_artifacts": {
           "type": "array",
-          "description": "Optional: additional artifacts published alongside the release bundle (spec MDs, must-maps, JSON Schema files, test vectors). Listed for digest verification; a Runner is not required to fetch these for self-improvement, but conformance tooling MAY rely on them.",
+          "description": "REQUIRED: the non-binary portion of the release bundle (spec MDs, must-maps, JSON Schema files, test vectors). The allOf/contains constraints above enforce the specific paths that MUST appear in every v1.0 release; additional entries are permitted. Runners verifying the manifest MAY fetch these; conformance tooling (soa-validate, ui-validate) MUST consume the ones relevant to its scope.",
           "items": {
             "type": "object",
             "required": [

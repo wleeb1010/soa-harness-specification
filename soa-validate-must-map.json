@@ -84,6 +84,7 @@
     "SV-A2A-11":{ "name": "A2A signing-key discovery",    "section": "§17.1", "section_title": "A2A Wire Protocol", "profile": "core+handoff", "severity": "critical", "assertion": "A2A JWT signing key matches either (a) the caller's Agent Card JWS signer kid (same trust anchor, same SPKI) or (b) the SPKI of the caller's mTLS client certificate with the x5t#S256 header present." },
     "SV-A2A-12":{ "name": "A2A jti replay cache",         "section": "§17.1", "section_title": "A2A Wire Protocol", "profile": "core+handoff", "severity": "critical", "assertion": "Receiver rejects a repeated jti within exp+30s (= 330s) from first observation with HandoffRejected(reason=jti-replay); cache MAY be per-connection (mTLS) or per-(iss,aud) keyed." },
     "SV-A2A-13":{ "name": "A2A agent_card_etag drift",    "section": "§17.1", "section_title": "A2A Wire Protocol", "profile": "core+handoff", "severity": "moderate", "assertion": "Receiver fetches caller's Agent Card and compares its JWS digest to the presented agent_card_etag; mismatch emits CardVersionDrift and responds JSON-RPC error -32051; etag cached ≤ 60 s." },
+    "SV-A2A-14":{ "name": "A2A digest canonicalization",  "section": "§17.2", "section_title": "A2A Wire Protocol", "profile": "core+handoff", "severity": "critical", "assertion": "messages_digest / workflow_digest / result_digest use form sha256:<64-hex-lowercase> where the hashed bytes are JCS-RFC-8785 canonical of the corresponding JSON object. Receiver recomputes and compares; mismatch → HandoffRejected(reason=digest-mismatch)." },
     "SV-ENC-01": { "name": "UTF-8 no BOM",                "section": "§1", "section_title": "Conventions", "profile": "core", "severity": "minor",    "assertion": "Every text file defined by the spec is UTF-8 without BOM." },
     "SV-ENC-02": { "name": "RFC 3339 timestamps",         "section": "§1", "section_title": "Conventions", "profile": "core", "severity": "minor",    "assertion": "Every timestamp emitted in StreamEvent, audit trail, session file, and memory-note responses is RFC 3339 with explicit timezone offset and ≥ ms precision." },
     "SV-ENC-03": { "name": "ISO-8601 durations",          "section": "§1", "section_title": "Conventions", "profile": "core", "severity": "minor",    "assertion": "Duration fields are ISO-8601 (e.g., P30D, PT5M)." },
@@ -270,7 +271,7 @@
     "SV-BUD":    ["SV-BUD-01","SV-BUD-02","SV-BUD-03","SV-BUD-04","SV-BUD-05","SV-BUD-06","SV-BUD-07"],
     "SV-STR":    ["SV-STR-01","SV-STR-02","SV-STR-03","SV-STR-04","SV-STR-05","SV-STR-06","SV-STR-07","SV-STR-08","SV-STR-09","SV-STR-10","SV-STR-11","SV-STR-12","SV-STR-13","SV-STR-14","SV-STR-15","SV-STR-16"],
     "SV-HOOK":   ["SV-HOOK-01","SV-HOOK-02","SV-HOOK-03","SV-HOOK-04","SV-HOOK-05","SV-HOOK-06","SV-HOOK-07","SV-HOOK-08"],
-    "SV-A2A":    ["SV-A2A-01","SV-A2A-02","SV-A2A-03","SV-A2A-04","SV-A2A-05","SV-A2A-06","SV-A2A-07","SV-A2A-08","SV-A2A-09","SV-A2A-10","SV-A2A-11","SV-A2A-12","SV-A2A-13"],
+    "SV-A2A":    ["SV-A2A-01","SV-A2A-02","SV-A2A-03","SV-A2A-04","SV-A2A-05","SV-A2A-06","SV-A2A-07","SV-A2A-08","SV-A2A-09","SV-A2A-10","SV-A2A-11","SV-A2A-12","SV-A2A-13","SV-A2A-14"],
     "SV-PRIN":   ["SV-PRIN-01","SV-PRIN-02","SV-PRIN-03","SV-PRIN-04","SV-PRIN-05"],
     "SV-STACK":  ["SV-STACK-01","SV-STACK-02"],
     "SV-BOOT":   ["SV-BOOT-01","SV-BOOT-02","SV-BOOT-03"],
@@ -355,6 +356,7 @@
     "§15.5#regression":  { "title": "Harness Regression Suite",     "tests": ["HR-01","HR-02","HR-03","HR-04","HR-05","HR-06","HR-07","HR-08","HR-09","HR-10","HR-11","HR-12","HR-13","HR-14","HR-15","HR-16","HR-17","HR-18"] },
     "§16.2#cross":       { "title": "Cross-interaction matrix",     "tests": ["SV-STR-11","SV-HOOK-08","SV-A2A-08"] },
     "§17#a2a":           { "title": "A2A wire protocol",            "tests": ["SV-A2A-01","SV-A2A-02","SV-A2A-03","SV-A2A-04","SV-A2A-05","SV-A2A-06","SV-A2A-07","SV-A2A-09","HR-15"] },
+    "§17.2#digests":     { "title": "A2A digest canonicalization",  "tests": ["SV-A2A-14"] },
     "§18#validator":     { "title": "soa-validate binary + profiles","tests": ["SV-GOV-06"] },
     "§19#governance":    { "title": "Governance, stability, versioning, deprecation, errata, HITL",
                            "tests": ["SV-GOV-01","SV-GOV-02","SV-GOV-03","SV-GOV-04","SV-GOV-05","SV-PERM-04"] },
@@ -387,7 +389,7 @@
                   "SV-CLUS-01","SV-CLUS-02","SV-CLUS-03","SV-CLUS-04",
                   "HR-08","HR-09","HR-10","HR-16"] },
       { "phase": 6, "name": "Handoff",
-        "tests": ["SV-A2A-01","SV-A2A-02","SV-A2A-03","SV-A2A-04","SV-A2A-05","SV-A2A-06","SV-A2A-07","SV-A2A-08","SV-A2A-09","SV-A2A-10","SV-A2A-11","SV-A2A-12","SV-A2A-13","HR-15"] }
+        "tests": ["SV-A2A-01","SV-A2A-02","SV-A2A-03","SV-A2A-04","SV-A2A-05","SV-A2A-06","SV-A2A-07","SV-A2A-08","SV-A2A-09","SV-A2A-10","SV-A2A-11","SV-A2A-12","SV-A2A-13","SV-A2A-14","HR-15"] }
     ]
   }
 }

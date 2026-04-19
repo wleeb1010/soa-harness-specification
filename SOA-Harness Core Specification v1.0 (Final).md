@@ -71,7 +71,7 @@ Each reference is pinned to a specific, immutable artifact.
 - **[RFC-7515]** JSON Web Signature (JWS).
 - **[RFC-8446]** TLS 1.3 (mandatory minimum).
 - **[JSON-SCHEMA-2020-12]** JSON Schema 2020-12.
-- **[RFC-8785]** JSON Canonicalization Scheme (JCS). Required for any signed JSON where cross-implementation signature verification is mandated (Agent Card JWS, `program.md` JWS, Permission Decision Attestation, audit-record canonical hash).
+- **[RFC-8785]** JSON Canonicalization Scheme (JCS). Required for any signed JSON where cross-implementation signature verification is mandated (Agent Card JWS, MANIFEST JWS, Permission Decision Attestation, audit-record canonical hash). `program.md` JWS is a non-JSON artifact (Markdown) and is signed over raw UTF-8 bytes — see Core §1 signing-input rules and §6.1.1 per-artifact profile.
 
 ---
 
@@ -162,7 +162,7 @@ Implementations MUST select exactly one bootstrap channel per deployment and doc
 - Response MUST include an `ETag` header and respect `If-None-Match`.
 - A detached JWS signature (RFC 7515) of the Agent Card bytes MUST be served at `https://<origin>/.well-known/agent-card.jws`. The signing key's x5c certificate chain MUST chain to an issuer advertised in `security.trustAnchors`.
 - Clients MUST verify the signature before trusting any policy-bearing field (`permissions.*`, `self_improvement.*`, `security.*`). On verification failure the client MUST fail closed (treat Agent as unreachable) and emit `CardSignatureFailed` (§24).
-- `Cache-Control: max-age` MUST NOT exceed 300 seconds unless the signer explicitly sets a longer value.
+- `Cache-Control: max-age` MUST NOT exceed 300 seconds. v1.0 does not define a signed TTL extension; any longer cache lifetime observed on the wire is presumed to originate from an unsigned intermediary (proxy, CDN) and MUST be ignored by the client (client MUST refresh no later than 300 s).
 
 ### 6.1.1 Artifact Signing Profile (Normative)
 
@@ -719,12 +719,24 @@ Each benchmark task container MUST be launched with the following settings.
     "publisher_kid": { "type": "string" },
     "artifacts": {
       "type": "object",
-      "required": ["seccomp","soa_validate_binary","ui_validate_binary"],
+      "required": ["seccomp","soa_validate_binary","ui_validate_binary","supplementary_artifacts"],
       "additionalProperties": false,
+      "allOf": [
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"SOA-Harness Core Specification v1.0 (Final).md"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"SOA-Harness UI Integration Profile v1.0 (Final).md"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"soa-validate-must-map.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"ui-validate-must-map.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/agent-card.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"schemas/release-manifest.schema.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"test-vectors/agent-card.json"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"test-vectors/topology-probe.md"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"test-vectors/tasks-fingerprint/README.md"}}, "required":["path"] } } } },
+        { "properties": { "supplementary_artifacts": { "contains": { "type":"object","properties": {"path": {"const":"test-vectors/permission-prompt/README.md"}}, "required":["path"] } } } }
+      ],
       "properties": {
         "supplementary_artifacts": {
           "type": "array",
-          "description": "Optional: additional artifacts published alongside the release bundle (spec MDs, must-maps, JSON Schema files, test vectors). Listed for digest verification; a Runner is not required to fetch these for self-improvement, but conformance tooling MAY rely on them.",
+          "description": "REQUIRED: the non-binary portion of the release bundle (spec MDs, must-maps, JSON Schema files, test vectors). The allOf/contains constraints above enforce the specific paths that MUST appear in every v1.0 release; additional entries are permitted. Runners verifying the manifest MAY fetch these; conformance tooling (soa-validate, ui-validate) MUST consume the ones relevant to its scope.",
           "items": {
             "type": "object",
             "required": ["name","path","sha256","canonicalization"],
@@ -1366,6 +1378,14 @@ Termination reasons are the closed `StopReason` enum (§13.4).
 | `handoff.status` | `{ task_id }` | `{ status: enum, last_event_id }` |
 | `handoff.return` | `{ task_id, result_digest, final_messages }` | `{ ack: true }` |
 
+**Digest-field canonicalization (normative).** Every `*_digest` field in A2A method params has the form `sha256:<64-hex-lowercase>`. The bytes hashed are:
+
+- `messages_digest` — SHA-256 of `JCS(messages)` where `messages` is a JSON array of the caller-side conversation messages to be transferred. Array order is caller-chronological; each message MUST validate against Core §14.1.1 (same schema as StreamEvent `MessageStart..MessageEnd` payloads collapsed into a single object `{role, content, ...}`).
+- `workflow_digest` — SHA-256 of `JCS(workflow)` where `workflow` is the full caller-side `workflow` object defined in Core §12.1 (`task_id`, `status`, `side_effects[]` committed-only, `checkpoint`).
+- `result_digest` — SHA-256 of `JCS(result)` where `result` is the `{artifacts?, final_state?, signals?}` object produced at task completion. Receivers MUST recompute and compare; mismatch → `HandoffRejected` (reason `digest-mismatch`). (SV-A2A-14)
+
+All three digests are over JCS-RFC-8785-canonical bytes — not raw JSON — so whitespace and key-order differences between sender and receiver do not cause drift. Hexadecimal MUST be lowercase.
+
 ### 17.3 Errors (JSON-RPC Error Codes)
 
 | Code | Meaning |
@@ -1430,7 +1450,7 @@ Exit code `0` means all required tests passed. Non-zero indicates failures enume
 
 The SOA-Harness specification is maintained by the **SOA-Harness Working Group** (SOA-WG). Charter, membership, and voting rules are published at `https://soa-harness.org/governance`. Spec changes require two-of-three maintainer approvals.
 
-**Bootstrap note.** v1.0 publication assumes the SOA-WG is bootstrapped at release time: the initial publisher key is pinned in the release manifest (§9.7.1) and all `security.trustAnchors` references in example Agent Cards resolve to that key until individual deployments elect their own trust anchors. The hostname `soa-harness.org` is the canonical publication endpoint; implementers deploying behind a mirror MUST pin the mirror's public key as a trust anchor equivalent, not substitute the hostname.
+**Bootstrap note.** v1.0 publication relies on the out-of-band bootstrap channels defined in **§5.3 External Bootstrap Root** — SDK-pinned, operator-bundled, or DNSSEC-protected TXT. The release manifest (§9.7.1) itself is NOT the root of trust: its JWS is verified against the bootstrap-supplied trust anchor, which is why the release manifest cannot also be the source of that anchor. The hostname `soa-harness.org` is the canonical publication endpoint; implementers deploying behind a mirror MUST pin the mirror's public key as a trust anchor equivalent (via one of the §5.3 channels), not substitute the hostname.
 
 **Worked `publisher_kid` example (informative).** A release-signing trust anchor and the corresponding MANIFEST JWS header are bound through `publisher_kid`:
 

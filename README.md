@@ -68,7 +68,7 @@ Agent Card JWS verification chains to a trust anchor published under `security.t
 - **Operator-bundled** — a trusted `initial-trust.json` shipped via configuration management or signed-container base image.
 - **DNSSEC-protected TXT record** — `_soa-trust.<deployment-domain>` carries the `publisher_kid` and SPKI digest with the AD bit set.
 
-Runners MUST refuse to load Agent Cards absent a valid bootstrap (emit `HostHardeningInsufficient` reason `bootstrap-missing`). Tests: `SV-BOOT-01..03`. The inline Agent Card schema now makes `security` a top-level REQUIRED field.
+The release manifest (§9.7.1) is NOT itself the root of trust; its JWS is verified against the bootstrap-supplied anchor. §19.1 explicitly reflects this. Runners MUST refuse to load Agent Cards absent a valid bootstrap (emit `HostHardeningInsufficient` reason `bootstrap-missing`). Tests: `SV-BOOT-01..03`. The inline Agent Card schema now makes `security` a top-level REQUIRED field.
 
 ## Signing profile (per artifact)
 
@@ -81,7 +81,20 @@ All signed artifacts conform to a normative per-artifact JWS profile (Core §6.1
 | MANIFEST JWS | detached | JCS(MANIFEST.json) | EdDSA, ES256 (RS256 forbidden at the bootstrap layer) | `soa-manifest+jws` | `alg`, `kid` (= `publisher_kid`) |
 | PDA-JWS (UI §11.4) | compact | BASE64URL(JCS(canonical_decision)) | EdDSA, ES256, RS256 ≥ 3072 | `soa-pda+jws` | `alg`, `kid` |
 
-Core §1 now separates **JSON signing inputs** (JCS-RFC-8785 required) from **non-JSON signing inputs** (raw UTF-8 bytes; JCS does not apply — `program.md` is Markdown, not JSON). Tests: `SV-SIGN-01..03`.
+Core §1 now separates **JSON signing inputs** (JCS-RFC-8785 required) from **non-JSON signing inputs** (raw UTF-8 bytes; JCS does not apply — `program.md` is Markdown, not JSON). Core §2 RFC-8785 reference list reflects the split. Tests: `SV-SIGN-01..03`.
+
+### A2A digest canonicalization
+
+A2A method params use `*_digest` fields of the form `sha256:<64-hex-lowercase>`. Per Core §17.2, the hashed bytes are `JCS(messages)`, `JCS(workflow)`, or `JCS(result)` — never raw JSON. Receivers MUST recompute and compare; mismatch → `HandoffRejected` (reason `digest-mismatch`). Test: `SV-A2A-14`.
+
+### Always-* step-up (UI §11.4)
+
+`scope ∈ {always-this-tool, always-this-session}` requires step-up evidence:
+
+- **PDA-WebAuthn:** `authenticatorData.flags.UV == 1` AND `hardware_backed == true` on the enrolled credential (derived from a known HSM-anchored attestation format — `packed`, `tpm`, `android-key`, `apple`; `none`/`self` attestation does NOT qualify).
+- **PDA-JWS:** hardware-backed enrollment (via OS-keystore, TPM quote, TEE quote, or PIV attestation) PLUS a Fresh-Auth Proof — a separate `soa-fresh-auth+jwt` tied to the PDA by `pda_digest` and bounded by `iat + 300 s`.
+
+Enrollment records now carry `hardware_backed: boolean` and `attestation_format`.
 
 ## Prompt-decision anti-replay
 

@@ -206,8 +206,7 @@
   "must_coverage": {
     "§1":    { "tests": ["UV-E-01","UV-E-02","UV-E-03"] },
     "§4":    { "tests": ["UV-PRIN-01"] },
-    "§5.1":  { "tests": ["UV-A-01","UV-A-02","UV-A-03","UV-A-04"] },
-    "§5.1":  { "tests": ["UV-SESS-06a"] },
+    "§5.1":  { "tests": ["UV-A-01","UV-A-02","UV-A-03","UV-A-04","UV-SESS-06a"] },
     "§5.2":  { "tests": ["UV-SESS-06"] },
     "§6.1":  { "tests": ["UV-T-01","UV-T-02"] },
     "§6.3":  { "tests": ["UV-T-03"] },

@@ -612,29 +612,31 @@ When the Runner emits `PermissionPrompt`, Gateway delivers:
 { "event": {
     "type": "PermissionPrompt",
     "payload": {
-      "source": "gateway",
-      "prompt_id": "prm_...",
+      "prompt_id": "prm_a1b2c3d4e5f6",
       "tool": { "name": "mcp__files__delete_file",
                 "risk_class": "Destructive",
                 "description": "Deletes a file on disk",
                 "args_redacted": { "path": "<redacted:pii>" },
                 "args_digest": "sha256:..." },
+      "capability": "WorkspaceWrite",
+      "control": "Prompt",
+      "handler": "Interactive",
+      "deadline": "2026-04-18T14:25:00Z",
+      "allowed_decisions": ["allow", "deny"],
+      "nonce": "q9Zt-X8bL4rFvH2kNpR7wS",
+      "attestation_required": true,
+      "accepted_attestation_formats": ["jws", "webauthn"],
       "context": {
-        "capability": "WorkspaceWrite",
-        "control": "Prompt",
-        "handler": "Interactive",
         "reasoning_summary": "Model intends to remove the stale draft.",
         "recent_decisions": [
           { "prompt_id": "prm_...", "tool": "mcp__files__write_file", "decision": "allow", "at": "2026-04-18T14:22:03Z" }
         ]
-      },
-      "deadline": "2026-04-18T14:25:00Z",
-      "allowed_decisions": ["allow", "deny"],
-      "attestation_required": true,
-      "accepted_attestation_formats": ["jws", "webauthn"]
+      }
     }
   } }
 ```
+
+The `payload` object exactly matches the Core §14.1.1 `PermissionPrompt` schema: `capability`, `control`, `handler`, and `nonce` are top-level fields (not inside `context`); `context` carries only Gateway-enrichment fields (`reasoning_summary`, `recent_decisions`). Any enrichment Gateway MAY add is limited to `attestation_required`, `accepted_attestation_formats`, and `context.*`; Gateway MUST NOT rename, remove, or relocate runner-emitted fields.
 
 `attestation_required` is Gateway-synthesized from Core §10.4 rules (Prompt control + handler=Interactive/Coordinator). (UV-P-01)
 
@@ -768,7 +770,11 @@ Mismatch on any of these comparisons MUST be rejected with `ui.prompt-signature-
   } }
 ```
 
-- `scope = always-this-tool|always-this-session` REQUIRES `userVerification=required` (WebAuthn) OR HSM-backed key + fresh user auth (JWS). Non-compliance → `ui.prompt-scope-insufficient`. (UV-P-09)
+- `scope = always-this-tool|always-this-session` REQUIRES step-up authentication evidence, evaluated per PDA format:
+  - **PDA-WebAuthn:** `authenticatorData.flags.UV == 1` (user-verified) AND the enrolled credential record MUST carry `hardware_backed == true` (populated at enrollment from the WebAuthn attestation chain — one of `packed`, `tpm`, `android-key`, or `apple` attestation format yielding a known HSM anchor). A `none` or `self` attestation does NOT satisfy `hardware_backed`.
+  - **PDA-JWS:** the JWS MUST be accompanied by a **Fresh-Auth Proof**: a separate compact JWT in the wrapper (`pda.fresh_auth_proof`) with `typ: soa-fresh-auth+jwt`, signed by the same `handler_kid`, claims `{ iss: user_sub, aud: gateway_origin, iat, exp ≤ 300 s from iat, pda_digest: sha256(compact PDA-JWS bytes) }`. Gateway verifies the proof's `pda_digest` matches the accompanying PDA-JWS and `iat` is within the last 300 s; mismatch → `ui.prompt-scope-insufficient`. AND the enrolled credential record MUST carry `hardware_backed == true` (populated at enrollment via one of: OS keystore attestation on first use, a TPM/TEE quote over the public key, or a YubiKey-signed attestation statement).
+- Enrollment record SHALL include the additional fields `hardware_backed: boolean` and `attestation_format: string` (WebAuthn attestation format token or, for JWS, one of `"os-keystore"|"tpm-quote"|"tee-quote"|"piv-attestation"`); these are populated during §7.3 enrollment and reflect evidence observed at that time.
+- Non-compliance → `ui.prompt-scope-insufficient`. (UV-P-09)
 - On Web: `always-*` MUST gate behind a WebAuthn UV (user-verifying) step. On Mobile: biometric gate required. On IDE: OS authentication dialog required. These are equivalent across profiles. (UV-P-10)
 
 ### 11.6 Multi-UI Assignment & Tie-Breaking
