@@ -41,6 +41,12 @@ The bundle is self-contained: every MUST in the spec has a corresponding test ID
 - `core+handoff` — adds A2A handoff (JSON-RPC 2.0 wire protocol per §17).
 - UI Profile — web / ide / mobile / cli, each with their own test subset.
 
+## Operator documentation
+
+Non-normative guidance for bringing a deployment online lives under [`docs/`](./docs/). These files are not part of the v1.0 normative bundle and are not enumerated in `MANIFEST.json`.
+
+- [`docs/deployment-environment.md`](./docs/deployment-environment.md) — OS / kernel / library / network prerequisites organized by conformance profile, with a summary checklist and cross-reference to authoritative spec sections.
+
 ## Gateway discovery document
 
 The UI Gateway publishes its configuration at `https://<gateway>/.well-known/soa-ui-config.json` (validates against [`schemas/gateway-config.schema.json`](./schemas/gateway-config.schema.json)). The schema's top-level `required` list now includes every load-bearing discovery field (plus two conditional requirements covered by `if/then`). Required fields:
