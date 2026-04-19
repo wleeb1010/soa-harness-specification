@@ -10,17 +10,19 @@
     },
     "soa_validate_binary": {
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "url": "https://soa-harness.org/soa-validate/v1.0.0/soa-validate"
+      "url": "https://soa-harness.org/soa-validate/v1.0.0/soa-validate",
+      "status": "placeholder"
     },
     "ui_validate_binary": {
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "url": "https://soa-harness.org/ui-validate/v1.0.0/ui-validate"
+      "url": "https://soa-harness.org/ui-validate/v1.0.0/ui-validate",
+      "status": "placeholder"
     },
     "supplementary_artifacts": [
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "847caa25714357860ff9a9068acc120b662422cdaa176650e6cc9df255c3d31f",
+        "sha256": "98bfa0e3b5810d558c5d51068bec9a2db43792484063a54f0cf6076db22eb3d1",
         "canonicalization": "raw-utf8"
       },
       {
@@ -86,7 +88,7 @@
       {
         "name": "release-manifest.schema.json",
         "path": "schemas/release-manifest.schema.json",
-        "sha256": "dc8bbf3d209521af1400eee4720b0ca410bba2a4951103b1412bb322b5729c98",
+        "sha256": "57dd50948cad03ef96c5f3ef9af6be974e7f517fe14d4acb1a790f952b9ed38f",
         "canonicalization": "JCS-RFC-8785"
       },
       {

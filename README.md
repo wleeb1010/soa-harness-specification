@@ -122,4 +122,6 @@ Governance and errata policy: Core §19. SemVer binding table: Core §19.4.
 
 ## Status
 
-Private repo. Conformance-tool implementers (`soa-validate`, `ui-validate`) are the intended audience.
+Public draft — v1.0 specification pending first signed release. Primary audience is conformance-tool implementers (`soa-validate`, `ui-validate`) and Runner / Gateway authors building against the bundle.
+
+`MANIFEST.json` lists both `soa_validate_binary` and `ui_validate_binary` with an all-zero SHA-256 and a `status: "placeholder"` marker — those slots are reserved; their digests become real when the validator binaries ship in a tagged release.

@@ -149,11 +149,13 @@ const manifest = {
     },
     soa_validate_binary: {
       sha256: placeholderSha,
-      url: "https://soa-harness.org/soa-validate/v1.0.0/soa-validate"
+      url: "https://soa-harness.org/soa-validate/v1.0.0/soa-validate",
+      status: "placeholder"
     },
     ui_validate_binary: {
       sha256: placeholderSha,
-      url: "https://soa-harness.org/ui-validate/v1.0.0/ui-validate"
+      url: "https://soa-harness.org/ui-validate/v1.0.0/ui-validate",
+      status: "placeholder"
     },
     supplementary_artifacts: supplementary
   }

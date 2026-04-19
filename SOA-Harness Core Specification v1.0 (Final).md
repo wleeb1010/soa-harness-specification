@@ -107,7 +107,7 @@ An engineer implementing every MUST against the pinned normative references prod
 | Layer | Component | Primitives | File / Endpoint | Purpose |
 |-------|-----------|-----------|-----------------|---------|
 | Tooling & Data | MCP Servers | P1, P9 | MCP endpoints | Tools, files, DBs, APIs, benchmarks |
-| Identity & Discovery | A2A + Agent Card | P12 | `https:///.well-known/agent-card.json` + `.jws` | Persona, types, permissions |
+| Identity & Discovery | A2A + Agent Card | P12 | `https://<origin>/.well-known/agent-card.json` + `.jws` | Persona, types, permissions |
 | Coordination | A2A JSON-RPC 2.0 | P11 | A2A endpoint (§17) | Cross-provider handoff |
 | Rules & Long-term Memory | AGENTS.md + Memory MCP | P10, P4 | Project root + Memory MCP | Rules, evolving/shareable memory |
 | State & Resumability | Session Persistence + Artifacts | P3, P4 | `/artifacts/` + `/sessions/` | Crash recovery, side-effect tracking |
@@ -717,8 +717,8 @@ Each benchmark task container MUST be launched with the following settings.
             "canonicalization": { "type": "string", "const": "JCS-RFC-8785" }
           }
         },
-        "soa_validate_binary": { "type": "object", "required": ["sha256","url"], "properties": { "sha256":{"type":"string","pattern":"^[A-Fa-f0-9]{64}$"}, "url":{"type":"string","format":"uri"} } },
-        "ui_validate_binary":  { "type": "object", "required": ["sha256","url"], "properties": { "sha256":{"type":"string","pattern":"^[A-Fa-f0-9]{64}$"}, "url":{"type":"string","format":"uri"} } }
+        "soa_validate_binary": { "type": "object", "required": ["sha256","url"], "additionalProperties": false, "properties": { "sha256":{"type":"string","pattern":"^[A-Fa-f0-9]{64}$"}, "url":{"type":"string","format":"uri"}, "status": {"type":"string","enum":["placeholder","shipped"],"description":"placeholder = all-zero digest reserved until a signed validator binary ships; conformance tools MUST refuse to verify against a placeholder entry."} } },
+        "ui_validate_binary":  { "type": "object", "required": ["sha256","url"], "additionalProperties": false, "properties": { "sha256":{"type":"string","pattern":"^[A-Fa-f0-9]{64}$"}, "url":{"type":"string","format":"uri"}, "status": {"type":"string","enum":["placeholder","shipped"],"description":"placeholder = all-zero digest reserved until a signed validator binary ships; conformance tools MUST refuse to verify against a placeholder entry."} } }
       }
     }
   }
@@ -1458,7 +1458,7 @@ All fields are **Stable** unless noted otherwise in `stability-tiers.md`.
 
 ## 20. Adoption Checklist
 
-- [ ] `https:///.well-known/agent-card.json` and `.jws`, signed by a trust-anchor key.
+- [ ] `https://<origin>/.well-known/agent-card.json` and `.jws`, signed by a trust-anchor key.
 - [ ] MCP servers: tools + memory + benchmarks, with scopes declared.
 - [ ] `AGENTS.md` with required H2 headings in order; bounded `@import`.
 - [ ] `program.md` + `program.md.jws` if `self_improvement.enabled = true`.
