@@ -329,6 +329,10 @@ export function decisionChallenge(decision: CanonicalDecision): Buffer {
 import { verifyAuthenticationResponse } from "@simplewebauthn/server";
 import { decisionChallenge } from "./canonical";
 import { crl } from "./crl";
+import { promptNonceCache } from "../prompt/replayCache";
+import { promptRegistry } from "../prompt/registry";
+
+const DEADLINE_SKEW_MS = 30_000;                 // Core §1 clock-skew tolerance
 
 export async function verifyPdaWebauthn(pda: any, origin: string): Promise<boolean> {
   const cred = await credentialStore.getByKid(pda.handler_kid);
@@ -336,6 +340,36 @@ export async function verifyPdaWebauthn(pda: any, origin: string): Promise<boole
   if (await crl.isRevoked(cred.kid)) throw new GatewayError("ui.prompt-signature-invalid");
   if (cred.format !== "webauthn") throw new GatewayError("ui.prompt-signature-invalid");
   if (new Date(cred.notAfter) < new Date()) throw new GatewayError("ui.prompt-signature-invalid");
+
+  // UI §11.4.1 — signer-identity equality: wrapper.handler_kid == canonical.handler_kid
+  // == enrolled credential kid.
+  if (pda.handler_kid !== pda.canonical_decision.handler_kid) {
+    throw new GatewayError("ui.prompt-signature-invalid"); // reason=signer-identity-mismatch
+  }
+  if (pda.canonical_decision.handler_kid !== cred.kid) {
+    throw new GatewayError("ui.prompt-signature-invalid"); // reason=signer-identity-mismatch
+  }
+
+  // UI §11.4.1 — fetch prompt to obtain deadline + nonce
+  const prompt = await promptRegistry.get(pda.canonical_decision.prompt_id);
+  if (!prompt) throw new GatewayError("ui.prompt-expired");
+
+  // UI §11.4.1 step 1: nonce equality
+  if (pda.canonical_decision.nonce !== prompt.payload.nonce) {
+    throw new GatewayError("ui.prompt-signature-invalid"); // reason=nonce-mismatch
+  }
+
+  // UI §11.4.1 step 2: replay cache check (NOT-yet-seen)
+  const sessionId = pda.canonical_decision.session_id;
+  if (await promptNonceCache.has(sessionId, prompt.payload.nonce)) {
+    throw new GatewayError("ui.prompt-signature-invalid"); // reason=replay
+  }
+
+  // UI §11.4.1 step 3: deadline enforced uniformly (JWS + WebAuthn)
+  const deadlineMs = Date.parse(prompt.payload.deadline);
+  if (Date.now() > deadlineMs + DEADLINE_SKEW_MS) {
+    throw new GatewayError("ui.prompt-expired");
+  }
 
   // §11.4 MUST: clientDataJSON.challenge == SHA-256(canonical_decision)
   const expectedChallenge = decisionChallenge(pda.canonical_decision);
@@ -368,6 +402,9 @@ export async function verifyPdaWebauthn(pda: any, origin: string): Promise<boole
 
   if (!result.verified) throw new GatewayError("ui.prompt-signature-invalid");
   await credentialStore.bumpCounter(cred.kid, result.authenticationInfo!.newCounter);
+
+  // UI §11.4.1 step 5: insert into replay cache on successful verification
+  await promptNonceCache.insert(sessionId, prompt.payload.nonce, deadlineMs + DEADLINE_SKEW_MS);
   return true;
 }
 
@@ -379,7 +416,11 @@ function isHighRisk(d: CanonicalDecision): boolean {
 ### 3.7 `src/attestation/pdaJws.ts` — PDA-JWS Verification
 
 ```ts
-import { compactVerify } from "jose";
+import { compactVerify, decodeProtectedHeader } from "jose";
+import { promptNonceCache } from "../prompt/replayCache";
+import { promptRegistry } from "../prompt/registry";
+
+const DEADLINE_SKEW_MS = 30_000;                 // Core §1 clock-skew tolerance
 
 export async function verifyPdaJws(pdaJws: string, origin: string): Promise<CanonicalDecision> {
   const header = decodeProtectedHeader(pdaJws);
@@ -395,9 +436,74 @@ export async function verifyPdaJws(pdaJws: string, origin: string): Promise<Cano
     throw new GatewayError("ui.prompt-signature-invalid");
   }
   const decision = JSON.parse(Buffer.from(payload).toString("utf8")) as CanonicalDecision;
-  if (decision.handler_kid !== header.kid) throw new GatewayError("ui.prompt-signature-invalid");
+
+  // UI §11.4.1 — signer-identity equality: canonical.handler_kid == header.kid
+  if (decision.handler_kid !== header.kid) {
+    throw new GatewayError("ui.prompt-signature-invalid"); // reason=signer-identity-mismatch
+  }
+
+  // UI §11.4.1 — fetch prompt to obtain deadline + nonce
+  const prompt = await promptRegistry.get(decision.prompt_id);
+  if (!prompt) throw new GatewayError("ui.prompt-expired");
+
+  // UI §11.4.1 step 1: nonce equality
+  if (decision.nonce !== prompt.payload.nonce) {
+    throw new GatewayError("ui.prompt-signature-invalid"); // reason=nonce-mismatch
+  }
+
+  // UI §11.4.1 step 2: replay cache check
+  if (await promptNonceCache.has(decision.session_id, prompt.payload.nonce)) {
+    throw new GatewayError("ui.prompt-signature-invalid"); // reason=replay
+  }
+
+  // UI §11.4.1 step 3: deadline enforced on the JWS path too (parity with WebAuthn)
+  const deadlineMs = Date.parse(prompt.payload.deadline);
+  if (Date.now() > deadlineMs + DEADLINE_SKEW_MS) {
+    throw new GatewayError("ui.prompt-expired");
+  }
+
+  // UI §11.4.1 step 5: insert on success
+  await promptNonceCache.insert(decision.session_id, prompt.payload.nonce, deadlineMs + DEADLINE_SKEW_MS);
   return decision;
 }
+```
+
+### 3.7.1 `src/prompt/replayCache.ts` — Prompt Nonce Replay Cache (UV-P-19)
+
+```ts
+// In-memory reference implementation. Production deployments SHOULD back this
+// with Redis (`SET NX PX`) or a fsync-backed ephemeral WORM store so the cache
+// survives Gateway restart within the deadline+skew horizon (UI §11.4.1).
+export class PromptNonceCache {
+  private entries = new Map<string, number>();   // key -> expiry ms
+
+  key(sessionId: string, nonce: string) {
+    return `${sessionId}\x00${nonce}`;
+  }
+
+  async has(sessionId: string, nonce: string): Promise<boolean> {
+    const k = this.key(sessionId, nonce);
+    const exp = this.entries.get(k);
+    if (exp === undefined) return false;
+    if (Date.now() > exp) { this.entries.delete(k); return false; }
+    return true;
+  }
+
+  async insert(sessionId: string, nonce: string, expiresAtMs: number): Promise<void> {
+    this.entries.set(this.key(sessionId, nonce), expiresAtMs);
+  }
+
+  // Housekeeping: drop expired entries every 60 s. Production uses Redis TTL.
+  startSweeper() {
+    setInterval(() => {
+      const now = Date.now();
+      for (const [k, exp] of this.entries) if (exp < now) this.entries.delete(k);
+    }, 60_000).unref();
+  }
+}
+
+export const promptNonceCache = new PromptNonceCache();
+promptNonceCache.startSweeper();
 ```
 
 ### 3.8 `src/envelope/wrap.ts` — Runner StreamEvent → UI Envelope

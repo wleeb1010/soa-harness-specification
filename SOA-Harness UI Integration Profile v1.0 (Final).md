@@ -703,6 +703,20 @@ header = { "alg": "EdDSA"|"ES256"|"RS256", "kid": "<kid>", "typ": "soa-pda+jws" 
 
 RSA keys MUST be ≥ 3072 bits (Core §10.6); Gateway rejects PDA-JWS with RSA modulus < 3072 as `ui.prompt-signature-invalid`.
 
+#### 11.4.1 Prompt Nonce Replay Cache (Normative)
+
+Gateway MUST maintain a replay cache keyed by `(session_id, prompt.nonce)`. On every PDA verification (both PDA-JWS and PDA-WebAuthn paths):
+
+1. **Extract and compare nonce.** Extract `canonical_decision.nonce` from the signed payload. It MUST equal `PermissionPrompt.payload.nonce` minted by the Gateway for the corresponding `prompt_id`. Mismatch → reject with `ui.prompt-signature-invalid` (reason `nonce-mismatch`).
+2. **Check replay cache.** Look up `(session_id, nonce)` in the cache; if present, reject with `ui.prompt-signature-invalid` (reason `replay`). (UV-P-19)
+3. **Enforce deadline uniformly.** Verify `now() ≤ PermissionPrompt.payload.deadline + skew` where `skew ≤ 30 s` per Core §1. This rule applies to BOTH PDA-JWS and PDA-WebAuthn — the two paths MUST behave identically on deadline. Past deadline → reject with `ui.prompt-expired`. (UV-P-20)
+4. **Verify signature** per the remaining §11.4 rules (algorithm allowlist, signer-identity equality, trust-anchor CRL).
+5. **Insert on success.** On successful verification, insert `(session_id, nonce)` into the cache with TTL = `PermissionPrompt.payload.deadline + skew` from first observation. Single-use: the same `(session_id, nonce)` MUST NOT verify twice.
+
+The replay cache MUST survive Gateway restart for at least the `deadline + skew` horizon (persist to the session's WORM sink or to an ephemeral durable store with fsync per commit).
+
+Rejection reasons added by this section: `nonce-mismatch`, `replay` (both under `ui.prompt-signature-invalid`). `ui.prompt-expired` retains its existing semantics but now applies uniformly across PDA formats.
+
 **Signer-identity equality (normative).** Three `kid` values exist in the PDA flow: `canonical_decision.handler_kid` (inside the signed payload), the PDA-JWS `header.kid` (on the JWS), and the PDA-WebAuthn wrapper `handler_kid` (on the wrapper). Gateway MUST enforce:
 - **PDA-JWS**: `canonical_decision.handler_kid === header.kid`.
 - **PDA-WebAuthn**: `canonical_decision.handler_kid === wrapper.handler_kid === the kid bound to the verified credentialId in the enrolled-credential store`.

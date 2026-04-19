@@ -499,7 +499,8 @@
         "allowed_decisions",
         "capability",
         "control",
-        "handler"
+        "handler",
+        "nonce"
       ],
       "additionalProperties": false,
       "properties": {
@@ -575,6 +576,11 @@
               "deny"
             ]
           }
+        },
+        "nonce": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{16,}$",
+          "description": "Gateway-minted single-use challenge. Gateway MUST generate a fresh ≥128-bit random value per PermissionPrompt. Clients MUST echo this value in canonical_decision.nonce when producing a PDA; Gateway MUST verify equality and enforce single-use via the replay cache defined in UI §11.4.1."
         },
         "context": {
           "type": "object",

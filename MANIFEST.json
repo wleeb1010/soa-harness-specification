@@ -22,19 +22,19 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "1f15a6587835b59e6142565ab18ab5446ae2d7b51882538bd5ed2034592b5ea8",
+        "sha256": "264cf94582dfc5d9b6f6f0028f391d96c9b5d4c0acb6042f9c6ea74f2e96cfca",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "SOA-Harness UI Integration Profile v1.0 (Final).md",
         "path": "SOA-Harness UI Integration Profile v1.0 (Final).md",
-        "sha256": "b8a967e91bedb0e0aa385921710f92d0165e8c8cad0b66a6684c6877131c97f4",
+        "sha256": "353aa47d198464ccbe53dc0fe6ef6ddac8863097e81062755f8a611df5ac53bd",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "SOA UI Gateway Reference Implementation Sketch.md",
         "path": "SOA UI Gateway Reference Implementation Sketch.md",
-        "sha256": "9259f89282c60f860ed13de16d6260d1787580e9338e0e7a279d74dc39989fe7",
+        "sha256": "b8c6770a21d7dbfbf659a29c64a9fc2e962e2886fce2a23326fab9c744dc4070",
         "canonicalization": "raw-utf8"
       },
       {
@@ -46,7 +46,7 @@
       {
         "name": "ui-validate-must-map.json",
         "path": "ui-validate-must-map.json",
-        "sha256": "6d5c2f210bc9383345f15f67c25fd030250ed404f91cc47d4bb03780a2ff804c",
+        "sha256": "9c240be87649e2c694dddb9d2caaf83246090e91408383dc06d21f08072a79f5",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -100,7 +100,7 @@
       {
         "name": "stream-event-payloads.schema.json",
         "path": "schemas/stream-event-payloads.schema.json",
-        "sha256": "d1dd213ea3c08c09ccdb8a8e164dace202b79767cba9405f449abdb3e15902c1",
+        "sha256": "c4bdd9e310a0be823083b6c31a7edb39fedab15324c00b2cebcc878176e87469",
         "canonicalization": "JCS-RFC-8785"
       },
       {

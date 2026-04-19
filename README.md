@@ -60,6 +60,44 @@ All three runner fields are covered by `UV-A-16`.
 
 UI §21 is a closed set of **emitted** error codes (`ui.auth-required`, `ui.replay-gap`, ...). §21.1 covers **diagnostic counters** that appear in observability metrics but never surface as error envelopes. `UV-ERR-01` tests the closed set; counters are explicitly excluded.
 
+## Trust bootstrap (non-circular)
+
+Agent Card JWS verification chains to a trust anchor published under `security.trustAnchors`, but the trust anchor itself cannot be discovered from any artifact in this bundle — that would be circular. Core §6.0 therefore REQUIRES that the initial trust root be delivered *out of band* via exactly ONE of three channels per deployment:
+
+- **SDK-pinned** — the operator's SOA client SDK hard-codes the `publisher_kid` + SPKI hash.
+- **Operator-bundled** — a trusted `initial-trust.json` shipped via configuration management or signed-container base image.
+- **DNSSEC-protected TXT record** — `_soa-trust.<deployment-domain>` carries the `publisher_kid` and SPKI digest with the AD bit set.
+
+Runners MUST refuse to load Agent Cards absent a valid bootstrap (emit `HostHardeningInsufficient` reason `bootstrap-missing`). Tests: `SV-BOOT-01..03`. The inline Agent Card schema now makes `security` a top-level REQUIRED field.
+
+## Signing profile (per artifact)
+
+All signed artifacts conform to a normative per-artifact JWS profile (Core §6.1.1):
+
+| Artifact | Serialization | Signing input | Allowed `alg` | Required `typ` | Required headers |
+|---|---|---|---|---|---|
+| Agent Card JWS | detached | JCS(agent-card.json) | EdDSA, ES256, RS256 ≥ 3072 | `soa-agent-card+jws` | `alg`, `kid`, `x5c` |
+| program.md JWS | detached | raw UTF-8 bytes | EdDSA, ES256 | `soa-program+jws` | `alg`, `kid` |
+| MANIFEST JWS | detached | JCS(MANIFEST.json) | EdDSA, ES256 (RS256 forbidden at the bootstrap layer) | `soa-manifest+jws` | `alg`, `kid` (= `publisher_kid`) |
+| PDA-JWS (UI §11.4) | compact | BASE64URL(JCS(canonical_decision)) | EdDSA, ES256, RS256 ≥ 3072 | `soa-pda+jws` | `alg`, `kid` |
+
+Core §1 now separates **JSON signing inputs** (JCS-RFC-8785 required) from **non-JSON signing inputs** (raw UTF-8 bytes; JCS does not apply — `program.md` is Markdown, not JSON). Tests: `SV-SIGN-01..03`.
+
+## Prompt-decision anti-replay
+
+Every `PermissionPrompt` now carries a Gateway-minted `nonce` (required ≥ 128 bits, ASCII URL-safe). UI §11.4.1 Prompt Nonce Replay Cache governs verification:
+
+1. `canonical_decision.nonce` MUST equal `PermissionPrompt.payload.nonce` — both PDA formats.
+2. `(session_id, nonce)` MUST be single-use — replay → `ui.prompt-signature-invalid` (reason `replay`).
+3. Deadline enforced uniformly on PDA-JWS and PDA-WebAuthn — past deadline → `ui.prompt-expired`.
+4. Replay cache survives Gateway restart within `deadline + skew` horizon.
+
+Signer-identity equality is also normative: `canonical_decision.handler_kid == PDA-JWS header.kid` (or `== PDA-WebAuthn wrapper.handler_kid == enrolled credential kid`); `canonical_decision.handler_kid` is authoritative for audit. Tests: `UV-P-17..20`, `UV-CMD-06`.
+
+## A2A handoff auth
+
+Core §17.1 now pins the A2A JWT profile: algorithm allowlist {EdDSA, ES256, RS256 ≥ 3072}; signing-key discovery (Agent Card signer `kid` OR mTLS SPKI via `x5t#S256`); `jti` replay cache with 330 s retention; `agent_card_etag` mismatch emits `CardVersionDrift` + JSON-RPC `-32051`. Tests: `SV-A2A-10..13`.
+
 ## Handler-key revocation
 
 Handler keys enrolled at the Gateway (§7.3) are revoked through the Core §10.6.1 trust-anchor CRL — no separate UI-side CRL schema. The Gateway's local cache is governed by UI §7.3.1 (`UV-P-16`):
@@ -113,6 +151,10 @@ for (const a of manifest.artifacts.supplementary_artifacts) {
   console.log(`${a.name}: ${actual === a.sha256 ? "OK" : "MISMATCH"}`);
 }
 ```
+
+## Conformance profiles in detail
+
+**Core profile (§18.3)** now includes §§4 and 5 so the lean-design / failure-path / primitive-testability / file-system-grounded / composition / stack-completeness MUSTs are formally in scope. `SV-PRIN-01..05` and `SV-STACK-01..02` cover them. UI §4 ("Runner MUST NOT serve UI assets") is exercised by `UV-PRIN-01`.
 
 ## Version
 
