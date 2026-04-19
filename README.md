@@ -64,7 +64,8 @@ The UI Gateway publishes its configuration at `https://<gateway>/.well-known/soa
 
 - `issuer`, `authorization_endpoint`, `token_endpoint` — OAuth 2.1 metadata
 - `ws_endpoint`, optional `sse_endpoint`, `rest_base`, optional `local_ipc` — transport surfaces
-- `scopes_supported`, `supported_profiles`, `attestation_formats_supported`, `webauthn_rp_id` — capability declaration
+- `scopes_supported`, `supported_profiles`, `attestation_formats_supported` — capability declaration
+- `webauthn_rp_id` — REQUIRED via `if/then` when `supported_profiles` contains any of `web`, `ide`, or `mobile`; OPTIONAL for `cli`-only deployments
 - `replay` — buffer sizing (`buffer_events ≥ 10 000`, `buffer_seconds ≥ 1800`, `max_backfill ≤ 5000`, `grace_seconds ≥ 600`)
 - `artifacts_origin` — cookie-less origin for tool-output artifacts; MUST differ from the UI origin by eTLD+1 (UI §5.1 MUST; `UV-SESS-06a`)
 - `runner_endpoint` — Runner base URL; either `^https://…` or the literal `"loopback"` sentinel declaring co-hosted deployment. When `loopback`, UI §7.4 requires routing via `127.0.0.0/8` / `::1/128` / a UNIX domain socket, matching process-identity check (`SO_PEERCRED` / `LOCAL_PEEREID` / `GetNamedPipeClientProcessId`), and an OTel `soa_ui_cohost_mode=true` span label.

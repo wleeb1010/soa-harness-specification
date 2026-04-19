@@ -148,7 +148,12 @@ The Agent Card signature chain terminates at a trust anchor published under `sec
 - **Operator-bundled.** The operator distributes `initial-trust.json` (`{"publisher_kid": "...", "spki_sha256": "<64-hex>", "issuer": "CN=..."}`) via a trusted deployment channel (configuration management, signed-container base image, etc.). The Runner loads this file at startup before any Agent Card; absence fails startup with `HostHardeningInsufficient` (reason `bootstrap-missing`).
 - **DNSSEC-protected TXT record (production).** At `_soa-trust.<deployment-domain>`, a DNSSEC-validated TXT record publishes `publisher_kid=<id>; spki_sha256=<64-hex>; issuer="CN=..."`. The Runner resolves and DNSSEC-validates the record at startup; lookup failure, missing AD bit, or empty result fails startup with `HostHardeningInsufficient` (reason `bootstrap-missing`).
 
-Implementations MUST select exactly one bootstrap channel per deployment and document the choice in their operator manual. The bootstrap provides the initial trust anchor that verifies the `MANIFEST.json.jws` release-manifest signature; the verified manifest then pins digests for subsequent `agent-card.jws` verification. Covered by `SV-BOOT-01..03`.
+Implementations MUST select exactly one bootstrap channel per deployment and document the choice in their operator manual. The bootstrap-supplied trust anchor serves two distinct verification paths, each with its own verification object:
+
+1. **Release bundle integrity.** The anchor verifies `MANIFEST.json.jws`, which in turn pins the SHA-256 digests of the shipped release artifacts (specs, schemas, test vectors, seccomp profile). This path establishes "did this bundle come from the SOA-WG and has it been tampered with in transit?"
+2. **Live Agent Card authenticity.** A Runner fetching `https://<agent-origin>/.well-known/agent-card.{json,jws}` verifies the card's detached JWS against `security.trustAnchors[].spki_sha256` — per §6.1 and §6.1.1, not via a manifest-pinned digest. (The Agent Card describes a *live* agent served from an arbitrary operator origin; the MANIFEST has no way to enumerate those cards in advance.) The anchor bootstrapped from §5.3 MAY be the same key that signs `security.trustAnchors[].publisher_kid`, or a separate operator-issued anchor — the two roles (release-signing vs. agent-card issuing) are orthogonal.
+
+Covered by `SV-BOOT-01..03`.
 
 ---
 
@@ -1458,7 +1463,7 @@ All three digests are over JCS-RFC-8785-canonical bytes — not raw JSON — so 
 
 ### 18.2 MUST-to-Test Map
 
-Every MUST in this specification is assigned at least one test ID. The mapping file `soa-validate/must-map.json` is part of the suite distribution. A MUST without a test ID is a spec defect.
+Every MUST in this specification is assigned at least one test ID. The mapping file `soa-validate-must-map.json` is part of the suite distribution (published at the bundle root; also enumerated in `MANIFEST.json.artifacts.supplementary_artifacts`). A MUST without a test ID is a spec defect.
 
 ### 18.3 Conformance Levels
 
