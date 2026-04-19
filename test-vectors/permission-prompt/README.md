@@ -19,7 +19,7 @@ Notes on the files:
 
 - `JCS(canonical-decision.json)` = 385 bytes
 - `sha256("JCS(canonical_decision)")` = `7bc890692f68b7d3b842380fcf9739f9987bf77c6cdf4c7992aac31c66fe4a8a`
-- `nonce` in both prompt payload and decision = `q9Zt-X8bL4rFvH2kNpR7wS` (22 URL-safe chars — meets the `^[A-Za-z0-9_-]{16,}$` pattern)
+- `nonce` in both prompt payload and decision = `q9Zt-X8bL4rFvH2kNpR7wS` (22 URL-safe chars — meets the `^[A-Za-z0-9_-]{22,}$` pattern; 132 bits capacity ≥ the 128-bit entropy floor)
 
 ## What this vector exercises
 

@@ -135,7 +135,7 @@ See Appendix A for the full UI vs Gateway MUST matrix.
 
 ### 5.2 Deployment Topology Notes (Informative)
 
-- Artifacts MUST be served from a cookie-less origin distinct from the UI origin (§14.3, §15.4). The Gateway MUST publish the artifact origin in its discovery document as `artifacts_origin` (§7.1) so that UIs and conformance tooling can resolve it deterministically. (UV-SESS-06†, verified by the topology probe defined below.)
+- Artifacts MUST be served from an origin that is (a) distinct from the UI origin by registrable domain (eTLD+1) and (b) fully cookie-less on every response — Gateway MUST NOT emit any `Set-Cookie` header on artifact responses, including host-only cookies scoped to the artifact origin itself (§14.3, §15.4). The Gateway MUST publish the artifact origin in its discovery document as `artifacts_origin` (§7.1) so that UIs and conformance tooling can resolve it deterministically. (UV-SESS-06†, verified by the topology probe defined below.)
 
 **Topology probe (normative for UV-SESS-06†).** A conformance client MUST:
 (a) resolve `artifacts_origin` (bound to the template variable `{{ARTIFACTS_ORIGIN}}`) and the deployment UI origin (`{{UI_ORIGIN}}`) from the discovery document (§7.1);
@@ -624,10 +624,25 @@ Unknown types → `ui.unknown-command`. Additions in future versions MUST be add
 
 - Client MUST supply `command_id` (ULID RECOMMENDED). (UV-CMD-02)
 - Gateway dedupes within 10 minutes; replays return the original response. (UV-CMD-03)
+- **Same command_id with differing body (normative).** On first observation of a `command_id`, Gateway MUST compute a body fingerprint = `sha256:` + hex(SHA-256(JCS-RFC-8785(command_body))) where `command_body` is the full command frame minus transport envelope fields. Gateway MUST record `(session_id, command_id, fingerprint)` alongside the original response in the dedupe store. On every subsequent call within the 10-minute window keyed by the same `(session_id, command_id)`:
+  - If the recomputed fingerprint equals the stored fingerprint → dedupe-replay path (return the original response per UV-CMD-03).
+  - If the fingerprint differs → reject with `ui.duplicate-command-mismatch` (HTTP 409 Conflict / WS close 4005) and include the stored fingerprint's prefix (first 8 hex) in the error detail for debugging. Gateway MUST NOT overwrite the first-observed response, MUST NOT execute the new command, and MUST emit an audit record noting the mismatch. (UV-CMD-07)
+- **Rationale.** Idempotency key reuse with drift is almost always a client bug or an injection attempt; silently accepting either body creates a confused-deputy path. Fail-closed behavior preserves auditability and forces the client to issue a fresh `command_id`.
 
 ### 10.4 Large Attachments
 
 Payloads > 256 KiB: `POST /ui/v1/uploads` → `{ upload_id, sha256 }`; reference `upload_id` in the command. Gateway verifies sha256 before forwarding. Mismatches → `ui.upload-sha-mismatch`; server→client equivalent `ui.artifact-sha-mismatch` in §21. (UV-CMD-04)
+
+**Upload lifecycle (normative).** The minimum-viable upload contract above is incomplete for interoperability; conformant Gateways MUST also enforce:
+
+- **Scope binding.** On `POST /ui/v1/uploads` Gateway MUST bind the returned `upload_id` to the `(session_id, user_sub)` derived from the caller's capability token. The binding MUST be recorded in the upload index alongside the computed sha256, the upload's byte length, and the issuance timestamp.
+- **Single-use.** Each `upload_id` MUST be consumed by at most one subsequent command. On the first successful command reference the upload is marked consumed; any later command referencing the same `upload_id` — even by the same user in the same session — MUST be rejected with `ui.upload-scope-mismatch` (HTTP 409 / WS 4005, reason `already-consumed`).
+- **Cross-session / cross-user rejection.** A command that references an `upload_id` from a different `session_id` or different `user_sub` than the one the upload was bound to MUST be rejected with `ui.upload-scope-mismatch` (reason `scope-mismatch`). Gateway MUST NOT forward the command to the Runner.
+- **Expiry.** An `upload_id` that has not been consumed within **15 minutes** of issuance MUST expire. Expired IDs MUST be garbage-collected from the upload index within ≤ 60 s of expiry; subsequent references MUST fail with `ui.upload-scope-mismatch` (reason `expired`).
+- **Quota.** A session MAY hold at most 16 unconsumed uploads at any instant; breaching the cap MUST reject new `POST /ui/v1/uploads` calls with `ui.upload-scope-mismatch` (reason `quota-exceeded`) and MUST NOT silently displace earlier uploads.
+- **Audit.** Every upload issuance, consumption, rejection, and expiry MUST produce an audit record carrying `{ upload_id, session_id, user_sub, outcome, ts }` into the Gateway's WORM sink per Core §10.5.
+
+(UV-CMD-08)
 
 ---
 
@@ -718,7 +733,7 @@ The `canonical_decision` object MUST validate against the JSON Schema 2020-12 do
     "scope":       { "type": "string", "enum": ["once","always-this-tool","always-this-session"] },
     "not_before":  { "type": "string", "format": "date-time" },
     "not_after":   { "type": "string", "format": "date-time" },
-    "nonce":       { "type": "string", "pattern": "^[A-Za-z0-9_-]{16,}$" },
+    "nonce":       { "type": "string", "pattern": "^[A-Za-z0-9_-]{22,}$", "description": "Echo of PermissionPrompt.payload.nonce; ≥22 base64url chars carries ≥128 bits of entropy per Core §14.1.1 and the Gateway-mint rule." },
     "handler_kid": { "type": "string", "minLength": 1, "maxLength": 256 }
   }
 }
@@ -749,6 +764,13 @@ Gateway MUST maintain a replay cache keyed by `(session_id, prompt.nonce)`. On e
 - **`web`, `mobile` profiles (REQUIRED):** the replay cache MUST survive Gateway restart for at least the `deadline + skew` horizon. Acceptable backends: Redis with `SET NX PX`, an fsync-backed ephemeral durable store, or the session's WORM sink. Rationale: these profiles face internet-scale replay surfaces and a Gateway restart MUST NOT re-open a closed decision window.
 - **`ide`, `cli` profiles (RECOMMENDED):** persistence SHOULD be durable when the deployment supports it, but an in-memory cache is acceptable for single-user, short-lived sessions. Gateway restart invalidates outstanding prompts; the user re-submits under a fresh `PermissionPrompt.nonce`.
 - **Any profile:** implementations that choose in-memory-only persistence MUST document the deployment constraint and expose a metric `soa_ui_replay_cache_persistence` carrying the string `memory` or `durable`.
+
+**Multi-replica consistency (normative).** The restart-durability rules above cover a single Gateway process across restart boundaries; they do NOT cover the split-cache condition that arises when multiple Gateway replicas run behind a load balancer. When `replica_count > 1`, the replay cache MUST satisfy one of the following two mutually-exclusive deployment modes, pinned by Gateway configuration:
+
+1. **Shared linearizable store.** All replicas MUST read and write the same backing store with linearizable semantics for the `(session_id, prompt.nonce)` key. Acceptable: a single Redis primary with `SET NX PX` (replicas route through the primary, not a read replica); an etcd/ZooKeeper cluster fronting the cache; a database with `SERIALIZABLE` isolation. Read-after-write on a Redis replica is NOT acceptable — the eventual-consistency window re-opens a closed decision window. Gateway MUST expose the metric `soa_ui_replay_cache_consistency = "linearizable"`.
+2. **Session-pinned load balancing.** The load balancer MUST pin every request carrying a given `session_id` to a single Gateway replica for at least `PermissionPrompt.payload.deadline + skew` from first observation; this reduces the multi-replica problem to the single-replica case covered above. Acceptable pinning mechanisms: HTTP cookie (`soa_ui_lb_affinity`), consistent hashing on `session_id`, or sticky session headers. Failover while a prompt is in flight MUST invalidate any un-consumed nonces bound to the failed replica. Gateway MUST expose the metric `soa_ui_replay_cache_consistency = "session-pinned"`.
+
+Any other configuration (for example, two replicas with independent in-memory caches behind round-robin LB) is non-conformant; soa-validate MUST reject it with `HostHardeningInsufficient` (reason `replay-cache-split`). Single-replica deployments (`replica_count = 1`) are exempt; they MUST expose `soa_ui_replay_cache_consistency = "single-replica"`. (UV-P-21)
 
 Rejection reasons added by this section: `nonce-mismatch`, `replay` (both under `ui.prompt-signature-invalid`). `ui.prompt-expired` retains its existing semantics but now applies uniformly across PDA formats.
 
@@ -1235,8 +1257,10 @@ All UI-surface errors use stable `ui.*` codes.
 | `ui.replay-exhausted` | Sub | 200 (partial) | 4002 | Backfill truncated |
 | `ui.unknown-command` | Command | 400 | — | Unknown `command.type` |
 | `ui.command-rejected` | Command | 422 | — | Runner rejected |
-| `ui.duplicate-command` | Command | 200 (cached) | — | Same `command_id` within window |
+| `ui.duplicate-command` | Command | 200 (cached) | — | Same `command_id` + same body within window |
+| `ui.duplicate-command-mismatch` | Command | 409 | 4005 | Same `command_id`, different body fingerprint |
 | `ui.upload-sha-mismatch` | Command | 400 | — | Upload integrity |
+| `ui.upload-scope-mismatch` | Command | 409 | 4005 | Upload ID already consumed, expired, cross-session, cross-user, or over quota |
 | `ui.artifact-sha-mismatch` | Content | 502 | — | Download integrity |
 | `ui.prompt-not-assigned` | Prompt | 403 | — | Read-only observer |
 | `ui.prompt-expired` | Prompt | 410 | — | Deadline elapsed |

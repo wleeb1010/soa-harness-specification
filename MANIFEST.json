@@ -22,13 +22,13 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "045debe8425cfa5cd4f32e391ff6a181119fe9360995edacf4bf6bbaac51a210",
+        "sha256": "84d67d81bc7d5863184dbbc5cde0e3a62400f73a4887e8f8dd6099c6ec425364",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "SOA-Harness UI Integration Profile v1.0 (Final).md",
         "path": "SOA-Harness UI Integration Profile v1.0 (Final).md",
-        "sha256": "c71768110009b9bbe21ff36f45ed0050752f96142385dd69d04a14129ec9896a",
+        "sha256": "1696b99c6635ad9dcd4d498a7d933f7446df7e5343e64d069a584687ca1116c3",
         "canonicalization": "raw-utf8"
       },
       {
@@ -46,7 +46,7 @@
       {
         "name": "ui-validate-must-map.json",
         "path": "ui-validate-must-map.json",
-        "sha256": "88c19de420f2889e55680de2869c33e4898bddfbc2cc561436a1ace2e452f950",
+        "sha256": "b03cc2396596d6c453817a784bd279b8489d4238df444a0a5183e9c46fd97f79",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -58,7 +58,7 @@
       {
         "name": "canonical-decision.schema.json",
         "path": "schemas/canonical-decision.schema.json",
-        "sha256": "99c126e0c1bfe19cb75ecd1d5a15002809aa583108a4a32adb16ac4e03d013bc",
+        "sha256": "3ebdbfe82b607841fa30a1728fdc5f4d9632d9e94028800425e3c5910c3a4bdf",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -106,7 +106,7 @@
       {
         "name": "stream-event-payloads.schema.json",
         "path": "schemas/stream-event-payloads.schema.json",
-        "sha256": "c4bdd9e310a0be823083b6c31a7edb39fedab15324c00b2cebcc878176e87469",
+        "sha256": "69839041d83b4148b15668c2b46d4f0b699689eeeebeaa60e4a8f9072624df7f",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -148,7 +148,7 @@
       {
         "name": "README.md",
         "path": "test-vectors/permission-prompt/README.md",
-        "sha256": "e7a05071c76c10ef8f12862a06123d94e851531bdf8094d7594551c76845b959",
+        "sha256": "89354062d63ce7fd2de7c43239a0c41e795d3dc47e3c6323ceb0f17e3bdc8d62",
         "canonicalization": "raw-utf8"
       },
       {
@@ -214,7 +214,7 @@
       {
         "name": "topology-probe.md",
         "path": "test-vectors/topology-probe.md",
-        "sha256": "2fcc07aa4ba6e8cf615e15972f06d4820e661d3aaf54ffa68a32f215c1def840",
+        "sha256": "e18be4fc7a7cfe6e2dec55d30c539539ba3cc544639323590080837ade4e865f",
         "canonicalization": "raw-utf8"
       }
     ]

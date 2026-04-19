@@ -21,12 +21,11 @@ Normative steps are in **UI Integration Profile §5.1**. This file is an informa
    - Compute eTLD+1 of `{{ARTIFACTS_ORIGIN}}`.
    - MUST differ.
 
-3. **No UI-scoped cookies on artifact responses.**
+3. **Fully cookie-less artifact responses (normative).**
    - Issue `GET {{ARTIFACTS_ORIGIN}}/<sample-artifact-path>` with no credentials, no `Cookie` header.
-   - Inspect all `Set-Cookie` response headers.
-   - For each, read the `Domain=` attribute (or, if absent, the response origin host).
-   - MUST NOT equal the UI origin's eTLD+1 or any suffix thereof.
-   - Stricter compliance: MUST NOT emit any `Set-Cookie` at all.
+   - Inspect all response headers.
+   - The response MUST NOT emit any `Set-Cookie` header — neither a UI-scoped cookie (Domain reaching the UI eTLD+1) nor a host-only cookie on the artifact origin itself. The artifact origin is a pure-content origin; session state lives on the Gateway origin, not here.
+   - Rationale: the design intent in §5.1 is "cookie-less, to prevent CSRF token leakage." A narrower check that only rejects UI-eTLD+1-scoped cookies would allow host-only cookies on the artifact origin, which still creates a confused-deputy surface if the artifact origin is ever reached via a browser context that also carries credentials.
 
 4. **Cross-origin resource policy.**
    - The artifact response MUST carry `Cross-Origin-Resource-Policy: cross-origin`.

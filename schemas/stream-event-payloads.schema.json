@@ -579,8 +579,8 @@
         },
         "nonce": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9_-]{16,}$",
-          "description": "Gateway-minted single-use challenge. Gateway MUST generate a fresh ≥128-bit random value per PermissionPrompt. Clients MUST echo this value in canonical_decision.nonce when producing a PDA; Gateway MUST verify equality and enforce single-use via the replay cache defined in UI §11.4.1."
+          "pattern": "^[A-Za-z0-9_-]{22,}$",
+          "description": "Gateway-minted single-use challenge. Gateway MUST generate a fresh ≥128-bit random value per PermissionPrompt and emit it as base64url without padding. The {22,} lower bound is derived from ceil(128/6)=22: shorter base64url strings cannot carry 128 bits of entropy and are rejected at the schema layer. Clients MUST echo this value in canonical_decision.nonce when producing a PDA; Gateway MUST verify equality and enforce single-use via the replay cache defined in UI §11.4.1."
         },
         "context": {
           "type": "object",

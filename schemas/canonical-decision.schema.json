@@ -59,7 +59,8 @@
     },
     "nonce": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9_-]{16,}$"
+      "pattern": "^[A-Za-z0-9_-]{22,}$",
+      "description": "Echo of PermissionPrompt.payload.nonce; ≥22 base64url chars carries ≥128 bits of entropy per Core §14.1.1 and the Gateway-mint rule."
     },
     "handler_kid": {
       "type": "string",
