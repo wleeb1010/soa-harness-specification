@@ -1407,6 +1407,17 @@ The SOA-Harness specification is maintained by the **SOA-Harness Working Group**
 
 Runner MUST reject any MANIFEST whose JWS `kid` does not equal the `publisher_kid` field of a configured trust anchor.
 
+**Release bundle contents (normative).** Every v1.0 release MUST ship the following artifact classes, all listed in MANIFEST.json with digests:
+1. **Normative specifications** — the Core Markdown, the UI Integration Profile, the companion seccomp profile JSON, and both conformance must-maps.
+2. **Extracted JSON Schemas** under `schemas/` — one file per `$id` URI referenced in the specs. Conformance tooling resolves `$id` lookups against this directory or the canonical HTTPS URL.
+3. **Test vectors** under `test-vectors/` — first-class conformance inputs. The vectors currently REQUIRED to be present:
+   - `test-vectors/agent-card.{json,json.jws}` — exercised by `SV-CARD-03` / `HR-12` (§6.3).
+   - `test-vectors/topology-probe.md` — recipe consumed by `UV-SESS-06†` / `UV-SESS-06a` (UI §5.1).
+   - `test-vectors/tasks-fingerprint/` — two-task `/tasks/` fixture + `compute.mjs` producing the canonical `tasks_fingerprint` string; exercised by `SV-GOOD-07` (§23 novelty quota).
+4. **MANIFEST.json + MANIFEST.json.jws** — canonical digest set, signed by the release key pinned in §9.7.1.
+
+Conformance tools (`soa-validate`, `ui-validate`) MUST consume test vectors from the release bundle unambiguously: either by fetching the canonical URL under `https://soa-harness.org/test-vectors/v1.0/` or by reading the mirrored copies in a locally-unpacked bundle. Mismatch between the vector's computed digest and the MANIFEST entry fails conformance with `ManifestDigestMismatch` (§24). New vectors added in patch releases MUST appear in `supplementary_artifacts` of MANIFEST.json; removal of an existing vector is a breaking change subject to §19.4 SemVer rules.
+
 ### 19.2 Errata
 
 - Errata are tracked at `https://soa-harness.org/errata/v1.0/`.

@@ -670,45 +670,85 @@ export class ReplayBuffer {
 }
 ```
 
-### 3.14 `src/runner/streamEventSource.ts` — Runner SSE Consumer (Core §14.3)
+### 3.14 `src/runner/streamEventSource.ts` — Runner SSE Consumer (Core §14.3; UI §7.4)
 
 ```ts
 import { EventSource } from "eventsource";   // or node-native 18+
+import https from "node:https";
+import crypto from "node:crypto";
+import fs from "node:fs";
 import { exchangeTokenForStreamScope } from "../auth/tokenExchange";
+import { expandScopeTemplate } from "./scopeTemplate"; // RFC 6570 Level 1
+
+// Loaded once at boot from /.well-known/soa-ui-config.json
+// (see §3.1 mountConfig). Fail-fast if runner_endpoint is absent and
+// we are NOT in the co-hosted `loopback` mode.
+export interface RunnerDiscovery {
+  runner_endpoint: string;          // https://... OR literal "loopback"
+  runner_mtls_ca_digest: string;    // sha256:<64 hex>
+  stream_scope_template: string;    // e.g. "stream:read:{session_id}"
+}
+
+// SOA-local adapter for outbound mTLS with CA pinning.
+// runner_mtls_ca_digest MUST be verified on every handshake (UI §7.4 / UV-A-16).
+function pinnedHttpsAgent(caPemPath: string, expectedDigest: string): https.Agent {
+  const ca = fs.readFileSync(caPemPath);
+  const actual = "sha256:" + crypto.createHash("sha256").update(ca).digest("hex");
+  if (actual !== expectedDigest) {
+    throw new Error(`runner_mtls_ca_digest mismatch: got ${actual}, want ${expectedDigest}`);
+  }
+  return new https.Agent({
+    ca,
+    cert: fs.readFileSync(process.env.GATEWAY_CLIENT_CERT!),
+    key:  fs.readFileSync(process.env.GATEWAY_CLIENT_KEY!),
+    minVersion: "TLSv1.3",
+  });
+}
 
 export async function openRunnerStream(
-  runnerOrigin: string,
+  disc: RunnerDiscovery,
   sessionId: string,
   userSub: string,
   onEvent: (evt: StreamEvent) => void,
   onClose: (reason: string) => void,
 ) {
-  const scope = `stream:read:${sessionId}`;
+  // UV-A-16: compose the URL from discovery; "loopback" sentinel bypasses outbound mTLS
+  // only when the Gateway is co-hosted with the Runner behind the loopback interface.
+  const isCoHosted = disc.runner_endpoint === "loopback";
+  const runnerUrl = isCoHosted
+    ? `http://127.0.0.1:${process.env.RUNNER_LOCAL_PORT ?? "8444"}/stream/v1/${sessionId}`
+    : `${disc.runner_endpoint}/stream/v1/${sessionId}`;
+
+  // UV-A-16: use the template-driven scope — never hard-code "stream:read:..."
+  const scope = expandScopeTemplate(disc.stream_scope_template, { session_id: sessionId });
   const runnerBearer = await exchangeTokenForStreamScope(userSub, scope);   // RFC 8693
-  const url = `${runnerOrigin}/stream/v1/${sessionId}`;
+
+  // UV-A-16: pin the Runner CA unless in loopback mode.
+  const agent = isCoHosted ? undefined : pinnedHttpsAgent(process.env.MTLS_CA!, disc.runner_mtls_ca_digest);
 
   let lastSequence = 0;
 
   const open = () => {
-    const es = new EventSource(url, {
+    const es = new EventSource(runnerUrl, {
       headers: {
         Authorization: `Bearer ${runnerBearer}`,
         "Last-Event-ID": String(lastSequence),
       },
-      // mTLS client cert is configured at the HTTPS agent level in Node (not shown)
+      agent,           // pinned mTLS agent per UV-A-16 (undefined in loopback mode)
     } as any);
 
     es.addEventListener("message", (msg: MessageEvent) => {
       lastSequence = Number((msg as any).lastEventId ?? lastSequence);
       const evt = JSON.parse(msg.data) as StreamEvent;
       onEvent(evt);
-      // Detect terminal SessionEnd and do not reconnect
       if (evt.type === "SessionEnd") { es.close(); onClose("SessionEnd"); }
     });
 
     es.addEventListener("error", async (e: any) => {
       es.close();
-      // ResumeGap (409) → fresh subscribe from 0; ConsumerLagging is signaled by a final SSE `event: soa-terminate` followed by HTTP close (§14.3) → reconnect after backoff
+      // ResumeGap (409) → fresh subscribe from 0; ConsumerLagging is signaled by a
+      // final SSE `event: soa-terminate` followed by HTTP close (§14.3) → reconnect
+      // after backoff. mTLS digest mismatch surfaces as `ui.runner-mtls-failed`.
       if (e.status === 409) { lastSequence = 0; setTimeout(open, 500); return; }
       setTimeout(open, Math.min(30_000, 500 * 2 ** backoffAttempts++));
     });
@@ -718,7 +758,7 @@ export async function openRunnerStream(
 }
 ```
 
-This path consumes the Runner-side SSE contract per Core §14.3. The Gateway bridges inbound `StreamEvent`s into the envelope-wrapper pipeline (§3.8 `wrap.ts`) for UI-facing delivery.
+This path consumes the Runner-side SSE contract per Core §14.3 and wires the three discovery fields from UI §7.4 (UV-A-16). The Gateway bridges inbound `StreamEvent`s into the envelope-wrapper pipeline (§3.8 `wrap.ts`) for UI-facing delivery. `pinnedHttpsAgent` verifies `runner_mtls_ca_digest` against the CA bundle at boot and on every reload; a mismatch fails the handshake and emits `ui.runner-mtls-failed`.
 
 ### 3.15 `src/cost/projector.ts` — CostUpdate Derivation
 

@@ -258,9 +258,9 @@ The discovery document served at `/.well-known/soa-ui-config.json` MUST validate
     "supported_profiles":              { "type": "array", "items": { "type": "string", "enum": ["web","ide","mobile","cli"] }, "uniqueItems": true, "minItems": 1 },
     "webauthn_rp_id":                  { "type": "string", "description": "Registrable-domain suffix for WebAuthn RP ID per §7.3; typically eTLD+1 shared by UI and Gateway origins." },
     "artifacts_origin":                { "type": "string", "format": "uri", "pattern": "^https://", "description": "Base URL (scheme + registrable-domain host) from which the Gateway serves tool-output artifacts. MUST differ from the UI origin by eTLD+1 per §5.1 (UV-SESS-06†). The topology probe at test-vectors/topology-probe.md reads this field." },
-    "runner_endpoint":                 { "type": "string", "format": "uri", "pattern": "^https://", "description": "Base URL of the upstream SOA-Harness Runner the Gateway brokers for (§5, §14.3). Gateway composes `${runner_endpoint}/stream/v1/{session_id}` for SSE subscription. REQUIRED when Gateway is not co-hosted with Runner." },
-    "runner_mtls_ca_digest":           { "type": "string", "pattern": "^sha256:[A-Fa-f0-9]{64}$", "description": "SHA-256 of the mTLS CA bundle (DER-encoded root certificate) that the Gateway uses to authenticate the Runner. Out-of-band distribution of the CA itself; this field pins the digest so reconnecting clients can detect CA rotation." },
-    "stream_scope_template":           { "type": "string", "description": "RFC 6570 Level 1 URI template the Gateway uses to build the `scope` parameter for RFC 8693 token exchange on a per-session basis (§7.4). Default: `stream:read:{session_id}`. Admin consumers MAY use `stream:read:all`." },
+    "runner_endpoint":                 { "type": "string", "oneOf": [ { "format": "uri", "pattern": "^https://" }, { "const": "loopback" } ], "description": "Base URL of the upstream SOA-Harness Runner the Gateway brokers for (§5, §14.3). Gateway composes `${runner_endpoint}/stream/v1/{session_id}` for SSE subscription. The literal value `loopback` declares co-hosted deployment (Gateway and Runner on the same host, routed over the loopback interface); in that mode outbound mTLS and the CA-digest pin MAY be omitted — see §7.4 for the exact co-host contract. REQUIRED when Gateway is not co-hosted with Runner." },
+    "runner_mtls_ca_digest":           { "type": "string", "pattern": "^sha256:[A-Fa-f0-9]{64}$", "description": "SHA-256 of the mTLS CA bundle (DER-encoded root certificate) that the Gateway uses to authenticate the Runner. Gateway MUST verify this digest against its configured CA bundle at every outbound mTLS handshake to the Runner; mismatch fails the handshake with `ui.runner-mtls-failed` and triggers CA-rotation reconciliation before any further stream attempts. REQUIRED when `runner_endpoint` is an https URL." },
+    "stream_scope_template":           { "type": "string", "pattern": "^[a-z][a-z0-9:_-]*(\\{[a-z_][a-z0-9_]*\\}[a-z0-9:_-]*)*$", "description": "RFC 6570 Level 1 URI template the Gateway MUST use to build the `scope` parameter for RFC 8693 token exchange on a per-session basis (§7.4). Default: `stream:read:{session_id}`. Admin consumers MAY use the literal scope `stream:read:all`. The authorization server MUST refuse scopes broader than the template's expansion for a given session." },
     "local_ipc": {
       "type": "object",
       "additionalProperties": false,
@@ -340,6 +340,17 @@ An enrolled `kid` MUST be bound to one user_sub and one attestation format. A us
 
 **Headless environments** (CI, automated tests, server-side CLI without keystore) MUST use the Device Authorization Grant (RFC 8628) to delegate prompt signing to an out-of-band authenticated device. (UV-P-13)
 
+#### 7.3.1 Gateway CRL Cache (Normative)
+
+Gateway MUST maintain a local cache of each trust anchor's CRL (Core §10.6.1) for the purpose of verifying enrolled handler `kid`s during PDA verification (§11.4). The cache:
+
+- MUST be refreshed at least **once per hour** per trust anchor (matching the Core Runner obligation in §10.6).
+- MUST fail-closed on fetch failure beyond `not_after`: past the CRL's declared `not_after` with no successful refresh, Gateway MUST reject every `PermissionDecision` signed by *any* `handler_kid` under that trust anchor with `ui.prompt-signature-invalid` (reason `crl-stale`) until refresh succeeds.
+- MUST fail-closed on fetch failure even before `not_after` if the cache has missed two consecutive refresh cycles (> 2 hours without a successful fetch) — Gateway MUST emit `ui.gateway-config-invalid` (reason `crl-unreachable`) and reject new decisions signed under the affected anchor until refresh recovers.
+- MUST be covered by observability metrics `soa_ui_crl_cache_age_seconds` (per anchor, sampled at each verification) and `soa_ui_crl_refresh_failures_total`.
+
+Covered by `UV-P-16`.
+
 ### 7.4 Token Exchange (Gateway → Runner)
 
 Gateway MUST exchange the UI token for a short-lived Runner credential via RFC 8693. UI MUST NOT receive, forward, or inspect Runner credentials. (UV-A-08)
@@ -349,7 +360,15 @@ Gateway MUST exchange the UI token for a short-lived Runner credential via RFC 8
 - `runner_mtls_ca_digest` — SHA-256 of the DER-encoded mTLS CA root that signs the Runner's serving certificate. The Gateway MUST verify the Runner's presented certificate chains to a CA whose DER digest equals this value; on mismatch emit `ui.runner-mtls-failed` (§21).
 - `stream_scope_template` — RFC 6570 Level 1 URI template the Gateway MUST use to construct the `scope` parameter for token exchange. Default: `stream:read:{session_id}`; admin consumers MAY use `stream:read:all`. Runtime expansion MUST substitute the active `session_id`; requested scopes broader than the template's expansion MUST be refused by the authorization server.
 
-These fields are REQUIRED when the Gateway is not co-hosted with the Runner (the common case). Co-hosted deployments MAY omit them and rely on loopback + internal trust; this is a deployment choice, not a conformance exemption — `UV-A-16` MUST pass either by field presence or by an explicit `runner_endpoint: "loopback"` sentinel with matching co-host evidence.
+These fields are REQUIRED when the Gateway is not co-hosted with the Runner (the common case). Co-hosted deployments MAY declare the `loopback` sentinel; `UV-A-16` MUST pass either by field presence or by the explicit sentinel with matching co-host evidence.
+
+**Co-host contract (`runner_endpoint: "loopback"`).** When this sentinel appears, the Gateway MUST satisfy ALL of the following at every Runner subscription attempt:
+1. Bind the outbound Runner connection to a loopback IP address (`127.0.0.0/8`, `::1/128`, or a UNIX domain socket).
+2. Use the scheme `http://` (since TLS on loopback is not meaningful when the peer cannot be tampered with by network attackers) OR `unix://` for a Unix-domain socket bridge.
+3. Confirm the Runner process runs under the same security principal (UID on POSIX, user SID on Windows) as the Gateway — e.g., verify `SO_PEERCRED` (Linux), `LOCAL_PEEREID` (BSD/macOS), or `GetNamedPipeClientProcessId` (Windows) before the first subscribe.
+4. Emit a one-time `soa_ui_cohost_mode=true` label on every OTel span under `soa.turn` so observability pipelines can distinguish co-host runs from brokered ones.
+
+If any of these invariants fails, the Gateway MUST abort with `ui.gateway-config-invalid` (reason `loopback-mismatch`). `runner_mtls_ca_digest` and out-of-band TLS trust are NOT required in loopback mode; kernel-enforced process identity replaces them.
 
 ### 7.5 Scopes and Filtering
 
@@ -1190,7 +1209,7 @@ Rows are grouped by spec section; columns mark who owns the MUST.
 | 6.5 | CSP L3, HSTS, frame-ancestors, memory-only tokens | ✓ | ✓ (headers) |
 | 7.1 | Discovery doc published |  | ✓ |
 | 7.2 | Access-token hygiene, refresh PKCE | ✓ |  |
-| 7.3 | Enrollment flow (JWS or WebAuthn) accepted; `kid` assigned; handler-key revocation via the Core §10.6.1 trust-anchor CRL (Gateway caches per §7.3 normative refresh interval; no separate UI CRL) | ✓ (produce) | ✓ (validate, store) |
+| 7.3 | Enrollment flow (JWS or WebAuthn) accepted; `kid` assigned; handler-key revocation via the Core §10.6.1 trust-anchor CRL (Gateway caches per §7.3.1 — hourly refresh, fail-closed past `not_after` or after 2h unreachable; no separate UI CRL) | ✓ (produce) | ✓ (validate, store) |
 | 7.4 | Token-exchange UI→Runner |  | ✓ |
 | 7.5 | Scope filtering per session; stub-prompt for `ui.read` |  | ✓ |
 | 7.6 | Capability token with mTLS or DPoP binding | ✓ (DPoP) | ✓ |
