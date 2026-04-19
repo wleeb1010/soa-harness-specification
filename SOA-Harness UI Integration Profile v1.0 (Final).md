@@ -141,7 +141,7 @@ See Appendix A for the full UI vs Gateway MUST matrix.
 (a) resolve `artifacts_origin` (bound to the template variable `{{ARTIFACTS_ORIGIN}}`) and the deployment UI origin (`{{UI_ORIGIN}}`) from the discovery document (§7.1);
 (b) verify they differ by registrable domain (eTLD+1);
 (c) issue an HTTP GET to an artifact URL and confirm the response carries no `Set-Cookie` headers whose `Domain=` attribute is equal to or a suffix of the UI origin's eTLD+1;
-(d) confirm the artifact response sets `Cross-Origin-Resource-Policy: same-site` (or stricter).
+(d) confirm the artifact response sets `Cross-Origin-Resource-Policy: cross-origin`. (Note: `same-site` and `same-origin` would block the UI origin from embedding the artifact, because step (b) REQUIRES the two origins to differ by registrable domain. `cross-origin` is the only CORP value compatible with the eTLD+1 separation topology; broader content-isolation is provided by the cookie-less origin and CORS allowlist rather than by CORP.) (UV-T-CORP)
 A probe recipe with example fixtures is published under `test-vectors/topology-probe.md`.
 - Gateway MAY shard sessions across multiple Runners transparently.
 - Gateway MAY be stateless at the transport layer but MUST hold buffer state per §17.
@@ -255,6 +255,11 @@ The discovery document served at `/.well-known/soa-ui-config.json` MUST validate
       "description": "runner_mtls_ca_digest is REQUIRED when runner_endpoint is an https URL; the `loopback` sentinel (co-hosted deployments per §7.4) MAY omit it because kernel-enforced process identity replaces the CA pin.",
       "if":   { "properties": { "runner_endpoint": { "pattern": "^https://" } } },
       "then": { "required": ["runner_mtls_ca_digest"] }
+    },
+    {
+      "description": "device_authorization_endpoint is REQUIRED when cli or ide is supported, because §7.2 mandates RFC 8628 device flow for those profiles.",
+      "if":   { "properties": { "supported_profiles": { "contains": { "enum": ["cli","ide"] } } } },
+      "then": { "required": ["device_authorization_endpoint"] }
     }
   ],
   "properties": {
@@ -278,6 +283,7 @@ The discovery document served at `/.well-known/soa-ui-config.json` MUST validate
     "runner_endpoint":                 { "type": "string", "oneOf": [ { "format": "uri", "pattern": "^https://" }, { "const": "loopback" } ], "description": "Base URL of the upstream SOA-Harness Runner the Gateway brokers for (§5, §14.3). Gateway composes `${runner_endpoint}/stream/v1/{session_id}` for SSE subscription. The literal value `loopback` declares co-hosted deployment (Gateway and Runner on the same host, routed over the loopback interface); in that mode outbound mTLS and the CA-digest pin MAY be omitted — see §7.4 for the exact co-host contract. REQUIRED when Gateway is not co-hosted with Runner." },
     "runner_mtls_ca_digest":           { "type": "string", "pattern": "^sha256:[A-Fa-f0-9]{64}$", "description": "SHA-256 of the mTLS CA bundle (DER-encoded root certificate) that the Gateway uses to authenticate the Runner. Gateway MUST verify this digest against its configured CA bundle at every outbound mTLS handshake to the Runner; mismatch fails the handshake with `ui.runner-mtls-failed` and triggers CA-rotation reconciliation before any further stream attempts. REQUIRED when `runner_endpoint` is an https URL." },
     "stream_scope_template":           { "type": "string", "pattern": "^[a-z][a-z0-9:_-]*(\\{[a-z_][a-z0-9_]*\\}[a-z0-9:_-]*)*$", "description": "RFC 6570 Level 1 URI template the Gateway MUST use to build the `scope` parameter for RFC 8693 token exchange on a per-session basis (§7.4). Default: `stream:read:{session_id}`. Admin consumers MAY use the literal scope `stream:read:all`. The authorization server MUST refuse scopes broader than the template's expansion for a given session." },
+    "supported_core_versions":         { "type": "array", "items": { "type": "string", "pattern": "^\\d+\\.\\d+$" }, "minItems": 1, "uniqueItems": true, "default": ["1.0"], "description": "Wire-level version advertisement per Core §19.4.1. MUST include the Core version the Gateway's upstream Runner reports; MAY include earlier minors within the two-minor compatibility window. Callers negotiating via the UI session-attach frame compute the intersection with their own supported set and select the highest common value." },
     "local_ipc": {
       "type": "object",
       "additionalProperties": false,
@@ -325,6 +331,12 @@ The discovery document served at `/.well-known/soa-ui-config.json` MUST validate
   "max_event_bytes": 65536,
   "supported_profiles": ["web", "ide", "mobile", "cli"],
   "webauthn_rp_id": "example.com",
+  "artifacts_origin": "https://artifacts.example-cdn.net",
+  "runner_endpoint": "https://runner.internal.example.com",
+  "runner_mtls_ca_digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "stream_scope_template": "stream:read:{session_id}",
+  "local_ipc": { "unix_socket_path": "/run/soa/gateway.sock" },
+  "supported_core_versions": ["1.0"],
   "replay": { "buffer_events": 10000, "buffer_seconds": 1800, "max_backfill": 5000, "grace_seconds": 600 }
 }
 ```

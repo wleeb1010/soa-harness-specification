@@ -18,6 +18,7 @@
    - 5.3 External Bootstrap Root (Normative)
      - 5.3.1 Bootstrap-Key Rotation and Compromise
      - 5.3.2 Anchor Disagreement and Split-Brain
+   - 5.4 Operational Probes (Normative)
 6. Agent Card
 7. AGENTS.md
 8. Memory Layer
@@ -190,6 +191,21 @@ Implementations MUST select exactly one bootstrap channel per deployment and doc
 
 Covered by `SV-BOOT-01..03`.
 
+### 5.4 Operational Probes (Normative)
+
+Every SOA-Harness Runner and every UI Gateway MUST expose two HTTP endpoints for lifecycle orchestration. These endpoints are independent of the signed-artifact integrity chain (they carry no policy-bearing data and MUST NOT be used to infer trust decisions).
+
+1. **`GET /health` (liveness).** Returns `200 OK` with body `{"status":"alive","soaHarnessVersion":"1.0"}` whenever the process is responding and its event loop is not deadlocked. A process that cannot answer this endpoint within 5 s MUST be considered dead by an orchestrator. Authentication is NOT required; the endpoint MUST NOT expose session or audit data. `/health` MUST remain reachable even under full rate-limit saturation (§13). (`SV-OPS-01`)
+2. **`GET /ready` (readiness).** Returns `200 OK` with body `{"status":"ready"}` only when ALL of the following hold:
+   - The bootstrap channel (§5.3) has resolved and the Agent Card / MANIFEST JWS verifications have succeeded at least once since startup.
+   - The MCP tool pool (P1, P2, P6) has produced a consistent registry state.
+   - The session persistence directory (P3) is writable (write-and-unlink probe within 100 ms).
+   - The audit sink (§10.5) is reachable (connect within 1 s).
+   - The CRL (§10.6.1) is fresh (within `not_after`).
+   When any of the above fails, `/ready` MUST return `503 Service Unavailable` with body `{"status":"not-ready","reason":"<enum>"}` where reason is one of `bootstrap-pending | tool-pool-initializing | persistence-unwritable | audit-sink-unreachable | crl-stale`. Orchestrators MUST NOT route traffic to a Runner that returns 503 on `/ready`. Authentication is NOT required. (`SV-OPS-02`)
+
+Gateways expose the same two endpoints with Gateway-appropriate readiness checks (upstream Runner reachable; IdP discovery successful; enrollment store reachable). Probe endpoints MUST use TLS 1.3+ on public listeners; MAY be plain HTTP when bound to loopback / named pipe / Unix socket only.
+
 ---
 
 ## 6. Agent Card
@@ -211,14 +227,18 @@ All signed artifacts in the SOA-Harness v1.0 bundle MUST conform to the followin
 | Artifact | Serialization | Signing input | Allowed `alg` | Required `typ` | Required header fields |
 |---|---|---|---|---|---|
 | Agent Card JWS (`.well-known/agent-card.jws`) | detached JWS (RFC 7515) | JCS(agent-card.json) bytes | EdDSA, ES256, RS256 (≥ 3072) | `soa-agent-card+jws` | `alg`, `kid`, `x5c` |
-| `program.md` JWS (`program.md.jws`) | detached JWS | raw UTF-8 bytes of `program.md` | EdDSA, ES256 | `soa-program+jws` | `alg`, `kid`, `x5t#S256` |
+| `program.md` JWS (`program.md.jws`) | detached JWS | raw UTF-8 bytes of `program.md` | EdDSA, ES256 | `soa-program+jws` | `alg`, `kid`, `x5c`, `x5t#S256` |
 | MANIFEST JWS (`MANIFEST.json.jws`) | detached JWS | JCS(MANIFEST.json) bytes | EdDSA, ES256 | `soa-manifest+jws` | `alg`, `kid` (MUST equal the configured `publisher_kid`) |
 | PDA-JWS (UI §11.4) | compact JWS | BASE64URL(JCS(canonical_decision)) | EdDSA, ES256, RS256 (≥ 3072) | `soa-pda+jws` | `alg`, `kid` |
 
 Notes:
 - **Agent Card JWS** carries `x5c` so the signer's chain is verifiable against `security.trustAnchors` without an extra fetch. The `x5c` value MUST be an RFC 7515 §4.1.6 array of one or more base64-encoded DER X.509 certificates, ordered **leaf first** (index 0 = the signing certificate), with each subsequent entry certifying the one before it. The array MUST include every intermediate certificate required to chain to an anchor in `security.trustAnchors`; the trust-anchor root itself is the only certificate that MAY be omitted. Verifiers MUST reject an `x5c` containing only the leaf certificate when the signing chain would otherwise require an intermediate that is absent from the anchor store (`CardSignatureFailed`, reason `x5c-chain-incomplete`). (SV-SIGN-04)
 - **MANIFEST JWS** intentionally forbids RS256 — manifest verification is a bootstrap-critical path and RSA adds no value over Ed25519 at that layer.
-- **`program.md` JWS** signs raw Markdown bytes (not JCS-canonicalized anything); Markdown is not JSON and has no canonicalization rule. **Signer key resolution:** the required header `x5t#S256` (RFC 7515 §4.1.8) carries the SHA-256 of the signer's DER-encoded X.509 certificate. Verifiers MUST locate the matching public key under the Agent Card's `security.trustAnchors` by computing the SPKI SHA-256 of each anchor's issuing chain and matching against `x5t#S256`; a signer whose SPKI does not chain to any anchor in `security.trustAnchors` MUST be rejected (`CardSignatureFailed`). `program.md` JWS is NOT signed by the `publisher_kid` release key — that key signs MANIFEST only. The adoption-checklist wording in §20 has been corrected to reflect this.
+- **`program.md` JWS** signs raw Markdown bytes (not JCS-canonicalized anything); Markdown is not JSON and has no canonicalization rule. **Signer key resolution (normative, two-step):**
+  1. **Cert retrieval + thumbprint match.** The required header `x5c` carries a leaf-first RFC 7515 §4.1.6 certificate array under the same rules as Agent Card JWS (see above): index 0 is the signing certificate, every intermediate required to chain to `security.trustAnchors` is included, only the anchor root MAY be omitted. The required header `x5t#S256` (RFC 7515 §4.1.8) carries the SHA-256 thumbprint of the DER-encoded signing certificate. Verifiers MUST compute SHA-256 of the DER bytes of `x5c[0]` and reject any JWS whose computed value differs from the `x5t#S256` header value (`CardSignatureFailed`, reason `x5t-thumbprint-mismatch`).
+  2. **Chain-to-anchor via SPKI.** Verifiers MUST then walk the `x5c` array and confirm that the chain terminates at a certificate whose `SubjectPublicKeyInfo` hashes to the `spki_sha256` of some entry in the Agent Card's `security.trustAnchors`. A signer whose chain does not terminate at an anchor MUST be rejected (`CardSignatureFailed`, reason `chain-anchor-mismatch`).
+
+  The two checks are distinct: `x5t#S256` binds the signer to the end-entity certificate, and `security.trustAnchors[].spki_sha256` binds the chain's trust root. Earlier drafts conflated the two; the present wording supersedes any legacy prose. `program.md` JWS is NOT signed by the `publisher_kid` release key — that key signs MANIFEST only. (SV-SIGN-05)
 - All verifiers MUST reject JWS with an absent or unknown `typ` as a category error (`CardSignatureFailed` for Agent Card, `ManifestDigestMismatch` for MANIFEST, `ui.prompt-signature-invalid` for PDA-JWS, appropriate equivalent for `program.md`).
 
 ### 6.2 Normative JSON Schema
@@ -1605,6 +1625,18 @@ Runner MUST reject any MANIFEST whose JWS `kid` does not equal the `publisher_ki
 
 Conformance tools (`soa-validate`, `ui-validate`) MUST consume test vectors from the release bundle unambiguously: either by fetching the canonical URL under `https://soa-harness.org/test-vectors/v1.0/` or by reading the mirrored copies in a locally-unpacked bundle. Mismatch between the vector's computed digest and the MANIFEST entry fails conformance with `ManifestDigestMismatch` (§24). New vectors added in patch releases MUST appear in `supplementary_artifacts` of MANIFEST.json; removal of an existing vector is a breaking change subject to §19.4 SemVer rules.
 
+#### 19.1.1 Release-Build Verification Gate (Normative)
+
+The bundle's integrity guarantee depends on the JSON Schemas inlined in this document matching the standalone files under `schemas/`, and on `MANIFEST.json` listing every distributable artifact with its current digest. Any release tagged by the SOA-WG MUST pass the following steps in a CI environment that is fresh (no pre-existing build outputs) before the release tag is pushed:
+
+1. **Schema-extraction parity.** Re-run `node extract-schemas.mjs` with `SOA_BUNDLE_ROOT` set to the repository root. Every file under `schemas/` that is produced from a fenced code block in Core or UI profile Markdown MUST be byte-identical to the committed copy. Any drift fails the release. The script MUST exit non-zero on first drift observation.
+2. **MANIFEST regeneration parity.** Re-run `node build-manifest.mjs` against the same tree. The produced `MANIFEST.json` and `MANIFEST.json.jws` MUST be byte-identical to the committed copies (modulo the JWS signature bytes, which are recomputed under the release-signing key).
+3. **Must-map zero-orphan check.** Run the orphan-detection script against both `soa-validate-must-map.json` and `ui-validate-must-map.json`; any test defined in `tests` but not referenced from `must_coverage` or `execution_order.phases` fails the release.
+4. **Test-vector digest parity.** Recompute SHA-256 over every file listed in `supplementary_artifacts`; mismatch fails the release.
+5. **JSON Schema lint.** Every file under `schemas/` MUST parse as a JSON Schema 2020-12 document (syntactic validation); failure fails the release.
+
+The CI pipeline MUST surface a machine-readable artifact (`release-gate.json`) enumerating each of the five checks with its outcome. A release without a passing `release-gate.json` is NOT a conformant v1.0 release and MUST NOT carry a signed MANIFEST. (`SV-GOV-11`)
+
 ### 19.2 Errata
 
 - Errata are tracked at `https://soa-harness.org/errata/v1.0/`.
@@ -1668,7 +1700,7 @@ SemVer compatibility (§19.4) defines WHICH peer versions can interoperate. This
 - [ ] MCP servers: tools + memory + benchmarks, with scopes declared.
 - [ ] `AGENTS.md` with required H2 headings in order; bounded `@import`.
 - [ ] `program.md` + `program.md.jws` if `self_improvement.enabled = true`.
-- [ ] `program.md` JWS verifiable against a trust anchor in `security.trustAnchors` via the `x5t#S256` header per §6.1.1 (NOT the `publisher_kid` release key — that key signs MANIFEST only).
+- [ ] `program.md` JWS verifiable against a trust anchor in `security.trustAnchors` per §6.1.1's two-step rule: (1) `x5t#S256` equals SHA-256 of `x5c[0]` DER bytes; (2) chain terminates at an anchor's SPKI. NOT signed by the `publisher_kid` release key — that key signs MANIFEST only.
 - [ ] `security.auditSink` configured and reachable (§10.5).
 - [ ] `security.coordinationEndpoint` configured if `SOA_COORD_MODE=distributed` (§12.4).
 - [ ] `/tasks/` with Harbor-format tasks (pinned images).

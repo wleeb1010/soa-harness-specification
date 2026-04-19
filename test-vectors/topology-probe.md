@@ -29,7 +29,8 @@ Normative steps are in **UI Integration Profile §5.1**. This file is an informa
    - Stricter compliance: MUST NOT emit any `Set-Cookie` at all.
 
 4. **Cross-origin resource policy.**
-   - The artifact response MUST carry `Cross-Origin-Resource-Policy: same-site` or stricter (`same-origin`).
+   - The artifact response MUST carry `Cross-Origin-Resource-Policy: cross-origin`.
+   - `same-site` and `same-origin` values fail the probe: step 2 REQUIRES the UI and artifact origins to differ by eTLD+1, which makes any stricter CORP value incompatible with the deployment topology (the UI would be blocked from embedding the artifact).
    - Responses without the header fail the probe.
 
 ## Pass / Fail
@@ -47,7 +48,7 @@ UI origin eTLD+1:       example.com
 Artifact origin eTLD+1: example-cdn.net                             ✓ differ
 Artifact GET /sample.png
   Set-Cookie: (none)                                                ✓ no UI-scoped cookie
-  Cross-Origin-Resource-Policy: same-site                           ✓ present, same-site
+  Cross-Origin-Resource-Policy: cross-origin                        ✓ present, cross-origin
 PASS UV-SESS-06†
 ```
 

@@ -77,6 +77,26 @@
           "runner_mtls_ca_digest"
         ]
       }
+    },
+    {
+      "description": "device_authorization_endpoint is REQUIRED when cli or ide is supported, because §7.2 mandates RFC 8628 device flow for those profiles.",
+      "if": {
+        "properties": {
+          "supported_profiles": {
+            "contains": {
+              "enum": [
+                "cli",
+                "ide"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "device_authorization_endpoint"
+        ]
+      }
     }
   ],
   "properties": {
@@ -214,6 +234,19 @@
       "type": "string",
       "pattern": "^[a-z][a-z0-9:_-]*(\\{[a-z_][a-z0-9_]*\\}[a-z0-9:_-]*)*$",
       "description": "RFC 6570 Level 1 URI template the Gateway MUST use to build the `scope` parameter for RFC 8693 token exchange on a per-session basis (§7.4). Default: `stream:read:{session_id}`. Admin consumers MAY use the literal scope `stream:read:all`. The authorization server MUST refuse scopes broader than the template's expansion for a given session."
+    },
+    "supported_core_versions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^\\d+\\.\\d+$"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "default": [
+        "1.0"
+      ],
+      "description": "Wire-level version advertisement per Core §19.4.1. MUST include the Core version the Gateway's upstream Runner reports; MAY include earlier minors within the two-minor compatibility window. Callers negotiating via the UI session-attach frame compute the intersection with their own supported set and select the highest common value."
     },
     "local_ipc": {
       "type": "object",

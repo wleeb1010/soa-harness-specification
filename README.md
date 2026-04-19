@@ -30,7 +30,7 @@ The bundle is self-contained: every MUST in the spec has a corresponding test ID
 | File                                                           | Role                            |
 | -------------------------------------------------------------- | ------------------------------- |
 | [`soa-harness-profile-v1.json`](./soa-harness-profile-v1.json) | §9.7 Docker seccomp profile     |
-| [`schemas/`](./schemas/)                                       | 13 standalone JSON Schemas      |
+| [`schemas/`](./schemas/)                                       | 14 standalone JSON Schemas      |
 | [`MANIFEST.json`](./MANIFEST.json)                             | Release digest set              |
 | [`MANIFEST.json.jws`](./MANIFEST.json.jws)                     | Detached MANIFEST signature     |
 | [`test-vectors/agent-card.{json,json.jws}`](./test-vectors/)   | SV-CARD-03 / HR-12 vector       |
@@ -194,6 +194,9 @@ for (const a of manifest.artifacts.supplementary_artifacts) {
 - **Signing profile:** §6.1.1 pins `x5c` to leaf-first chain ordering with mandatory intermediates (`SV-SIGN-04`).
 - **Version negotiation:** §19.4.1 defines wire-level supported-set intersection, highest-common selection, and session-lifetime binding on A2A (`soa_core_version` JWT claim) and UI session-attach; `VersionNegotiationFailed` on empty intersection (`SV-GOV-08..10`).
 - **Privacy + data governance:** §10.7 adds `data_class` tagging, `privacy.delete_subject` / `privacy.export_subject` MCP tools, `SubjectSuppression` audit records, retention categories with a 24-hour sweep, and an optional `security.data_residency` geographic pin (`SV-PRIV-01..04`).
+- **Operational probes:** §5.4 pins `/health` (liveness) and `/ready` (readiness) endpoints on Runner and Gateway with explicit not-ready reason codes (`SV-OPS-01..02`).
+- **Release gate:** §19.1.1 requires CI to re-run schema extraction + MANIFEST build before any release tag; drift against the committed bundle fails the release (`SV-GOV-11`).
+- **`program.md` signing:** §6.1.1 now pins a two-step signer resolution — `x5t#S256` binds the end-entity cert, `security.trustAnchors[].spki_sha256` binds the chain root, and `x5c` is now a required header so the verifier has the full chain (`SV-SIGN-05`).
 - **Threat model:** Core §25 (informative) catalogs 9 named adversary classes, 22 attack-surface vectors, and cross-references every normative mitigation. Out-of-scope / residual-risk items are explicit (HSM extraction, model-level prompt injection, volumetric DoS, ±30s clock-skew bound). Operators whose threat model exceeds v1.0 MUST layer additional controls outside the harness.
 
 ## Version

@@ -22,13 +22,13 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "46e614b80bc42814a3d9c1d9d5bb957d4bf046d1b8199d2900782feed15175c1",
+        "sha256": "045debe8425cfa5cd4f32e391ff6a181119fe9360995edacf4bf6bbaac51a210",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "SOA-Harness UI Integration Profile v1.0 (Final).md",
         "path": "SOA-Harness UI Integration Profile v1.0 (Final).md",
-        "sha256": "c39da1371188b485bbcb66dd398375a56dd6f0471ce8c56b8ef23f05766bb21b",
+        "sha256": "c71768110009b9bbe21ff36f45ed0050752f96142385dd69d04a14129ec9896a",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,13 +40,13 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "2fddf652bcfaacd559e6e167dd213f44101bfdf465d82f0b872fe0e5426a1202",
+        "sha256": "82a3ab24065b4b9b6f5be59f46e188b7f846bb22ee9dc15ab09fe071fb8b9665",
         "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": "ui-validate-must-map.json",
         "path": "ui-validate-must-map.json",
-        "sha256": "9ed3df05d5d78faa02448b5b4d53d1f0f6151ab00008719254de1e90c2793c1c",
+        "sha256": "88c19de420f2889e55680de2869c33e4898bddfbc2cc561436a1ace2e452f950",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -70,7 +70,7 @@
       {
         "name": "gateway-config.schema.json",
         "path": "schemas/gateway-config.schema.json",
-        "sha256": "12f2eb75a1fecde7fc70a262e0e5bcda9a56d8516df0d1a26a249ab70d2c5920",
+        "sha256": "61a6de50e1157b80d6fddb305c684e05d1204addcf3eba4a030fd5f480c1f18e",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -214,7 +214,7 @@
       {
         "name": "topology-probe.md",
         "path": "test-vectors/topology-probe.md",
-        "sha256": "0bc39b6cd362484419960c99d89cab2e3a1f5bcf5da7a43702591cff390082b4",
+        "sha256": "2fcc07aa4ba6e8cf615e15972f06d4820e661d3aaf54ffa68a32f215c1def840",
         "canonicalization": "raw-utf8"
       }
     ]
