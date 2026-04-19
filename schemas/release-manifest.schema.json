@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://soa-harness.org/schemas/v1.0/release-manifest.schema.json",
+  "type": "object",
+  "required": [
+    "spec_version",
+    "released_at",
+    "publisher_kid",
+    "artifacts"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "spec_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "released_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "publisher_kid": {
+      "type": "string"
+    },
+    "artifacts": {
+      "type": "object",
+      "required": [
+        "seccomp",
+        "soa_validate_binary",
+        "ui_validate_binary"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "supplementary_artifacts": {
+          "type": "array",
+          "description": "Optional: additional artifacts published alongside the release bundle (spec MDs, must-maps, JSON Schema files, test vectors). Listed for digest verification; a Runner is not required to fetch these for self-improvement, but conformance tooling MAY rely on them.",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "path",
+              "sha256",
+              "canonicalization"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[A-Fa-f0-9]{64}$"
+              },
+              "canonicalization": {
+                "type": "string",
+                "enum": [
+                  "JCS-RFC-8785",
+                  "raw-utf8"
+                ]
+              }
+            }
+          }
+        },
+        "seccomp": {
+          "type": "object",
+          "required": [
+            "name",
+            "sha256",
+            "canonicalization"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "const": "soa-harness-profile-v1.json"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[A-Fa-f0-9]{64}$"
+            },
+            "canonicalization": {
+              "type": "string",
+              "const": "JCS-RFC-8785"
+            }
+          }
+        },
+        "soa_validate_binary": {
+          "type": "object",
+          "required": [
+            "sha256",
+            "url"
+          ],
+          "properties": {
+            "sha256": {
+              "type": "string",
+              "pattern": "^[A-Fa-f0-9]{64}$"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        "ui_validate_binary": {
+          "type": "object",
+          "required": [
+            "sha256",
+            "url"
+          ],
+          "properties": {
+            "sha256": {
+              "type": "string",
+              "pattern": "^[A-Fa-f0-9]{64}$"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://soa-harness.org/schemas/ui/v1.0/gateway-config.schema.json",
+  "type": "object",
+  "required": [
+    "soa_ui_profile_version",
+    "issuer",
+    "authorization_endpoint",
+    "token_endpoint",
+    "scopes_supported",
+    "agents_supported",
+    "ws_endpoint",
+    "rest_base",
+    "enroll_endpoint",
+    "attestation_formats_supported",
+    "max_event_bytes",
+    "supported_profiles",
+    "replay"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "soa_ui_profile_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "issuer": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "authorization_endpoint": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "token_endpoint": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "device_authorization_endpoint": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "scopes_supported": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "ui.read",
+          "ui.command",
+          "ui.admin"
+        ]
+      },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "agents_supported": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uri",
+        "pattern": "^https://"
+      },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "ws_endpoint": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^wss://"
+    },
+    "sse_endpoint": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "rest_base": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "enroll_endpoint": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "attestation_formats_supported": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "jws",
+          "webauthn"
+        ]
+      },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "dpop_required_for_public_clients": {
+      "type": "boolean",
+      "default": true
+    },
+    "max_event_bytes": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 1048576
+    },
+    "supported_profiles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "web",
+          "ide",
+          "mobile",
+          "cli"
+        ]
+      },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "webauthn_rp_id": {
+      "type": "string",
+      "description": "Registrable-domain suffix for WebAuthn RP ID per §7.3; typically eTLD+1 shared by UI and Gateway origins."
+    },
+    "local_ipc": {
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "unix_socket_path"
+          ]
+        },
+        {
+          "required": [
+            "named_pipe_name"
+          ]
+        }
+      ],
+      "properties": {
+        "unix_socket_path": {
+          "type": "string",
+          "description": "POSIX socket path, e.g., /run/soa/gateway.sock; mode SHOULD be 0660 with group ownership."
+        },
+        "named_pipe_name": {
+          "type": "string",
+          "description": "Windows named pipe, e.g., \\\\.\\pipe\\soa-gateway."
+        }
+      }
+    },
+    "replay": {
+      "type": "object",
+      "required": [
+        "buffer_events",
+        "buffer_seconds",
+        "max_backfill",
+        "grace_seconds"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "buffer_events": {
+          "type": "integer",
+          "minimum": 10000,
+          "description": "Per-UI replay buffer size; MUST be ≥ 10 000 per §17.5."
+        },
+        "buffer_seconds": {
+          "type": "integer",
+          "minimum": 1800,
+          "description": "Per-UI replay buffer age in seconds; MUST be ≥ 1800 (30 min) per §17.5."
+        },
+        "max_backfill": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000,
+          "description": "Upper bound on backfill per subscribe; MUST be ≤ 5000 per §17.5."
+        },
+        "grace_seconds": {
+          "type": "integer",
+          "minimum": 600,
+          "description": "Reconnect grace window in seconds; MUST be ≥ 600 (10 min) per §9.3."
+        }
+      }
+    }
+  }
+}

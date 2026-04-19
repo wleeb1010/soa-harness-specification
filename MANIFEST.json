@@ -1,0 +1,130 @@
+{
+  "spec_version": "1.0",
+  "released_at": "2026-04-18T00:00:00Z",
+  "publisher_kid": "soa-release-v1.0",
+  "artifacts": {
+    "seccomp": {
+      "name": "soa-harness-profile-v1.json",
+      "sha256": "63c74ced31c8b8c606ba4c4e50422085382907c1a3d552d160acf449f3be9c1f",
+      "canonicalization": "JCS-RFC-8785"
+    },
+    "soa_validate_binary": {
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "url": "https://soa-harness.org/soa-validate/v1.0.0/soa-validate"
+    },
+    "ui_validate_binary": {
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "url": "https://soa-harness.org/ui-validate/v1.0.0/ui-validate"
+    },
+    "supplementary_artifacts": [
+      {
+        "name": "SOA-Harness Core Specification v1.0 (Final).md",
+        "path": "SOA-Harness Core Specification v1.0 (Final).md",
+        "sha256": "11ff8b8e1a7ffbf37dde067aa77e13d95bfabbc9dc414d1900a6be7efd17c6ac",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "SOA-Harness UI Integration Profile v1.0 (Final).md",
+        "path": "SOA-Harness UI Integration Profile v1.0 (Final).md",
+        "sha256": "a99a80435790f49de6596962a733a4248553d62fde718c2b3402c2ab872b6ed7",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "SOA UI Gateway Reference Implementation Sketch.md",
+        "path": "SOA UI Gateway Reference Implementation Sketch.md",
+        "sha256": "d12e43ec184e02e40157f828d9ce33d8ef00fa9137cc12fb99fea61ad203e2cf",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "soa-validate-must-map.json",
+        "path": "soa-validate-must-map.json",
+        "sha256": "2864ed61df309f24ad01082bac12c0506e5e12fb2e39c2e7964f5ec9c96762ec",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "ui-validate-must-map.json",
+        "path": "ui-validate-must-map.json",
+        "sha256": "ecf82f017084bcf9156e61f6926f54792c52eab871562dbe4e5b75cd4da41bf2",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "agent-card.schema.json",
+        "path": "schemas/agent-card.schema.json",
+        "sha256": "6ef077ab55505f0e3c298b2cf06fd61bd2689da737134af1336f2ed507f375c2",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "canonical-decision.schema.json",
+        "path": "schemas/canonical-decision.schema.json",
+        "sha256": "99c126e0c1bfe19cb75ecd1d5a15002809aa583108a4a32adb16ac4e03d013bc",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "crl.schema.json",
+        "path": "schemas/crl.schema.json",
+        "sha256": "d6d7e4e883848723ee68619965d0de32d8b101017b7b714704beab18097fb80c",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "gateway-config.schema.json",
+        "path": "schemas/gateway-config.schema.json",
+        "sha256": "57e191365ae9132bba081fa6a24a16f447e871771770baca2a0f39074f59cae1",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "harbor-task.schema.json",
+        "path": "schemas/harbor-task.schema.json",
+        "sha256": "f9268f4d12ae2967f207f02e381448514e6e8108f6ac09f183a15f8b40ba168e",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "locale-map.schema.json",
+        "path": "schemas/locale-map.schema.json",
+        "sha256": "59b50c1043aa949e76d98cbc6630a0bbbce588719a932c655a31b7508a306379",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "release-manifest.schema.json",
+        "path": "schemas/release-manifest.schema.json",
+        "sha256": "dc8bbf3d209521af1400eee4720b0ca410bba2a4951103b1412bb322b5729c98",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "session.schema.json",
+        "path": "schemas/session.schema.json",
+        "sha256": "7a20ac18b90ef2b60df4ba319e934325f10773539b77f6a48131bdb78ecba1ce",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "stream-event-payloads.schema.json",
+        "path": "schemas/stream-event-payloads.schema.json",
+        "sha256": "d1dd213ea3c08c09ccdb8a8e164dace202b79767cba9405f449abdb3e15902c1",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "stream-event.schema.json",
+        "path": "schemas/stream-event.schema.json",
+        "sha256": "1da3c8bb74cfef487ea308ff24714ca9fc3be2314f12cebbf6cc818898597933",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "ui-derived-payloads.schema.json",
+        "path": "schemas/ui-derived-payloads.schema.json",
+        "sha256": "14b2db7731f5ac82afed3e707cc7b56175c9597fad85bdc2d38e6f3625110708",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "ui-envelope.schema.json",
+        "path": "schemas/ui-envelope.schema.json",
+        "sha256": "7f5630a5c75ae39d2c3de90ce29819d0b80aad0348ed3a921b5a5a51f1fe1f31",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "wcag-addendum.schema.json",
+        "path": "schemas/wcag-addendum.schema.json",
+        "sha256": "282ecf25951210f2ea2c16811acd0a52ce13658fd13b71218382d59afe0f5702",
+        "canonicalization": "JCS-RFC-8785"
+      }
+    ]
+  }
+}
