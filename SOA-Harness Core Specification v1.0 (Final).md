@@ -140,11 +140,7 @@ Each primitive carries a mandatory `soa-validate` test ID (§18).
 
 Primitives P1–P10 and P12–P14 are REQUIRED for every `core`-profile Runner. P11 (A2A Handoff) is REQUIRED only for Runners claiming the `core+handoff` profile (§18.3). A Core-only Runner without A2A MAY omit §17 entirely without violating this primitive set.
 
----
-
-## 6. Agent Card
-
-### 6.0 External Bootstrap Root (Normative)
+### 5.3 External Bootstrap Root (Normative)
 
 The Agent Card signature chain terminates at a trust anchor published under `security.trustAnchors`. The trust anchor itself is not discoverable from any artifact in this bundle — doing so would be circular. v1.0 therefore REQUIRES that the initial trust root be delivered *out of band* via exactly ONE of the following channels per deployment:
 
@@ -153,6 +149,10 @@ The Agent Card signature chain terminates at a trust anchor published under `sec
 - **DNSSEC-protected TXT record (production).** At `_soa-trust.<deployment-domain>`, a DNSSEC-validated TXT record publishes `publisher_kid=<id>; spki_sha256=<64-hex>; issuer="CN=..."`. The Runner resolves and DNSSEC-validates the record at startup; lookup failure, missing AD bit, or empty result fails startup with `HostHardeningInsufficient` (reason `bootstrap-missing`).
 
 Implementations MUST select exactly one bootstrap channel per deployment and document the choice in their operator manual. The bootstrap provides the initial trust anchor that verifies the `MANIFEST.json.jws` release-manifest signature; the verified manifest then pins digests for subsequent `agent-card.jws` verification. Covered by `SV-BOOT-01..03`.
+
+---
+
+## 6. Agent Card
 
 ### 6.1 Discovery and Transport
 
@@ -1453,6 +1453,7 @@ Runner MUST reject any MANIFEST whose JWS `kid` does not equal the `publisher_ki
    - `test-vectors/agent-card.{json,json.jws}` — exercised by `SV-CARD-03` / `HR-12` (§6.3).
    - `test-vectors/topology-probe.md` — recipe consumed by `UV-SESS-06†` / `UV-SESS-06a` (UI §5.1).
    - `test-vectors/tasks-fingerprint/` — two-task `/tasks/` fixture + `compute.mjs` producing the canonical `tasks_fingerprint` string; exercised by `SV-GOOD-07` (§23 novelty quota).
+   - `test-vectors/permission-prompt/` — paired `PermissionPrompt` + `canonical_decision` + detached PDA-JWS (placeholder signature) demonstrating the §14.1.1 nonce field and the UI §11.4.1 replay/deadline rules; exercised by `UV-P-17..20`.
 4. **MANIFEST.json + MANIFEST.json.jws** — canonical digest set, signed by the release key pinned in §9.7.1.
 
 Conformance tools (`soa-validate`, `ui-validate`) MUST consume test vectors from the release bundle unambiguously: either by fetching the canonical URL under `https://soa-harness.org/test-vectors/v1.0/` or by reading the mirrored copies in a locally-unpacked bundle. Mismatch between the vector's computed digest and the MANIFEST entry fails conformance with `ManifestDigestMismatch` (§24). New vectors added in patch releases MUST appear in `supplementary_artifacts` of MANIFEST.json; removal of an existing vector is a breaking change subject to §19.4 SemVer rules.

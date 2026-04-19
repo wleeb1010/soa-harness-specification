@@ -62,7 +62,7 @@ UI §21 is a closed set of **emitted** error codes (`ui.auth-required`, `ui.repl
 
 ## Trust bootstrap (non-circular)
 
-Agent Card JWS verification chains to a trust anchor published under `security.trustAnchors`, but the trust anchor itself cannot be discovered from any artifact in this bundle — that would be circular. Core §6.0 therefore REQUIRES that the initial trust root be delivered *out of band* via exactly ONE of three channels per deployment:
+Agent Card JWS verification chains to a trust anchor published under `security.trustAnchors`, but the trust anchor itself cannot be discovered from any artifact in this bundle — that would be circular. Core §5.3 therefore REQUIRES that the initial trust root be delivered *out of band* via exactly ONE of three channels per deployment:
 
 - **SDK-pinned** — the operator's SOA client SDK hard-codes the `publisher_kid` + SPKI hash.
 - **Operator-bundled** — a trusted `initial-trust.json` shipped via configuration management or signed-container base image.
@@ -116,6 +116,7 @@ Per Core §19, the following vectors are **required** release-bundle content —
 | `test-vectors/agent-card.{json,json.jws}` | `SV-CARD-03`, `HR-12` |
 | `test-vectors/topology-probe.md` | `UV-SESS-06†`, `UV-SESS-06a` |
 | `test-vectors/tasks-fingerprint/` + `compute.mjs` | `SV-GOOD-07` (Core §23 novelty quota) |
+| `test-vectors/permission-prompt/` (prompt + decision + PDA-JWS) | `UV-P-17..20` (UI §11.4.1 prompt-nonce / replay / deadline) |
 
 ## Conformance stance
 

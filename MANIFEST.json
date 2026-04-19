@@ -22,13 +22,13 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "264cf94582dfc5d9b6f6f0028f391d96c9b5d4c0acb6042f9c6ea74f2e96cfca",
+        "sha256": "67b2a830695bf713d9babb8cfb3b4a01cbdaafffaa904aa059fc90098d39ea50",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "SOA-Harness UI Integration Profile v1.0 (Final).md",
         "path": "SOA-Harness UI Integration Profile v1.0 (Final).md",
-        "sha256": "353aa47d198464ccbe53dc0fe6ef6ddac8863097e81062755f8a611df5ac53bd",
+        "sha256": "9e39765f6ff87eb1ef5f12e4aea9ee3c4de14ae4eea3c5b66f587f004738e519",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "536d26824dcfa6b6867cb0090d11a1e30b0c95476ae8b4e4aa5bc877abfef253",
+        "sha256": "7265320ae6a6c1131ad0afdacabc3433e229638ff8badf12f46f841e100f865d",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -138,6 +138,30 @@
         "path": "test-vectors/agent-card.json.jws",
         "sha256": "12ef8c089337399e719b307ba70a855de00f13363836091eba5c19bdb6dc1341",
         "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/permission-prompt/README.md",
+        "sha256": "830e758c9c8319f8bcac23d1719b452d19a0ceaf39ec800af55d0b4eeb6ae268",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "canonical-decision.json",
+        "path": "test-vectors/permission-prompt/canonical-decision.json",
+        "sha256": "7bc890692f68b7d3b842380fcf9739f9987bf77c6cdf4c7992aac31c66fe4a8a",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "pda.jws",
+        "path": "test-vectors/permission-prompt/pda.jws",
+        "sha256": "cc759bbc3cbf6baba0faf6e24d9d68644cebd466211ee63470540f7cdcd7cd32",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "permission-prompt.json",
+        "path": "test-vectors/permission-prompt/permission-prompt.json",
+        "sha256": "bcd8716eb3150c024afb16eab5d12921e28e06fc313808bad979e67fd19d97bd",
+        "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": "README.md",

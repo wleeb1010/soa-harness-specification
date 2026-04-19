@@ -713,7 +713,11 @@ Gateway MUST maintain a replay cache keyed by `(session_id, prompt.nonce)`. On e
 4. **Verify signature** per the remaining §11.4 rules (algorithm allowlist, signer-identity equality, trust-anchor CRL).
 5. **Insert on success.** On successful verification, insert `(session_id, nonce)` into the cache with TTL = `PermissionPrompt.payload.deadline + skew` from first observation. Single-use: the same `(session_id, nonce)` MUST NOT verify twice.
 
-The replay cache MUST survive Gateway restart for at least the `deadline + skew` horizon (persist to the session's WORM sink or to an ephemeral durable store with fsync per commit).
+**Persistence (profile-gated).** Cache durability requirements track the deployment profile:
+
+- **`web`, `mobile` profiles (REQUIRED):** the replay cache MUST survive Gateway restart for at least the `deadline + skew` horizon. Acceptable backends: Redis with `SET NX PX`, an fsync-backed ephemeral durable store, or the session's WORM sink. Rationale: these profiles face internet-scale replay surfaces and a Gateway restart MUST NOT re-open a closed decision window.
+- **`ide`, `cli` profiles (RECOMMENDED):** persistence SHOULD be durable when the deployment supports it, but an in-memory cache is acceptable for single-user, short-lived sessions. Gateway restart invalidates outstanding prompts; the user re-submits under a fresh `PermissionPrompt.nonce`.
+- **Any profile:** implementations that choose in-memory-only persistence MUST document the deployment constraint and expose a metric `soa_ui_replay_cache_persistence` carrying the string `memory` or `durable`.
 
 Rejection reasons added by this section: `nonce-mismatch`, `replay` (both under `ui.prompt-signature-invalid`). `ui.prompt-expired` retains its existing semantics but now applies uniformly across PDA formats.
 
