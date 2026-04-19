@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "2a9233f7e0e1433eadb0a52ded4b2559510460bd0682b958b7572fd75bfd1d35",
+        "sha256": "46e614b80bc42814a3d9c1d9d5bb957d4bf046d1b8199d2900782feed15175c1",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "e9060cd543f1f9f64eb19fd0264f187cc9a6ebfca4a2cdf886600d28fc0615e6",
+        "sha256": "2fddf652bcfaacd559e6e167dd213f44101bfdf465d82f0b872fe0e5426a1202",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -52,7 +52,7 @@
       {
         "name": "agent-card.schema.json",
         "path": "schemas/agent-card.schema.json",
-        "sha256": "bd04bad88bb1ac98a70e4afd4be8e900abee33c162c24cf94aacba9dcacf19b1",
+        "sha256": "bc5a09b1fd707adefe9dcdbfd3be580f5472fdcc375672341261bc842e8b6ebd",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -77,6 +77,12 @@
         "name": "harbor-task.schema.json",
         "path": "schemas/harbor-task.schema.json",
         "sha256": "f9268f4d12ae2967f207f02e381448514e6e8108f6ac09f183a15f8b40ba168e",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "initial-trust.schema.json",
+        "path": "schemas/initial-trust.schema.json",
+        "sha256": "50e21ad40d914d221971fafbaf911ea7be4343cab214227c5b38e4004766a93d",
         "canonicalization": "JCS-RFC-8785"
       },
       {

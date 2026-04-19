@@ -16,6 +16,8 @@
    - 5.1 Stack Table
    - 5.2 Primitives Enumerated
    - 5.3 External Bootstrap Root (Normative)
+     - 5.3.1 Bootstrap-Key Rotation and Compromise
+     - 5.3.2 Anchor Disagreement and Split-Brain
 6. Agent Card
 7. AGENTS.md
 8. Memory Layer
@@ -149,7 +151,7 @@ Primitives P1–P10 and P12–P14 are REQUIRED for every `core`-profile Runner. 
 The Agent Card signature chain terminates at a trust anchor published under `security.trustAnchors`. The trust anchor itself is not discoverable from any artifact in this bundle — doing so would be circular. v1.0 therefore REQUIRES that the initial trust root be delivered *out of band* via exactly ONE of the following channels per deployment:
 
 - **SDK-pinned.** The operator's SOA client SDK ships with a hard-coded `{publisher_kid, spki_sha256, issuer}` triple identifying the SOA-WG release-signing key. Runners loading an Agent Card whose `security.trustAnchors[].publisher_kid` does not match the SDK-pinned value MUST emit `HostHardeningInsufficient` (reason `bootstrap-missing`) and refuse to load the Card.
-- **Operator-bundled.** The operator distributes `initial-trust.json` (`{"publisher_kid": "...", "spki_sha256": "<64-hex>", "issuer": "CN=..."}`) via a trusted deployment channel (configuration management, signed-container base image, etc.). The Runner loads this file at startup before any Agent Card; absence fails startup with `HostHardeningInsufficient` (reason `bootstrap-missing`).
+- **Operator-bundled.** The operator distributes `initial-trust.json` via a trusted deployment channel (configuration management, signed-container base image, etc.). The file MUST validate against the normative schema at `schemas/initial-trust.schema.json` (required fields: `soaHarnessVersion`, `publisher_kid`, `spki_sha256`, `issuer`; see schema for optional rotation fields). The Runner loads and schema-validates this file at startup before any Agent Card; absence OR schema-validation failure fails startup with `HostHardeningInsufficient` (reason `bootstrap-missing`).
 - **DNSSEC-protected TXT record (production).** At `_soa-trust.<deployment-domain>`, a DNSSEC-validated TXT record publishes `publisher_kid=<id>; spki_sha256=<64-hex>; issuer="CN=..."`. The Runner resolves and DNSSEC-validates the record at startup; lookup failure, missing AD bit, or empty result fails startup with `HostHardeningInsufficient` (reason `bootstrap-missing`).
 
 #### 5.3.1 Bootstrap-Key Rotation and Compromise (Normative)
@@ -165,6 +167,21 @@ The bootstrap-supplied key (the `publisher_kid` + SPKI hash delivered via SDK-pi
 - **Storage.** Release-signing private keys MUST be held in an HSM or hardware-backed keystore. Plaintext on disk is forbidden, matching the handler-key rule in §10.6.
 
 Covered by `SV-BOOT-04`.
+
+#### 5.3.2 Anchor Disagreement and Split-Brain (Normative)
+
+A deployment MUST select exactly ONE bootstrap channel per §5.3. When a Runner nevertheless observes two or more channels (e.g., an SDK-pinned value in-process AND a visible DNSSEC TXT record at `_soa-trust.<deployment-domain>`, or an operator-bundled `initial-trust.json` AND an SDK pin), the Runner MUST resolve the disagreement using the following deterministic, fail-closed rules:
+
+1. **Authoritative channel.** The deployment's authoritative channel is the one named in `SOA_BOOTSTRAP_CHANNEL` (environment variable, one of `sdk-pinned` | `operator-bundled` | `dnssec-txt`). If the variable is absent, the Runner MUST fail startup with `HostHardeningInsufficient` (reason `bootstrap-channel-undeclared`). The variable's value is the ONLY authoritative source of `publisher_kid` + `spki_sha256` for verification.
+2. **Secondary-channel handling.** A `publisher_kid`/`spki_sha256` observed on any non-authoritative channel MUST NOT be used for verification. If such a value is observed AND disagrees with the authoritative channel's value, the Runner MUST:
+   - Emit `HostHardeningInsufficient` (reason `bootstrap-split-brain`) to the audit sink with both observed values, the authoritative channel name, and the dissenting channel name.
+   - Halt self-improvement iterations (same stop semantics as §5.3.1 emergency revocation).
+   - Continue accepting Agent Cards whose `security.trustAnchors[].publisher_kid` matches the authoritative value; reject all others with `HostHardeningInsufficient` (reason `bootstrap-missing`).
+3. **Agreement across channels.** Multiple channels carrying the SAME `publisher_kid` + `spki_sha256` is NOT a split-brain condition and MUST NOT trigger rejection; the authoritative channel is still used exclusively for verification, but no alert is emitted.
+4. **Tie-breaking during rotation overlap.** If the authoritative channel carries BOTH the current and `successor_publisher_kid` (§5.3.1 30-day overlap), and a secondary channel carries only one of the two values, no split-brain is triggered — the secondary is considered a lagging observation. If the secondary carries a THIRD value (not current, not successor), rule 2 applies.
+5. **Operator recovery.** Recovery from `bootstrap-split-brain` requires either (a) removing the dissenting secondary-channel artifact (e.g., retracting a stale DNSSEC TXT entry) OR (b) rotating the authoritative channel to match per §5.3.1. Manual override of the fail-closed state is NOT permitted in v1.0.
+
+Covered by `SV-BOOT-05`.
 
 Implementations MUST select exactly one bootstrap channel per deployment and document the choice in their operator manual. The bootstrap-supplied trust anchor serves two distinct verification paths, each with its own verification object:
 
@@ -199,7 +216,7 @@ All signed artifacts in the SOA-Harness v1.0 bundle MUST conform to the followin
 | PDA-JWS (UI §11.4) | compact JWS | BASE64URL(JCS(canonical_decision)) | EdDSA, ES256, RS256 (≥ 3072) | `soa-pda+jws` | `alg`, `kid` |
 
 Notes:
-- **Agent Card JWS** carries `x5c` so the signer's chain is verifiable against `security.trustAnchors` without an extra fetch.
+- **Agent Card JWS** carries `x5c` so the signer's chain is verifiable against `security.trustAnchors` without an extra fetch. The `x5c` value MUST be an RFC 7515 §4.1.6 array of one or more base64-encoded DER X.509 certificates, ordered **leaf first** (index 0 = the signing certificate), with each subsequent entry certifying the one before it. The array MUST include every intermediate certificate required to chain to an anchor in `security.trustAnchors`; the trust-anchor root itself is the only certificate that MAY be omitted. Verifiers MUST reject an `x5c` containing only the leaf certificate when the signing chain would otherwise require an intermediate that is absent from the anchor store (`CardSignatureFailed`, reason `x5c-chain-incomplete`). (SV-SIGN-04)
 - **MANIFEST JWS** intentionally forbids RS256 — manifest verification is a bootstrap-critical path and RSA adds no value over Ed25519 at that layer.
 - **`program.md` JWS** signs raw Markdown bytes (not JCS-canonicalized anything); Markdown is not JSON and has no canonicalization rule. **Signer key resolution:** the required header `x5t#S256` (RFC 7515 §4.1.8) carries the SHA-256 of the signer's DER-encoded X.509 certificate. Verifiers MUST locate the matching public key under the Agent Card's `security.trustAnchors` by computing the SPKI SHA-256 of each anchor's issuing chain and matching against `x5t#S256`; a signer whose SPKI does not chain to any anchor in `security.trustAnchors` MUST be rejected (`CardSignatureFailed`). `program.md` JWS is NOT signed by the `publisher_kid` release key — that key signs MANIFEST only. The adoption-checklist wording in §20 has been corrected to reflect this.
 - All verifiers MUST reject JWS with an absent or unknown `typ` as a category error (`CardSignatureFailed` for Agent Card, `ManifestDigestMismatch` for MANIFEST, `ui.prompt-signature-invalid` for PDA-JWS, appropriate equivalent for `program.md`).
@@ -228,6 +245,14 @@ The Agent Card MUST validate against the JSON Schema 2020-12 document below.
     },
     "skills": { "type": "array", "items": { "type": "string" }, "maxItems": 64 },
     "provider": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "supported_core_versions": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+      "minItems": 1,
+      "uniqueItems": true,
+      "default": ["1.0"],
+      "description": "Wire-level version advertisement per §19.4.1. MUST include the value of soaHarnessVersion; MAY include earlier minors within the two-minor compatibility window."
+    },
     "self_improvement": {
       "type": "object",
       "required": ["enabled"],
@@ -981,6 +1006,42 @@ The CRL served at `<trust-anchor-uri>/crl.json` MUST validate against the schema
 
 **Failure-mode MUSTs:** Runner MUST fetch the CRL every ≤ 60 min. On fetch failure, Runner MAY serve the stale CRL until `not_after`; past `not_after`, Runner MUST reject all new high-risk decisions with `HandlerKeyRevoked` (reason `crl-stale`) until refresh succeeds. Covered by `SV-PERM-18`.
 
+### 10.7 Privacy and Data-Governance Controls (Normative)
+
+SOA-Harness emits three classes of persistent records that MAY carry personal data: audit records (§10.5), memory entries (§8), and session/workflow state (§12). v1.0 defines the following normative controls; operators remain responsible for the legal classification of specific data items under their applicable regime (e.g., GDPR, CCPA, HIPAA).
+
+1. **Data inventory.** Every deployment MUST publish a data-inventory document at `docs/data-inventory.md` enumerating, per primitive, which fields MAY contain personal data, the field's retention category (see §10.7.3), and the legal basis asserted for collection. Absence of the file fails conformance (`SV-PRIV-01`). The document is informative in text but its presence and schema adherence are normative.
+2. **Field-level tagging.** Any StreamEvent payload, memory entry, or audit record containing a field that MAY carry personal data MUST tag that field with a `data_class` annotation drawn from the closed enum `{ "public" | "internal" | "confidential" | "personal" | "sensitive-personal" }`. Tagging is carried at the schema level (JSON Schema `x-soa-data-class` extension) and at the record level for entries that do not flow through a fixed schema. Untagged fields default to `internal`. `sensitive-personal` (e.g., health, credentials, precise location) MUST NOT be persisted to memory in any form; attempting to consolidate such an entry MUST emit `MemoryDeletionForbidden` (reason `sensitive-class-forbidden`). (`SV-PRIV-02`)
+
+#### 10.7.1 Deletion and Subject-Access Semantics
+
+3. **Deletion requests.** The Runner MUST expose an MCP tool `privacy.delete_subject` with parameters `{ subject_id, scope: "memory" | "audit" | "session" | "all", legal_basis, operator_kid }`. On invocation the Runner MUST:
+   - For `scope = memory`: tombstone every memory entry whose metadata contains `subject_id`, per the §8 memory-deletion rules. Tombstones (not physical deletion) satisfy the integrity-chain requirement and MUST include the originating `operator_kid` and `legal_basis`.
+   - For `scope = audit`: the WORM sink rule (§10.5) forbids destructive deletion; the Runner instead writes a `SubjectSuppression` audit record that downstream consumers MUST honor when producing subject-access exports. The original records remain intact for regulatory audit of the suppression itself.
+   - For `scope = session`: active sessions touching the subject MUST be paused; persisted session bodies MUST be tombstoned in place and the summary-only record retained. Resumption after suppression is NOT permitted — the Runner MUST emit `SessionFormatIncompatible` (reason `subject-suppressed`) on any resume attempt.
+   - For `scope = all`: apply all three above atomically under a single `privacy.delete_subject` audit record.
+4. **Subject-access export.** The Runner MUST also expose `privacy.export_subject` returning a JCS-canonical JSON object `{ memory: [...], audit: [...], sessions: [...] }` filtered to entries whose `subject_id` matches. The export MUST honor `SubjectSuppression` records (suppressed entries appear as redacted stubs). (`SV-PRIV-03`)
+
+#### 10.7.2 Cross-Border and Residency
+
+5. **Residency pinning.** Deployments that require data residency MUST declare the allowed set of geographic regions in Agent Card `security.data_residency` (array of ISO-3166 alpha-2 country codes). The Runner MUST refuse any MCP tool invocation whose resolved endpoint (DNS + TLS SNI + reverse lookup) does not map to one of the declared regions and emit `PermissionDenied` (reason `residency-violation`). Absence of `security.data_residency` MUST be treated as "no residency constraint"; strict deployments SHOULD declare it explicitly.
+
+#### 10.7.3 Retention
+
+6. **Retention categories.** Every record type MUST declare a retention category, pinned here:
+
+| Category | Applies to | Default retention | Override mechanism |
+|---|---|---|---|
+| `audit-integrity` | Records covered by §10.5 WORM rule | Indefinite (append-only) | NOT overridable; §10.5 precedence |
+| `audit-personal` | Audit records tagged with personal fields | ≤ 400 days, or the shorter of applicable legal maximum and operator-declared | Operator policy at `docs/data-inventory.md`; `SubjectSuppression` reduces to redacted stubs |
+| `memory-personal` | Memory entries tagged `personal` or containing subject references | Consolidation horizon per §8.2 `consolidation_threshold`, capped at 400 days for personal-class | Per-subject `privacy.delete_subject` |
+| `session-body` | Full session message bodies | ≤ 90 days after session close | Summary record retained indefinitely; body tombstone on expiry |
+| `operational` | Everything else | ≤ 30 days | Operator discretion |
+
+A record whose age exceeds its category's retention MUST be either tombstoned (memory, session-body) or redacted in new exports (audit-personal). Runners MUST run a retention sweep at least every 24 hours (`SV-PRIV-04`).
+
+7. **Boundary with §10.5 WORM.** The WORM immutability requirement (§10.5) precludes destructive deletion of audit records but not structural redaction on export. Deployments needing hard-delete for regulatory reasons beyond the `SubjectSuppression` stub MUST NOT claim conformance with `core+si`; that conflict is acknowledged as a known limitation of v1.0 and is NOT resolvable within §19.4 two-minor evolution.
+
 ---
 
 ## 11. Tool Registry & Pool Assembly
@@ -1427,7 +1488,7 @@ Notes on the table:
   **A2A JWT normative profile:**
   1. **Algorithm allowlist.** `alg ∈ {EdDSA, ES256, RS256}`. RS256 requires key size ≥ 3072 bits. Any other `alg` MUST be rejected with `HandoffRejected` (reason `bad-alg`). (SV-A2A-10)
   2. **Signing-key discovery.** The signing key MUST match ONE of:
-     - The caller's Agent Card JWS signer `kid` — same trust anchor, same SPKI as the `agent-card.jws` header. Default when the transport is not mutually authenticated.
+     - The caller's Agent Card JWS signer `kid` — same trust anchor, same SPKI as the `agent-card.jws` header. Default when the transport is not mutually authenticated. To obtain the caller's Agent Card the receiver MUST issue an HTTPS GET to the URL supplied in the JWT `sub` claim, with a connection timeout ≤ 3 s and a total-request deadline ≤ 5 s; if the fetch fails, times out, or returns a body that does not validate against §6 the receiver MUST reject the handoff with `HandoffRejected` (reason `card-unreachable`). A freshly-fetched Agent Card JWS MAY be cached for up to 60 s (the same window used for `agent_card_etag` in step 4) to avoid per-request fetches.
      - The SPKI of the caller's mTLS client certificate when the handoff is served behind mTLS. The JWT header MUST carry `x5t#S256` (RFC 7515 §4.1.8) whose value matches the SHA-256 of the DER-encoded client certificate presented at the TLS handshake.
      No other discovery mechanism is permitted; a JWT whose signing key cannot be resolved via either path MUST be rejected with `HandoffRejected` (reason `key-not-found`). (SV-A2A-11)
   3. **`jti` replay cache.** Receiver MUST reject a repeated `jti` within a retention window of `exp + 30 s = 330 s` from first observation with `HandoffRejected` (reason `jti-replay`). Cache MAY be per-connection (mTLS-scoped) or per-(`iss`,`aud`) keyed. (SV-A2A-12)
@@ -1571,6 +1632,25 @@ All fields are **Stable** unless noted otherwise in `stability-tiers.md`.
 |---|---|---|
 | 1.0 | 1.0 only (no predecessors) | 1.0 |
 
+#### 19.4.1 Wire-Level Version Negotiation (Normative)
+
+SemVer compatibility (§19.4) defines WHICH peer versions can interoperate. This subsection defines HOW two peers discover and agree on a shared wire version at connection time.
+
+1. **Advertisement.** Every SOA-Harness endpoint MUST advertise its supported Core version set:
+   - Agent Card: field `supported_core_versions` (array of `"A.B"` strings; MUST include `soaHarnessVersion`; MAY include earlier minors within the §19.4 two-minor window).
+   - A2A `agent.describe` result: the returned Agent Card carries the same field; no separate advertisement is required.
+   - UI Gateway discovery document (UI §5.1): field `supported_core_versions` with the same semantics, reflecting the Core version the Gateway's Runner backend supports.
+2. **Selection.** A caller establishing a session (A2A handoff, WebSocket/SSE attach, `handoff.offer`, etc.) MUST:
+   - Compute the intersection of its own `supported_core_versions` and the callee's advertised set.
+   - If the intersection is empty, abort with `VersionNegotiationFailed` (§24) and JSON-RPC error `-32061` on A2A, `ui.version-mismatch` on UI transports. No further traffic is permitted on the connection.
+   - Otherwise SELECT the highest version (lexicographically, treating the `A.B` pair as a (major, minor) numeric tuple) present in the intersection. That value is the **negotiated Core version** for the session.
+3. **Binding.** The negotiated version MUST be echoed in:
+   - A2A JWT claim `soa_core_version` (new REQUIRED claim; receivers MUST reject a handoff whose `soa_core_version` is absent or disagrees with the advertised intersection with `HandoffRejected` reason `version-not-negotiated`).
+   - UI session-attach frame `negotiated_core_version` (per UI §6.x session handshake).
+   - OTel `resource` attribute `soa.core.version` on every span emitted for that session.
+4. **Lifetime.** The negotiated version is frozen for the session's duration; mid-session renegotiation is NOT supported. A peer that updates its supported set during a session MUST close existing sessions before accepting traffic under the new set (graceful drain permitted).
+5. **Test coverage.** `SV-GOV-08` (empty-intersection → `VersionNegotiationFailed`), `SV-GOV-09` (highest-common selection across a three-version intersection), `SV-GOV-10` (JWT claim binding on A2A).
+
 ### 19.5 Deprecation
 
 - A field marked deprecated in release N MUST still work through release N+2.
@@ -1641,7 +1721,7 @@ The self-improvement loop optimizes a measurable aggregate score; Goodhart's Law
 - **Immutable task set** (§9.1): `/tasks/` is immutable to the meta-agent.
 - **Fingerprint audit** (§9.5 steps 2, 12): iteration fingerprints recorded to the audit chain.
 - **Novelty quota (enforced)**: the Runner MUST compute `tasks_fingerprint` using the following deterministic algorithm at each iteration:
-  1. Enumerate every immediate child directory of `/tasks/` (recursively only if a child declares `task.json`; subdirectories without `task.json` are ignored).
+  1. Enumerate every immediate child directory of `/tasks/`. A directory is a *task directory* iff it contains a regular file named `task.json` (not a symlink, not a directory). Descend recursively only into immediate child directories that are themselves task directories; subdirectories without `task.json` are ignored entirely (neither enumerated nor descended into).
   2. For each task directory, compute the tuple:
      `{ "task_id": <dir name>, "task_json_sha256": <hex SHA-256 of the JCS-RFC-8785-canonical bytes of task.json>, "dockerfile_sha256": <hex SHA-256 of the raw UTF-8 Dockerfile bytes>, "entrypoint_sha256": <hex SHA-256 of the raw UTF-8 entrypoint.sh bytes, or the literal string "absent" if the file is not present> }`.
   3. Sort the resulting array by `task_id` in code-unit lexicographic order.
@@ -1673,6 +1753,8 @@ Note: `PermissionPrompt` is a StreamEvent type, not an error code (§14.1); earl
 **Host**: `HostHardeningInsufficient`
 **Stream**: `ConsumerLagging`, `ResumeGap`, `ManifestDigestMismatch`
 **Config**: `ConfigOverride`
+**Version**: `VersionNegotiationFailed`
+**Privacy**: `SubjectSuppression`
 
 A full JSON catalog is published at `https://soa-harness.org/errors/v1.0.json`.
 

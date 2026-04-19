@@ -190,7 +190,10 @@ for (const a of manifest.artifacts.supplementary_artifacts) {
 
 ## Security posture
 
-- **Trust bootstrap:** §5.3 (SDK-pinned / operator-bundled / DNSSEC TXT) + §5.3.1 rotation (≥ 365 d scheduled; ≤ 4 h emergency compromise response; ≥ 30 d overlap; M-of-N signing RECOMMENDED). Test: `SV-BOOT-04`.
+- **Trust bootstrap:** §5.3 (SDK-pinned / operator-bundled / DNSSEC TXT) + §5.3.1 rotation (≥ 365 d scheduled; ≤ 4 h emergency compromise response; ≥ 30 d overlap; M-of-N signing RECOMMENDED) + §5.3.2 anchor-disagreement / split-brain fail-closed rules driven by `SOA_BOOTSTRAP_CHANNEL`. Tests: `SV-BOOT-04..06`. The operator-bundled file is now schema-pinned (`schemas/initial-trust.schema.json`).
+- **Signing profile:** §6.1.1 pins `x5c` to leaf-first chain ordering with mandatory intermediates (`SV-SIGN-04`).
+- **Version negotiation:** §19.4.1 defines wire-level supported-set intersection, highest-common selection, and session-lifetime binding on A2A (`soa_core_version` JWT claim) and UI session-attach; `VersionNegotiationFailed` on empty intersection (`SV-GOV-08..10`).
+- **Privacy + data governance:** §10.7 adds `data_class` tagging, `privacy.delete_subject` / `privacy.export_subject` MCP tools, `SubjectSuppression` audit records, retention categories with a 24-hour sweep, and an optional `security.data_residency` geographic pin (`SV-PRIV-01..04`).
 - **Threat model:** Core §25 (informative) catalogs 9 named adversary classes, 22 attack-surface vectors, and cross-references every normative mitigation. Out-of-scope / residual-risk items are explicit (HSM extraction, model-level prompt injection, volumetric DoS, ±30s clock-skew bound). Operators whose threat model exceeds v1.0 MUST layer additional controls outside the harness.
 
 ## Version

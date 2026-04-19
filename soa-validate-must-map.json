@@ -44,7 +44,8 @@
     "SV-A2A":    "Agent2Agent wire protocol.",
     "SV-GOV":    "Governance + versioning + normative-reference pinning.",
     "SV-CLUS":   "Cluster coordination + concurrency.",
-    "SV-GOOD":   "Goodhart mitigations (§23)."
+    "SV-GOOD":   "Goodhart mitigations (§23).",
+    "SV-PRIV":   "Privacy and data-governance controls (§10.7)."
   },
 
   "tests": {
@@ -78,9 +79,12 @@
     "SV-BOOT-02":{ "name": "Operator-bundled bootstrap",  "section": "§5.3", "section_title": "External Bootstrap Root", "profile": "core", "severity": "critical", "assertion": "When the operator-bundled channel is declared, initial-trust.json is loaded at startup before any Agent Card; absence fails startup with HostHardeningInsufficient(reason=bootstrap-missing)." },
     "SV-BOOT-03":{ "name": "DNSSEC TXT bootstrap",        "section": "§5.3", "section_title": "External Bootstrap Root", "profile": "core", "severity": "critical", "assertion": "When the DNSSEC channel is declared, the Runner resolves _soa-trust.<domain> TXT, requires the AD bit, and treats empty / unvalidated results as HostHardeningInsufficient(reason=bootstrap-missing)." },
     "SV-BOOT-04":{ "name": "Bootstrap key rotation + compromise","section": "§5.3.1","section_title": "Bootstrap-Key Rotation and Compromise", "profile": "core", "severity": "critical", "assertion": "Runner polls bootstrap channel at ≤ 24 h interval; on revoked publisher_kid observation it rejects Agent Cards referencing the revoked value with HostHardeningInsufficient(reason=bootstrap-revoked), halts SI, and flags all MANIFEST JWS accepted in the preceding 24 h as SuspectDecision. Rotation overlap ≥ 30 d honored during transition." },
+    "SV-BOOT-05":{ "name": "Anchor disagreement / split-brain","section": "§5.3.2","section_title": "Anchor Disagreement and Split-Brain", "profile": "core", "severity": "critical", "assertion": "SOA_BOOTSTRAP_CHANNEL is the sole authoritative source; a disagreeing publisher_kid observed on any non-authoritative channel triggers HostHardeningInsufficient(reason=bootstrap-split-brain), SI halt, and rejection of Agent Cards whose security.trustAnchors[].publisher_kid matches the dissenting value. Multi-channel agreement does not trigger. Recovery requires removing the dissenting artifact or rotating the authoritative channel per §5.3.1." },
+    "SV-BOOT-06":{ "name": "initial-trust.json schema conformance","section": "§5.3","section_title": "External Bootstrap Root", "profile": "core", "severity": "critical", "assertion": "For operator-bundled deployments, initial-trust.json validates against schemas/initial-trust.schema.json (required fields soaHarnessVersion='1.0', publisher_kid, spki_sha256 matching /^[A-Fa-f0-9]{64}$/, issuer); validation failure fails startup with HostHardeningInsufficient(reason=bootstrap-missing)." },
     "SV-SIGN-01":{ "name": "Agent Card JWS profile",      "section": "§6.1.1", "section_title": "Artifact Signing Profile", "profile": "core", "severity": "critical", "assertion": "Agent Card JWS uses detached serialization over JCS(agent-card.json), alg ∈ {EdDSA,ES256,RS256≥3072}, typ=soa-agent-card+jws, header carries kid and x5c; mismatch → CardSignatureFailed." },
     "SV-SIGN-02":{ "name": "program.md JWS profile",      "section": "§6.1.1", "section_title": "Artifact Signing Profile", "profile": "core+si", "severity": "critical", "assertion": "program.md JWS is detached over the raw UTF-8 bytes (NOT JCS), alg ∈ {EdDSA,ES256}, typ=soa-program+jws." },
     "SV-SIGN-03":{ "name": "MANIFEST JWS profile",        "section": "§6.1.1, §9.7.1", "section_title": "Artifact Signing Profile", "profile": "core", "severity": "critical", "assertion": "MANIFEST.json.jws is detached over JCS(MANIFEST.json), alg ∈ {EdDSA,ES256} (RS256 forbidden), typ=soa-manifest+jws, header.kid equals the configured publisher_kid." },
+    "SV-SIGN-04":{ "name": "x5c chain depth and ordering","section": "§6.1.1", "section_title": "Artifact Signing Profile", "profile": "core", "severity": "critical", "assertion": "Agent Card JWS x5c header is an RFC 7515 §4.1.6 array ordered leaf-first (index 0 = signing cert) including every intermediate certificate required to chain to an anchor in security.trustAnchors; trust-anchor root MAY be omitted. Verifiers reject leaf-only x5c with CardSignatureFailed(reason=x5c-chain-incomplete) when an intermediate is missing from the anchor store." },
     "SV-A2A-10":{ "name": "A2A JWT algorithm allowlist",  "section": "§17.1", "section_title": "A2A Wire Protocol", "profile": "core+handoff", "severity": "critical", "assertion": "A2A JWT alg ∈ {EdDSA,ES256,RS256}; RS256 requires key size ≥ 3072; any other alg rejected with HandoffRejected(reason=bad-alg)." },
     "SV-A2A-11":{ "name": "A2A signing-key discovery",    "section": "§17.1", "section_title": "A2A Wire Protocol", "profile": "core+handoff", "severity": "critical", "assertion": "A2A JWT signing key matches either (a) the caller's Agent Card JWS signer kid (same trust anchor, same SPKI) or (b) the SPKI of the caller's mTLS client certificate with the x5t#S256 header present." },
     "SV-A2A-12":{ "name": "A2A jti replay cache",         "section": "§17.1", "section_title": "A2A Wire Protocol", "profile": "core+handoff", "severity": "critical", "assertion": "Receiver rejects a repeated jti within exp+30s (= 330s) from first observation with HandoffRejected(reason=jti-replay); cache MAY be per-connection (mTLS) or per-(iss,aud) keyed." },
@@ -173,6 +177,10 @@
     "SV-PERM-14": { "name": "Runner CRL refresh SLA",     "section": "§10.6", "section_title": "Handler Key Management", "profile": "core", "severity": "critical", "assertion": "Runner refreshes CRL at least once per 60 minutes; a newly-published CRL with a revoked kid is honored on the next refresh. The issuer-side 60-minute revocation obligation composes to an end-to-end ≤ 120-minute SLA; SV-PERM-14 measures the Runner-side refresh interval only." },
     "SV-PERM-15": { "name": "SuspectDecision flagging",   "section": "§10.6", "section_title": "Handler Key Management", "profile": "core", "severity": "moderate", "assertion": "Audit records signed by compromised kid in 24h preceding revocation are flagged SuspectDecision." },
     "SV-PERM-18": { "name": "CRL artifact schema",        "section": "§10.6.1","section_title":"CRL Artifact Format",    "profile": "core", "severity": "critical", "assertion": "CRL fetched from <trust-anchor-uri>/crl.json validates against crl.schema.json; past not_after with no fresh refresh, new high-risk decisions rejected with HandlerKeyRevoked(reason=crl-stale)." },
+    "SV-PRIV-01": { "name": "Data inventory present",     "section": "§10.7",  "section_title": "Privacy and Data-Governance Controls", "profile": "core", "severity": "moderate", "assertion": "docs/data-inventory.md exists; enumerates per-primitive fields that MAY carry personal data with retention category and asserted legal basis. Absence fails conformance." },
+    "SV-PRIV-02": { "name": "data_class tagging + sensitive-class block","section": "§10.7","section_title": "Privacy and Data-Governance Controls", "profile": "core", "severity": "critical", "assertion": "Personal-data-carrying fields tagged with data_class ∈ {public,internal,confidential,personal,sensitive-personal} via x-soa-data-class. Untagged fields default to 'internal'. Memory consolidation of a 'sensitive-personal' entry emits MemoryDeletionForbidden(reason=sensitive-class-forbidden)." },
+    "SV-PRIV-03": { "name": "Subject delete + export tools","section": "§10.7.1","section_title": "Deletion and Subject-Access Semantics", "profile": "core", "severity": "critical", "assertion": "MCP tools privacy.delete_subject and privacy.export_subject are exposed. delete produces memory tombstones, SubjectSuppression audit record, and session-body tombstones. export returns JCS-canonical {memory,audit,sessions} with suppressed entries rendered as redacted stubs." },
+    "SV-PRIV-04": { "name": "Retention sweep",            "section": "§10.7.3", "section_title": "Retention", "profile": "core", "severity": "moderate", "assertion": "Runner runs a retention sweep at least every 24 h; records past category horizon are tombstoned (memory, session-body) or redacted-on-export (audit-personal); audit-integrity records are never destructively deleted." },
     "SV-PERM-16": { "name": "WORM retention tiers",       "section": "§10.5", "section_title": "Audit Trail",           "profile": "core", "severity": "moderate", "assertion": "DangerFullAccess sessions retained ≥ 365 days; other sessions ≥ 90 days." },
     "SV-PERM-17": { "name": "Audit-reader access",        "section": "§10.5", "section_title": "Audit Trail",           "profile": "core", "severity": "moderate", "assertion": "Read-only verifier credentials can list/read records without write authority." },
 
@@ -244,6 +252,9 @@
     "SV-GOV-05": { "name": "Errata URL reachable",        "section": "§19.2", "section_title": "Errata",                  "profile": "core", "severity": "minor",    "assertion": "Published errata URL returns 200 with JSON-formatted errata." },
     "SV-GOV-06": { "name": "soa-validate pinned",         "section": "§18.1", "section_title": "Distribution",            "profile": "core", "severity": "moderate", "assertion": "soa-validate binary digest matches release-tag manifest." },
     "SV-GOV-07": { "name": "Normative references pinned", "section": "§2",    "section_title": "Normative References",    "profile": "core", "severity": "moderate", "assertion": "Every entry in §2 resolves to a URL/tag with an immutable digest or version. Wall-clock citations rejected." },
+    "SV-GOV-08": { "name": "Version negotiation: empty intersection","section": "§19.4.1","section_title":"Wire-Level Version Negotiation","profile": "core", "severity": "critical", "assertion": "When a caller's and callee's supported_core_versions sets have empty intersection, the session is aborted with VersionNegotiationFailed; A2A returns JSON-RPC -32061; UI transports return ui.version-mismatch. No further traffic permitted." },
+    "SV-GOV-09": { "name": "Version negotiation: highest-common selection","section": "§19.4.1","section_title":"Wire-Level Version Negotiation","profile": "core", "severity": "moderate", "assertion": "Given an intersection {1.0, 1.1, 1.2}, the negotiated version is the highest value by (major,minor) numeric tuple — here 1.2. Lower values are not selected when higher values are present in the intersection." },
+    "SV-GOV-10": { "name": "Version negotiation: binding on A2A","section": "§19.4.1","section_title":"Wire-Level Version Negotiation","profile": "core+handoff", "severity": "critical", "assertion": "A2A JWT carries soa_core_version claim matching the negotiated version; absent or mismatched claim → HandoffRejected(reason=version-not-negotiated)." },
 
     "SV-CLUS-01": { "name": "Local lock (default)",       "section": "§12.4", "section_title": "Concurrency",             "profile": "core", "severity": "moderate", "assertion": "Single-host contention → SelfImproveLockBusy after 30s." },
     "SV-CLUS-02": { "name": "Distributed fencing",        "section": "§12.4", "section_title": "Concurrency",             "profile": "core", "severity": "moderate", "assertion": "SOA_COORD_MODE=distributed: commits carry Soa-Fencing-Token trailer." },
@@ -275,11 +286,12 @@
     "SV-A2A":    ["SV-A2A-01","SV-A2A-02","SV-A2A-03","SV-A2A-04","SV-A2A-05","SV-A2A-06","SV-A2A-07","SV-A2A-08","SV-A2A-09","SV-A2A-10","SV-A2A-11","SV-A2A-12","SV-A2A-13","SV-A2A-14"],
     "SV-PRIN":   ["SV-PRIN-01","SV-PRIN-02","SV-PRIN-03","SV-PRIN-04","SV-PRIN-05"],
     "SV-STACK":  ["SV-STACK-01","SV-STACK-02"],
-    "SV-BOOT":   ["SV-BOOT-01","SV-BOOT-02","SV-BOOT-03","SV-BOOT-04"],
-    "SV-SIGN":   ["SV-SIGN-01","SV-SIGN-02","SV-SIGN-03"],
-    "SV-GOV":    ["SV-GOV-01","SV-GOV-02","SV-GOV-03","SV-GOV-04","SV-GOV-05","SV-GOV-06","SV-GOV-07"],
+    "SV-BOOT":   ["SV-BOOT-01","SV-BOOT-02","SV-BOOT-03","SV-BOOT-04","SV-BOOT-05","SV-BOOT-06"],
+    "SV-SIGN":   ["SV-SIGN-01","SV-SIGN-02","SV-SIGN-03","SV-SIGN-04"],
+    "SV-GOV":    ["SV-GOV-01","SV-GOV-02","SV-GOV-03","SV-GOV-04","SV-GOV-05","SV-GOV-06","SV-GOV-07","SV-GOV-08","SV-GOV-09","SV-GOV-10"],
     "SV-CLUS":   ["SV-CLUS-01","SV-CLUS-02","SV-CLUS-03","SV-CLUS-04"],
-    "SV-GOOD":   ["SV-GOOD-01","SV-GOOD-02","SV-GOOD-03","SV-GOOD-04","SV-GOOD-05","SV-GOOD-06","SV-GOOD-07"]
+    "SV-GOOD":   ["SV-GOOD-01","SV-GOOD-02","SV-GOOD-03","SV-GOOD-04","SV-GOOD-05","SV-GOOD-06","SV-GOOD-07"],
+    "SV-PRIV":   ["SV-PRIV-01","SV-PRIV-02","SV-PRIV-03","SV-PRIV-04"]
   },
 
   "must_coverage": {
@@ -300,10 +312,13 @@
     "§6.1#fail-closed":  { "title": "Fail closed on invalid",       "tests": ["SV-CARD-09","HR-12"] },
     "§4#principles":     { "title": "Core Principles",              "tests": ["SV-PRIN-01","SV-PRIN-02","SV-PRIN-03","SV-PRIN-04","SV-PRIN-05"] },
     "§5#stack":          { "title": "Required stack + primitives",  "tests": ["SV-STACK-01","SV-STACK-02"] },
-    "§5.3#bootstrap":    { "title": "External bootstrap root",      "tests": ["SV-BOOT-01","SV-BOOT-02","SV-BOOT-03"] },
+    "§5.3#bootstrap":    { "title": "External bootstrap root",      "tests": ["SV-BOOT-01","SV-BOOT-02","SV-BOOT-03","SV-BOOT-06"] },
     "§5.3.1#rotation":   { "title": "Bootstrap-key rotation + compromise","tests": ["SV-BOOT-04"] },
-    "§6.1.1#signing":    { "title": "Per-artifact JWS signing profile","tests": ["SV-SIGN-01","SV-SIGN-02","SV-SIGN-03"] },
+    "§5.3.2#split-brain":{ "title": "Anchor disagreement / split-brain","tests": ["SV-BOOT-05"] },
+    "§6.1.1#signing":    { "title": "Per-artifact JWS signing profile","tests": ["SV-SIGN-01","SV-SIGN-02","SV-SIGN-03","SV-SIGN-04"] },
     "§17.1#jwt":         { "title": "A2A JWT algorithm, key discovery, replay, etag","tests": ["SV-A2A-10","SV-A2A-11","SV-A2A-12","SV-A2A-13"] },
+    "§19.4.1#negotiation":{ "title": "Wire-level version negotiation","tests": ["SV-GOV-08","SV-GOV-09","SV-GOV-10"] },
+    "§10.7#privacy":     { "title": "Privacy and data-governance controls","tests": ["SV-PRIV-01","SV-PRIV-02","SV-PRIV-03","SV-PRIV-04"] },
     "§6.2#schema":       { "title": "Card schema validation",       "tests": ["SV-CARD-05"] },
     "§6.2#const-version":{ "title": "soaHarnessVersion const",      "tests": ["SV-CARD-06","SV-GOV-01"] },
     "§6.2#addl-false":   { "title": "additionalProperties false",   "tests": ["SV-CARD-07"] },
@@ -371,12 +386,12 @@
   "execution_order": {
     "notes": "Tests ordered by dependency: encoding/static configuration first, then security headers, auth, enrollment; envelope and subscribe require auth; content safety and prompts require envelope; handoff and SI are terminal phases. Every ID listed below is literal — no glob or range expansion.",
     "phases": [
-      { "phase": 1, "name": "Encoding & Static Hygiene", "tests": ["SV-ENC-01","SV-ENC-02","SV-ENC-03","SV-ENC-04","SV-ENC-05","SV-ENC-06","SV-ENC-07","SV-GOV-07","SV-PRIN-01","SV-PRIN-02","SV-PRIN-03","SV-PRIN-04","SV-PRIN-05","SV-STACK-01","SV-STACK-02","SV-BOOT-01","SV-BOOT-02","SV-BOOT-03","SV-BOOT-04"] },
-      { "phase": 2, "name": "Agent Card Discovery & Schema", "tests": ["SV-CARD-01","SV-CARD-02","SV-CARD-03","SV-CARD-04","SV-CARD-05","SV-CARD-06","SV-CARD-07","SV-CARD-08","SV-CARD-09","SV-CARD-10","SV-CARD-11","SV-SIGN-01","SV-SIGN-02","SV-SIGN-03"] },
+      { "phase": 1, "name": "Encoding & Static Hygiene", "tests": ["SV-ENC-01","SV-ENC-02","SV-ENC-03","SV-ENC-04","SV-ENC-05","SV-ENC-06","SV-ENC-07","SV-GOV-07","SV-PRIN-01","SV-PRIN-02","SV-PRIN-03","SV-PRIN-04","SV-PRIN-05","SV-STACK-01","SV-STACK-02","SV-BOOT-01","SV-BOOT-02","SV-BOOT-03","SV-BOOT-04","SV-BOOT-05","SV-BOOT-06","SV-PRIV-01"] },
+      { "phase": 2, "name": "Agent Card Discovery & Schema", "tests": ["SV-CARD-01","SV-CARD-02","SV-CARD-03","SV-CARD-04","SV-CARD-05","SV-CARD-06","SV-CARD-07","SV-CARD-08","SV-CARD-09","SV-CARD-10","SV-CARD-11","SV-SIGN-01","SV-SIGN-02","SV-SIGN-03","SV-SIGN-04"] },
       { "phase": 3, "name": "Static Configuration (AGENTS.md, Registry, Governance — includes SI-gated static checks)",
         "tests": ["SV-AGENTS-01","SV-AGENTS-02","SV-AGENTS-03","SV-AGENTS-04","SV-AGENTS-05","SV-AGENTS-06","SV-AGENTS-07","SV-AGENTS-08",
                   "SV-REG-01","SV-REG-02","SV-REG-03","SV-REG-04","SV-REG-05",
-                  "SV-GOV-01","SV-GOV-02","SV-GOV-03","SV-GOV-04","SV-GOV-05","SV-GOV-06"] },
+                  "SV-GOV-01","SV-GOV-02","SV-GOV-03","SV-GOV-04","SV-GOV-05","SV-GOV-06","SV-GOV-08","SV-GOV-09"] },
       { "phase": 4, "name": "Runtime Core",
         "tests": ["SV-MEM-01","SV-MEM-02","SV-MEM-03","SV-MEM-04","SV-MEM-05","SV-MEM-06","SV-MEM-07","SV-MEM-08",
                   "SV-PERM-01","SV-PERM-02","SV-PERM-03","SV-PERM-04","SV-PERM-05","SV-PERM-06","SV-PERM-07","SV-PERM-08","SV-PERM-09","SV-PERM-10","SV-PERM-11","SV-PERM-12","SV-PERM-13","SV-PERM-14","SV-PERM-15","SV-PERM-16","SV-PERM-17","SV-PERM-18",
@@ -384,6 +399,7 @@
                   "SV-STR-01","SV-STR-02","SV-STR-03","SV-STR-04","SV-STR-05","SV-STR-06","SV-STR-07","SV-STR-08","SV-STR-09","SV-STR-10","SV-STR-11","SV-STR-12","SV-STR-13","SV-STR-14","SV-STR-15","SV-STR-16",
                   "SV-HOOK-01","SV-HOOK-02","SV-HOOK-03","SV-HOOK-04","SV-HOOK-05","SV-HOOK-06","SV-HOOK-07","SV-HOOK-08",
                   "SV-SESS-01","SV-SESS-02","SV-SESS-03","SV-SESS-04","SV-SESS-05","SV-SESS-06","SV-SESS-07","SV-SESS-08","SV-SESS-09","SV-SESS-10",
+                  "SV-PRIV-02","SV-PRIV-03","SV-PRIV-04",
                   "HR-01","HR-02","HR-03","HR-04","HR-05","HR-06","HR-07","HR-11","HR-12","HR-13","HR-14","HR-17","HR-18"] },
       { "phase": 5, "name": "Self-Improvement",
         "tests": ["SV-SI-01","SV-SI-02","SV-SI-03","SV-SI-04","SV-SI-05","SV-SI-06","SV-SI-07","SV-SI-08","SV-SI-09","SV-SI-10","SV-SI-11","SV-SI-12","SV-SI-13","SV-SI-14","SV-SI-15","SV-SI-16","SV-SI-17","SV-SI-18","SV-SI-19","SV-SI-20","SV-SI-21","SV-SI-22","SV-SI-23","SV-SI-24","SV-SI-25","SV-SI-26","SV-SI-27","SV-SI-28","SV-SI-29","SV-SI-30","SV-SI-31","SV-SI-32",
@@ -391,7 +407,7 @@
                   "SV-CLUS-01","SV-CLUS-02","SV-CLUS-03","SV-CLUS-04",
                   "HR-08","HR-09","HR-10","HR-16"] },
       { "phase": 6, "name": "Handoff",
-        "tests": ["SV-A2A-01","SV-A2A-02","SV-A2A-03","SV-A2A-04","SV-A2A-05","SV-A2A-06","SV-A2A-07","SV-A2A-08","SV-A2A-09","SV-A2A-10","SV-A2A-11","SV-A2A-12","SV-A2A-13","SV-A2A-14","HR-15"] }
+        "tests": ["SV-A2A-01","SV-A2A-02","SV-A2A-03","SV-A2A-04","SV-A2A-05","SV-A2A-06","SV-A2A-07","SV-A2A-08","SV-A2A-09","SV-A2A-10","SV-A2A-11","SV-A2A-12","SV-A2A-13","SV-A2A-14","SV-GOV-10","HR-15"] }
     ]
   }
 }

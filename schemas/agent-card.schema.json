@@ -63,6 +63,19 @@
       "minLength": 1,
       "maxLength": 255
     },
+    "supported_core_versions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^\\d+\\.\\d+$"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "default": [
+        "1.0"
+      ],
+      "description": "Wire-level version advertisement per §19.4.1. MUST include the value of soaHarnessVersion; MAY include earlier minors within the two-minor compatibility window."
+    },
     "self_improvement": {
       "type": "object",
       "required": [
