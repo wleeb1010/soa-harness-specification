@@ -4,8 +4,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const DL = "C:/Users/wbrumbalow/Downloads";
+const DL = process.env.SOA_BUNDLE_ROOT
+  ?? path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(DL, "schemas");
 fs.mkdirSync(OUT, { recursive: true });
 

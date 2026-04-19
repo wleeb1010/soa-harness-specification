@@ -191,12 +191,15 @@
     "UV-GOV-04":{ "name": "Gateway accepts N-1 UI",      "section": "§20.2", "profile": "all", "assertion": "Gateway accepts UIs one minor version behind." },
     "UV-GOV-05":{ "name": "UI accepts N-1 Gateway",      "section": "§20.2", "profile": "all", "assertion": "UI accepts Gateway one minor version behind unless a required MUST is missing, in which case it presents an actionable upgrade message." },
 
-    "UV-ERR-01":{ "name": "Closed error set emission",   "section": "§21",   "profile": "all", "assertion": "Observed ui.* error codes ⊆ §21 table; each carries the specified HTTP status or WS close code (except `ui.backpressure` which is a diagnostic counter, not an emitted error envelope)." }
+    "UV-ERR-01":{ "name": "Closed error set emission",   "section": "§21",   "profile": "all", "assertion": "Observed ui.* error codes ⊆ §21 table; each carries the specified HTTP status or WS close code. §21.1 diagnostic counters (e.g., ui.backpressure) are surfaced in observability metrics only and are explicitly outside the closed error set." },
+    "UV-A-16":  { "name": "Runner discovery fields",     "section": "§5, §7.1, §7.4", "profile": "all", "assertion": "Discovery doc exposes `runner_endpoint` (https URL) AND `runner_mtls_ca_digest` (sha256:<64 hex>) AND `stream_scope_template` OR explicitly declares co-hosted mode via `runner_endpoint: \"loopback\"`; Gateway composes SSE URL by the published template; broader token-exchange scopes refused by the authorization server." },
+    "UV-SESS-06a":{ "name": "Artifacts origin in discovery", "section": "§5.1, §7.1", "profile": "all", "assertion": "Discovery doc exposes `artifacts_origin` (https URL); its eTLD+1 differs from the UI origin's; topology-probe.md (automated) passes." }
   },
 
   "must_coverage": {
     "§1":    { "tests": ["UV-E-01","UV-E-02","UV-E-03"] },
     "§5.1":  { "tests": ["UV-A-01","UV-A-02","UV-A-03","UV-A-04"] },
+    "§5.1":  { "tests": ["UV-SESS-06a"] },
     "§5.2":  { "tests": ["UV-SESS-06"] },
     "§6.1":  { "tests": ["UV-T-01","UV-T-02"] },
     "§6.3":  { "tests": ["UV-T-03"] },
@@ -205,7 +208,7 @@
     "§6.5":  { "tests": ["UV-S-01","UV-S-02","UV-S-03","UV-S-04","UV-S-05"] },
     "§7.2":  { "tests": ["UV-A-05","UV-A-06","UV-A-07"] },
     "§7.3":  { "tests": ["UV-P-11","UV-P-12","UV-P-13","UV-A-15"] },
-    "§7.4":  { "tests": ["UV-A-08","UV-A-14"] },
+    "§7.4":  { "tests": ["UV-A-08","UV-A-14","UV-A-16"] },
     "§7.5":  { "tests": ["UV-A-09"] },
     "§7.6":  { "tests": ["UV-A-10","UV-A-11"] },
     "§8.1":  { "tests": ["UV-E-04"] },
@@ -268,8 +271,8 @@
   "execution_order": {
     "notes": "ui-validate runs tests in dependency order: transport & CSP before subscribe; auth before prompt; enrollment before attestation; envelope before content-safety. Every ID listed below is literal. Phase 13 is a gate: on web/ide profiles, Phase 14 is not reached if Phase 13 fails. UV-X-05† is enforced as REQUIRED for web/ide via UV-GOV-02.",
     "phases": [
-      { "phase": 1, "name": "Transport & Security Headers", "tests": ["UV-T-01","UV-T-02","UV-T-03","UV-T-04","UV-T-10","UV-S-01","UV-S-02","UV-S-03","UV-S-04","UV-S-05"] },
-      { "phase": 2, "name": "Auth & Token Hygiene",          "tests": ["UV-A-01","UV-A-02","UV-A-03","UV-A-05","UV-A-06","UV-A-07","UV-A-08","UV-A-10","UV-A-11","UV-A-12","UV-A-13","UV-A-14"] },
+      { "phase": 1, "name": "Transport & Security Headers", "tests": ["UV-T-01","UV-T-02","UV-T-03","UV-T-04","UV-T-10","UV-S-01","UV-S-02","UV-S-03","UV-S-04","UV-S-05","UV-SESS-06a"] },
+      { "phase": 2, "name": "Auth & Token Hygiene",          "tests": ["UV-A-01","UV-A-02","UV-A-03","UV-A-05","UV-A-06","UV-A-07","UV-A-08","UV-A-10","UV-A-11","UV-A-12","UV-A-13","UV-A-14","UV-A-16"] },
       { "phase": 3, "name": "Enrollment",                    "tests": ["UV-P-11","UV-P-12","UV-P-13","UV-A-15"] },
       { "phase": 4, "name": "Envelope & Subscribe",          "tests": ["UV-E-01","UV-E-02","UV-E-03","UV-E-04","UV-E-05","UV-E-06","UV-E-07","UV-E-08","UV-T-05","UV-T-06","UV-T-07","UV-T-08","UV-T-09","UV-F-01","UV-F-02"] },
       { "phase": 5, "name": "Scope & Stub",                  "tests": ["UV-A-04","UV-A-09","UV-P-03","UV-SC-21"] },

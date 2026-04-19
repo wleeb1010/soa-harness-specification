@@ -1,0 +1,1 @@
+{"task_id":"alpha-adder","version":"1.0.0","description":"Return the sum of two integers read from /inputs/a.txt and /inputs/b.txt.","scoring":{"kind":"numeric","tolerance":0},"resources":{"memory_mib":256,"cpus":1,"wall_clock_seconds":30},"env":{}}

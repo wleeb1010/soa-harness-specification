@@ -6,12 +6,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
 
-const DL = "C:/Users/wbrumbalow/Downloads";
+// Repo root — script runs from either the project dir or with the path overridden.
+const DL = process.env.SOA_BUNDLE_ROOT
+  ?? path.dirname(fileURLToPath(import.meta.url));
 
-// Minimal JCS implementation — sufficient for schema content (strings/objects/arrays,
-// integers within safe-int range). For full RFC 8785 conformance with floats, see
-// the `@filen/rfc8785` package; we don't need that here.
+// Minimal JCS — sufficient for this bundle's schema content (strings / objects /
+// arrays / safe-range integers only). Per Core §1, production signing paths that
+// may encounter non-integer numbers MUST use a library-grade RFC 8785 implementation
+// (e.g. `@filen/rfc8785`, `canonicaljson-go`, Python `rfc8785`). This builder is
+// audited to not hit those cases — schemas and must-maps are integer-only.
 function jcs(value) {
   if (value === null) return "null";
   if (typeof value === "boolean") return value ? "true" : "false";
@@ -88,6 +93,40 @@ for (const f of fs.readdirSync(schemaDir).sort()) {
     sha256: digestJson(path.join(schemaDir, f)),
     canonicalization: "JCS-RFC-8785"
   });
+}
+
+// Test vectors (mixed: JCS for signed JSON artifacts, raw-utf8 for everything else).
+function walk(dir, base) {
+  const out = [];
+  for (const f of fs.readdirSync(dir).sort()) {
+    const abs = path.join(dir, f);
+    const rel = path.posix.join(base, f);
+    const stat = fs.statSync(abs);
+    if (stat.isDirectory()) out.push(...walk(abs, rel));
+    else if (stat.isFile()) out.push({ abs, rel });
+  }
+  return out;
+}
+
+const testVectorsDir = path.join(DL, "test-vectors");
+if (fs.existsSync(testVectorsDir)) {
+  for (const { abs, rel } of walk(testVectorsDir, "test-vectors")) {
+    if (rel.endsWith(".json") && !rel.endsWith(".json.jws")) {
+      supplementary.push({
+        name: path.basename(rel),
+        path: rel,
+        sha256: digestJson(abs),
+        canonicalization: "JCS-RFC-8785"
+      });
+    } else {
+      supplementary.push({
+        name: path.basename(rel),
+        path: rel,
+        sha256: sha256Hex(fs.readFileSync(abs)),
+        canonicalization: "raw-utf8"
+      });
+    }
+  }
 }
 
 // -------- seccomp + validator-binary placeholders (required by release-manifest schema) --------

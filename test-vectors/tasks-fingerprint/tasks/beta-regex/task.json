@@ -1,0 +1,1 @@
+{"task_id":"beta-regex","version":"1.0.0","description":"Verify /inputs/msg.txt matches /inputs/pattern.txt as a POSIX ERE; emit MATCH or NOMATCH.","scoring":{"kind":"regex","pattern":"^MATCH$"},"resources":{"memory_mib":128,"cpus":1,"wall_clock_seconds":15},"env":{}}

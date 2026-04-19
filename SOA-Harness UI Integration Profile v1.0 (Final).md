@@ -135,10 +135,10 @@ See Appendix A for the full UI vs Gateway MUST matrix.
 
 ### 5.2 Deployment Topology Notes (Informative)
 
-- Artifacts SHOULD be served from a cookie-less origin distinct from the UI origin (§14.3, §15.4). (UV-SESS-06†, verified by the topology probe defined below.)
+- Artifacts MUST be served from a cookie-less origin distinct from the UI origin (§14.3, §15.4). The Gateway MUST publish the artifact origin in its discovery document as `artifacts_origin` (§7.1) so that UIs and conformance tooling can resolve it deterministically. (UV-SESS-06†, verified by the topology probe defined below.)
 
 **Topology probe (normative for UV-SESS-06†).** A conformance client MUST:
-(a) resolve `{{ARTIFACTS_ORIGIN}}` and `{{UI_ORIGIN}}` from the discovery document (§7.1);
+(a) resolve `artifacts_origin` (bound to the template variable `{{ARTIFACTS_ORIGIN}}`) and the deployment UI origin (`{{UI_ORIGIN}}`) from the discovery document (§7.1);
 (b) verify they differ by registrable domain (eTLD+1);
 (c) issue an HTTP GET to an artifact URL and confirm the response carries no `Set-Cookie` headers whose `Domain=` attribute is equal to or a suffix of the UI origin's eTLD+1;
 (d) confirm the artifact response sets `Cross-Origin-Resource-Policy: same-site` (or stricter).
@@ -257,6 +257,10 @@ The discovery document served at `/.well-known/soa-ui-config.json` MUST validate
     "max_event_bytes":                 { "type": "integer", "minimum": 1024, "maximum": 1048576 },
     "supported_profiles":              { "type": "array", "items": { "type": "string", "enum": ["web","ide","mobile","cli"] }, "uniqueItems": true, "minItems": 1 },
     "webauthn_rp_id":                  { "type": "string", "description": "Registrable-domain suffix for WebAuthn RP ID per §7.3; typically eTLD+1 shared by UI and Gateway origins." },
+    "artifacts_origin":                { "type": "string", "format": "uri", "pattern": "^https://", "description": "Base URL (scheme + registrable-domain host) from which the Gateway serves tool-output artifacts. MUST differ from the UI origin by eTLD+1 per §5.1 (UV-SESS-06†). The topology probe at test-vectors/topology-probe.md reads this field." },
+    "runner_endpoint":                 { "type": "string", "format": "uri", "pattern": "^https://", "description": "Base URL of the upstream SOA-Harness Runner the Gateway brokers for (§5, §14.3). Gateway composes `${runner_endpoint}/stream/v1/{session_id}` for SSE subscription. REQUIRED when Gateway is not co-hosted with Runner." },
+    "runner_mtls_ca_digest":           { "type": "string", "pattern": "^sha256:[A-Fa-f0-9]{64}$", "description": "SHA-256 of the mTLS CA bundle (DER-encoded root certificate) that the Gateway uses to authenticate the Runner. Out-of-band distribution of the CA itself; this field pins the digest so reconnecting clients can detect CA rotation." },
+    "stream_scope_template":           { "type": "string", "description": "RFC 6570 Level 1 URI template the Gateway uses to build the `scope` parameter for RFC 8693 token exchange on a per-session basis (§7.4). Default: `stream:read:{session_id}`. Admin consumers MAY use `stream:read:all`." },
     "local_ipc": {
       "type": "object",
       "additionalProperties": false,
@@ -339,6 +343,13 @@ An enrolled `kid` MUST be bound to one user_sub and one attestation format. A us
 ### 7.4 Token Exchange (Gateway → Runner)
 
 Gateway MUST exchange the UI token for a short-lived Runner credential via RFC 8693. UI MUST NOT receive, forward, or inspect Runner credentials. (UV-A-08)
+
+**Runner discovery (normative, UV-A-16).** The Gateway's upstream Runner is declared in the discovery document (§7.1) via three fields:
+- `runner_endpoint` — base URL the Gateway brokers for. The Gateway MUST compose the Runner SSE subscription URL as `${runner_endpoint}/stream/v1/{session_id}` per Core §14.3.
+- `runner_mtls_ca_digest` — SHA-256 of the DER-encoded mTLS CA root that signs the Runner's serving certificate. The Gateway MUST verify the Runner's presented certificate chains to a CA whose DER digest equals this value; on mismatch emit `ui.runner-mtls-failed` (§21).
+- `stream_scope_template` — RFC 6570 Level 1 URI template the Gateway MUST use to construct the `scope` parameter for token exchange. Default: `stream:read:{session_id}`; admin consumers MAY use `stream:read:all`. Runtime expansion MUST substitute the active `session_id`; requested scopes broader than the template's expansion MUST be refused by the authorization server.
+
+These fields are REQUIRED when the Gateway is not co-hosted with the Runner (the common case). Co-hosted deployments MAY omit them and rely on loopback + internal trust; this is a deployment choice, not a conformance exemption — `UV-A-16` MUST pass either by field presence or by an explicit `runner_endpoint: "loopback"` sentinel with matching co-host evidence.
 
 ### 7.5 Scopes and Filtering
 
@@ -1134,7 +1145,6 @@ All UI-surface errors use stable `ui.*` codes.
 | `ui.transport-unsupported` | Transport | 400 | 4005 | Unsupported transport |
 | `ui.frame-too-large` | Transport | 413 | 4005 | Exceeds `max_event_bytes` |
 | `ui.rate-limited` | Transport | 429 | 4006 | Per-profile ceiling exceeded |
-| `ui.backpressure` | Transport | — | — | Diagnostic; non-emitting — surfaces only in observability metrics, not in UI-visible error envelopes; `UV-ERR-01` excludes this row |
 | `ui.unknown-session` | Sub | 404 | 4005 | Unknown session id |
 | `ui.replay-gap` | Sub | 409 | 4002 | Requested sequence before retention |
 | `ui.replay-exhausted` | Sub | 200 (partial) | 4002 | Backfill truncated |
@@ -1157,6 +1167,14 @@ All UI-surface errors use stable `ui.*` codes.
 
 (UV-ERR-01: observed error codes are a subset of this closed set)
 
+### 21.1 Diagnostic Counters (Not Errors)
+
+These identifiers appear in observability dashboards and OTel metrics but are NOT emitted as UI-surface error envelopes and are NOT part of the §21 closed set for `UV-ERR-01` compliance. They are documented here so that implementers share a vocabulary.
+
+| Identifier | Surface | Meaning |
+|---|---|---|
+| `ui.backpressure` | Metric counter; OTel `soa_ui_backpressure_total` | Gateway is shedding non-essential events under load (§17.3). Emitted to the observability pipeline at most once per minute per session; never appears in a UI-visible error envelope. |
+
 ---
 
 ## 22. Appendix A — UI vs Gateway MUST Matrix
@@ -1172,7 +1190,7 @@ Rows are grouped by spec section; columns mark who owns the MUST.
 | 6.5 | CSP L3, HSTS, frame-ancestors, memory-only tokens | ✓ | ✓ (headers) |
 | 7.1 | Discovery doc published |  | ✓ |
 | 7.2 | Access-token hygiene, refresh PKCE | ✓ |  |
-| 7.3 | Enrollment flow (JWS or WebAuthn) accepted; `kid` assigned; CRL maintained | ✓ (produce) | ✓ (validate, store) |
+| 7.3 | Enrollment flow (JWS or WebAuthn) accepted; `kid` assigned; handler-key revocation via the Core §10.6.1 trust-anchor CRL (Gateway caches per §7.3 normative refresh interval; no separate UI CRL) | ✓ (produce) | ✓ (validate, store) |
 | 7.4 | Token-exchange UI→Runner |  | ✓ |
 | 7.5 | Scope filtering per session; stub-prompt for `ui.read` |  | ✓ |
 | 7.6 | Capability token with mTLS or DPoP binding | ✓ (DPoP) | ✓ |

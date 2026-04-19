@@ -20,13 +20,13 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "11ff8b8e1a7ffbf37dde067aa77e13d95bfabbc9dc414d1900a6be7efd17c6ac",
+        "sha256": "fbbb44e892e38770f5cd8a233d48aeb7c7aea29a93dca1e29ae1d829d24cc3d4",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "SOA-Harness UI Integration Profile v1.0 (Final).md",
         "path": "SOA-Harness UI Integration Profile v1.0 (Final).md",
-        "sha256": "a99a80435790f49de6596962a733a4248553d62fde718c2b3402c2ab872b6ed7",
+        "sha256": "b3670f498f3e2aa57223f67df2564fc814a7b6205cfca3b744518ae21cf40341",
         "canonicalization": "raw-utf8"
       },
       {
@@ -38,13 +38,13 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "2864ed61df309f24ad01082bac12c0506e5e12fb2e39c2e7964f5ec9c96762ec",
+        "sha256": "6483cc6a36be77bb3c2130288810d5906aac0e09f4a15994c79ba1c6061bc942",
         "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": "ui-validate-must-map.json",
         "path": "ui-validate-must-map.json",
-        "sha256": "ecf82f017084bcf9156e61f6926f54792c52eab871562dbe4e5b75cd4da41bf2",
+        "sha256": "1eae83042dcb5acd98364c4debcad42d41e39103dd0e7f24bee4699c07062a99",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -68,7 +68,7 @@
       {
         "name": "gateway-config.schema.json",
         "path": "schemas/gateway-config.schema.json",
-        "sha256": "57e191365ae9132bba081fa6a24a16f447e871771770baca2a0f39074f59cae1",
+        "sha256": "767f5eba844f76dfcd3786b83f8572ab8152246a851386c4b7d146d5a9cf01d2",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -124,6 +124,66 @@
         "path": "schemas/wcag-addendum.schema.json",
         "sha256": "282ecf25951210f2ea2c16811acd0a52ce13658fd13b71218382d59afe0f5702",
         "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "agent-card.json",
+        "path": "test-vectors/agent-card.json",
+        "sha256": "426505c59bee8d582cb9c6932f3f84d86d2b39877a02235a1f111c111b323044",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "agent-card.json.jws",
+        "path": "test-vectors/agent-card.json.jws",
+        "sha256": "12ef8c089337399e719b307ba70a855de00f13363836091eba5c19bdb6dc1341",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/tasks-fingerprint/README.md",
+        "sha256": "d8946baa59c63ee34aae63098717a31d7735e056934181d46ffbf037eda28381",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "compute.mjs",
+        "path": "test-vectors/tasks-fingerprint/compute.mjs",
+        "sha256": "99d654574c77cfbaa94a1db2a0ae52b55e6d3a473c86d7a1c4345a08e1df026e",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "Dockerfile",
+        "path": "test-vectors/tasks-fingerprint/tasks/alpha-adder/Dockerfile",
+        "sha256": "4595c4ac2e960e0da3bfecced1fe725eacbf007fe0ce1c3dd7caa50fa54ff8ae",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "entrypoint.sh",
+        "path": "test-vectors/tasks-fingerprint/tasks/alpha-adder/entrypoint.sh",
+        "sha256": "e912f7f9932f2b312ceb23ab5a635445bb52aaab7095f45ba81ab0f546df0956",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "task.json",
+        "path": "test-vectors/tasks-fingerprint/tasks/alpha-adder/task.json",
+        "sha256": "5ccf36295e0b9a35f75c4fc66402f107aafce349fd492301bee442316e981f6d",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "Dockerfile",
+        "path": "test-vectors/tasks-fingerprint/tasks/beta-regex/Dockerfile",
+        "sha256": "12e1e32bf71fccc28c0125c168cd7d80569688d6e1169469188bf3462f82dbcc",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "task.json",
+        "path": "test-vectors/tasks-fingerprint/tasks/beta-regex/task.json",
+        "sha256": "1e242158fe0b4368b28372d919d464650be8c975af9035e4d3a0806f77cb04da",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "topology-probe.md",
+        "path": "test-vectors/topology-probe.md",
+        "sha256": "0bc39b6cd362484419960c99d89cab2e3a1f5bcf5da7a43702591cff390082b4",
+        "canonicalization": "raw-utf8"
       }
     ]
   }

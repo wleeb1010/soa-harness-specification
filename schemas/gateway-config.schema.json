@@ -125,6 +125,27 @@
       "type": "string",
       "description": "Registrable-domain suffix for WebAuthn RP ID per §7.3; typically eTLD+1 shared by UI and Gateway origins."
     },
+    "artifacts_origin": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://",
+      "description": "Base URL (scheme + registrable-domain host) from which the Gateway serves tool-output artifacts. MUST differ from the UI origin by eTLD+1 per §5.1 (UV-SESS-06†). The topology probe at test-vectors/topology-probe.md reads this field."
+    },
+    "runner_endpoint": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://",
+      "description": "Base URL of the upstream SOA-Harness Runner the Gateway brokers for (§5, §14.3). Gateway composes `${runner_endpoint}/stream/v1/{session_id}` for SSE subscription. REQUIRED when Gateway is not co-hosted with Runner."
+    },
+    "runner_mtls_ca_digest": {
+      "type": "string",
+      "pattern": "^sha256:[A-Fa-f0-9]{64}$",
+      "description": "SHA-256 of the mTLS CA bundle (DER-encoded root certificate) that the Gateway uses to authenticate the Runner. Out-of-band distribution of the CA itself; this field pins the digest so reconnecting clients can detect CA rotation."
+    },
+    "stream_scope_template": {
+      "type": "string",
+      "description": "RFC 6570 Level 1 URI template the Gateway uses to build the `scope` parameter for RFC 8693 token exchange on a per-session basis (§7.4). Default: `stream:read:{session_id}`. Admin consumers MAY use `stream:read:all`."
+    },
     "local_ipc": {
       "type": "object",
       "additionalProperties": false,

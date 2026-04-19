@@ -232,7 +232,8 @@
     "SV-GOOD-03": { "name": "Score ceiling saturation",   "section": "§23",   "section_title": "Safety Constraints",      "profile": "core+si", "severity": "moderate", "assertion": "training_score ≥ 0.98 × 3 → SelfImprovementSaturation." },
     "SV-GOOD-04": { "name": "Novelty quota enforced",     "section": "§23",   "section_title": "Safety Constraints",      "profile": "core+si", "severity": "moderate", "assertion": "10 accepted iterations with unchanged tasks_fingerprint → SelfImprovementSaturation(NoveltyQuotaUnmet)." },
     "SV-GOOD-05": { "name": "Human-sign resumes",         "section": "§23",   "section_title": "Safety Constraints",      "profile": "core+si", "severity": "moderate", "assertion": "Only non-meta-agent signed commit to /tasks/ resumes the loop." },
-    "SV-GOOD-06": { "name": "Fingerprint audited",        "section": "§23",   "section_title": "Safety Constraints",      "profile": "core+si", "severity": "moderate", "assertion": "Iteration fingerprint recorded in audit chain and improvement log." }
+    "SV-GOOD-06": { "name": "Fingerprint audited",        "section": "§23",   "section_title": "Safety Constraints",      "profile": "core+si", "severity": "moderate", "assertion": "Iteration fingerprint recorded in audit chain and improvement log." },
+    "SV-GOOD-07": { "name": "tasks_fingerprint reproducible","section": "§23", "section_title": "Safety Constraints",      "profile": "core+si", "severity": "critical", "assertion": "Given the reference test-vectors/tasks-fingerprint/ tree, a conformant Runner produces the published tasks_fingerprint string byte-for-byte: JCS of sorted-by-task_id array of {task_id, task_json_sha256 (JCS of task.json), dockerfile_sha256 (raw bytes), entrypoint_sha256 (raw bytes or 'absent')}, then SHA-256." }
   },
 
   "tests_by_category": {
@@ -251,7 +252,7 @@
     "SV-A2A":    ["SV-A2A-01","SV-A2A-02","SV-A2A-03","SV-A2A-04","SV-A2A-05","SV-A2A-06","SV-A2A-07","SV-A2A-08","SV-A2A-09"],
     "SV-GOV":    ["SV-GOV-01","SV-GOV-02","SV-GOV-03","SV-GOV-04","SV-GOV-05","SV-GOV-06","SV-GOV-07"],
     "SV-CLUS":   ["SV-CLUS-01","SV-CLUS-02","SV-CLUS-03","SV-CLUS-04"],
-    "SV-GOOD":   ["SV-GOOD-01","SV-GOOD-02","SV-GOOD-03","SV-GOOD-04","SV-GOOD-05","SV-GOOD-06"]
+    "SV-GOOD":   ["SV-GOOD-01","SV-GOOD-02","SV-GOOD-03","SV-GOOD-04","SV-GOOD-05","SV-GOOD-06","SV-GOOD-07"]
   },
 
   "must_coverage": {
@@ -327,7 +328,7 @@
     "§18#validator":     { "title": "soa-validate binary + profiles","tests": ["SV-GOV-06"] },
     "§19#governance":    { "title": "Governance, stability, versioning, deprecation, errata, HITL",
                            "tests": ["SV-GOV-01","SV-GOV-02","SV-GOV-03","SV-GOV-04","SV-GOV-05","SV-PERM-04"] },
-    "§23#goodhart":      { "title": "Goodhart mitigations",         "tests": ["SV-GOOD-01","SV-GOOD-02","SV-GOOD-03","SV-GOOD-04","SV-GOOD-05","SV-GOOD-06","HR-08","HR-10"] },
+    "§23#goodhart":      { "title": "Goodhart mitigations",         "tests": ["SV-GOOD-01","SV-GOOD-02","SV-GOOD-03","SV-GOOD-04","SV-GOOD-05","SV-GOOD-06","SV-GOOD-07","HR-08","HR-10"] },
     "§24#errors":        { "title": "Stable error code emission",   "tests": ["SV-BUD-06","SV-BUD-07","SV-A2A-09","SV-CLUS-03"] }
   },
 
@@ -352,7 +353,7 @@
                   "HR-01","HR-02","HR-03","HR-04","HR-05","HR-06","HR-07","HR-11","HR-12","HR-13","HR-14","HR-17","HR-18"] },
       { "phase": 5, "name": "Self-Improvement",
         "tests": ["SV-SI-01","SV-SI-02","SV-SI-03","SV-SI-04","SV-SI-05","SV-SI-06","SV-SI-07","SV-SI-08","SV-SI-09","SV-SI-10","SV-SI-11","SV-SI-12","SV-SI-13","SV-SI-14","SV-SI-15","SV-SI-16","SV-SI-17","SV-SI-18","SV-SI-19","SV-SI-20","SV-SI-21","SV-SI-22","SV-SI-23","SV-SI-24","SV-SI-25","SV-SI-26","SV-SI-27","SV-SI-28","SV-SI-29","SV-SI-30","SV-SI-31","SV-SI-32",
-                  "SV-GOOD-01","SV-GOOD-02","SV-GOOD-03","SV-GOOD-04","SV-GOOD-05","SV-GOOD-06",
+                  "SV-GOOD-01","SV-GOOD-02","SV-GOOD-03","SV-GOOD-04","SV-GOOD-05","SV-GOOD-06","SV-GOOD-07",
                   "SV-CLUS-01","SV-CLUS-02","SV-CLUS-03","SV-CLUS-04",
                   "HR-08","HR-09","HR-10","HR-16"] },
       { "phase": 6, "name": "Handoff",

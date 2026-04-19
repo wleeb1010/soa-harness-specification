@@ -30,8 +30,9 @@ The bundle is self-contained: every MUST in the spec has a corresponding test ID
 | [`MANIFEST.json`](./MANIFEST.json) | Release manifest listing every artifact with SHA-256 digests + canonicalization rule. Validates against `schemas/release-manifest.schema.json`. |
 | [`MANIFEST.json.jws`](./MANIFEST.json.jws) | Detached JWS over the manifest (placeholder signature; real signing key is issued per §9.7.1 `publisher_kid`). |
 | [`test-vectors/agent-card.json`](./test-vectors/agent-card.json) + [`.jws`](./test-vectors/agent-card.json.jws) | Reference Agent Card + detached JWS for `SV-CARD-03` / `HR-12` test setup. |
-| [`test-vectors/topology-probe.md`](./test-vectors/topology-probe.md) | Recipe for the `UV-SESS-06†` topology probe (artifacts-origin separation). |
-| [`build-manifest.mjs`](./build-manifest.mjs), [`extract-schemas.mjs`](./extract-schemas.mjs) | Build tools: re-extract schemas from the MDs and rebuild `MANIFEST.json` after spec edits. Requires Node ≥ 18. |
+| [`test-vectors/topology-probe.md`](./test-vectors/topology-probe.md) | Recipe for the `UV-SESS-06†` / `UV-SESS-06a` topology probe (artifacts-origin separation, read from the `artifacts_origin` discovery field). |
+| [`test-vectors/tasks-fingerprint/`](./test-vectors/tasks-fingerprint/) | Two-task `/tasks/` fixture + [`compute.mjs`](./test-vectors/tasks-fingerprint/compute.mjs) producing the published `tasks_fingerprint` for `SV-GOOD-07` (Core §23 novelty quota). |
+| [`build-manifest.mjs`](./build-manifest.mjs), [`extract-schemas.mjs`](./extract-schemas.mjs) | Build tools: re-extract schemas from the MDs and rebuild `MANIFEST.json` after spec edits. Requires Node ≥ 18. Run from the repo root or set `SOA_BUNDLE_ROOT`. |
 
 ## Conformance profiles
 
@@ -39,6 +40,25 @@ The bundle is self-contained: every MUST in the spec has a corresponding test ID
 - `core+si` — adds Self-Improvement loop + Docker isolation + Harness Regression suite `HR-01…HR-18`.
 - `core+handoff` — adds A2A handoff (JSON-RPC 2.0 wire protocol per §17).
 - UI Profile — web / ide / mobile / cli, each with their own test subset.
+
+## Gateway discovery document
+
+The UI Gateway publishes its configuration at `https://<gateway>/.well-known/soa-ui-config.json` (validates against [`schemas/gateway-config.schema.json`](./schemas/gateway-config.schema.json)). Required load-bearing fields include:
+
+- `issuer`, `authorization_endpoint`, `token_endpoint` — OAuth 2.1 metadata
+- `ws_endpoint`, optional `sse_endpoint`, `rest_base`, optional `local_ipc` — transport surfaces
+- `scopes_supported`, `supported_profiles`, `attestation_formats_supported`, `webauthn_rp_id` — capability declaration
+- `replay` — buffer sizing (`buffer_events ≥ 10 000`, `buffer_seconds ≥ 1800`, `max_backfill ≤ 5000`, `grace_seconds ≥ 600`)
+- `artifacts_origin` — cookie-less origin for tool-output artifacts; MUST differ from the UI origin by eTLD+1 (Core §5.1 MUST; `UV-SESS-06a`)
+- `runner_endpoint`, `runner_mtls_ca_digest`, `stream_scope_template` — upstream Runner discovery for non-co-hosted deployments (`UV-A-16`); co-hosted deployments MAY use the `runner_endpoint: "loopback"` sentinel
+
+## Diagnostic counters vs error envelopes
+
+UI §21 is a closed set of **emitted** error codes (`ui.auth-required`, `ui.replay-gap`, ...). §21.1 covers **diagnostic counters** that appear in observability metrics but never surface as error envelopes. `UV-ERR-01` tests the closed set; counters are explicitly excluded.
+
+## Conformance stance
+
+Every MUST in either spec has a corresponding test ID in one of the two must-maps; there are zero orphan tests and zero uncovered MUSTs. Signing paths REQUIRE a library-grade RFC 8785 JCS implementation (the in-repo [`build-manifest.mjs`](./build-manifest.mjs) JCS is a documented subset — integer/string content only).
 
 ## Rebuilding the bundle
 
