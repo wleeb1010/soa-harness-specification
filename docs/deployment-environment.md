@@ -10,13 +10,20 @@ This document collects the OS, hardware, network, and library prerequisites that
 
 The requirements split cleanly along conformance profile (Core §18.3) and UI profile targets (UI §18.1):
 
-| Profile | What it runs | Minimum OS | Container/seccomp required |
-|---|---|---|---|
-| `core` | Runner without self-improvement (§§6, 7, 8, 10–16, 18) | Linux, macOS, or Windows | No |
-| `core+si` | Core + Self-Improvement loop (+§9, §23, HR-01..HR-18) | **Linux only** (host-kernel seccomp is Linux-native) | Yes — Docker 20.10+ or containerd + runc ≥ 1.1 |
-| `core+handoff` | Core + A2A handoff (+§17) | Linux, macOS, or Windows | No |
-| UI Gateway — `web` / `mobile` | Gateway serving WebAuthn-enrollable UIs | Linux, macOS, or Windows | No |
-| UI Gateway — `ide` / `cli` | Gateway serving local IPC peers | Linux, macOS, or Windows (IPC peer-creds work on all three) | No |
+| Profile            | Runs                          | Host OS      | Container?   |
+| ------------------ | ----------------------------- | ------------ | ------------ |
+| `core`             | Runner without SI             | Any          | No           |
+| `core+si`          | Core + §9 Self-Improvement    | **Linux**    | **Yes**      |
+| `core+handoff`     | Core + §17 A2A handoff        | Any          | No           |
+| UI — `web`         | Gateway for browser UI        | Any          | No           |
+| UI — `mobile`      | Gateway for mobile UI         | Any          | No           |
+| UI — `ide`         | Gateway for IDE / IPC peers   | Any          | No           |
+| UI — `cli`         | Gateway for CLI / IPC peers   | Any          | No           |
+
+Notes on the table:
+- **Host OS = Any** means Linux, macOS, or Windows — all three have normative support in the spec (session atomic writes §12.3, keystore §10.6, IPC peer-creds UI §6.1.1).
+- `core+si` is the only profile that requires Linux; the §9.7 Docker + seccomp + host-kernel-userns prerequisite is Linux-native. `core+si` also requires **Docker 20.10+ or containerd + runc ≥ 1.1**.
+- UI Gateway profiles (`web` / `mobile` / `ide` / `cli`) are listed separately because UI §18.1 enables different test subsets per profile; the OS/container requirements are identical across them.
 
 **Cross-platform normative support points:**
 - Session atomic writes (§12.3) have a POSIX recipe (`rename(.tmp, path)` + `fsync(dir_fd)`) and a Windows recipe (`MoveFileExW(MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)`).
@@ -32,15 +39,18 @@ The requirements split cleanly along conformance profile (Core §18.3) and UI pr
 
 The companion seccomp profile `soa-harness-profile-v1.json` enumerates five architectures in its `archMap`:
 
-| Arch | Seccomp baseline | clone-arg filter (CLONE_NEW* bitmap check) |
-|---|---|---|
-| `x86_64` (SCMP_ARCH_X86_64, includes X86/X32 sub-arches) | Applied | Applied |
-| `aarch64` (SCMP_ARCH_AARCH64, includes ARM sub-arch) | Applied | Applied |
-| `riscv64` (SCMP_ARCH_RISCV64) | Applied | Applied |
-| `s390x` (SCMP_ARCH_S390X) | Applied | **Skipped** — clone() places flags at arg index 1; best-effort defense via cap-drop=ALL + sysctl |
-| `ppc64le` (SCMP_ARCH_PPC64LE) | Applied | **Skipped** — same reason as s390x |
+| Arch      | libseccomp token       | Baseline | `CLONE_NEW*` filter |
+| --------- | ---------------------- | -------- | ------------------- |
+| x86_64    | `SCMP_ARCH_X86_64`     | Applied  | Applied             |
+| aarch64   | `SCMP_ARCH_AARCH64`    | Applied  | Applied             |
+| riscv64   | `SCMP_ARCH_RISCV64`    | Applied  | Applied             |
+| s390x     | `SCMP_ARCH_S390X`      | Applied  | **Skipped**         |
+| ppc64le   | `SCMP_ARCH_PPC64LE`    | Applied  | **Skipped**         |
 
-Core (without SI) has no architecture restriction.
+Notes on the table:
+- x86_64 includes the `SCMP_ARCH_X86` and `SCMP_ARCH_X32` sub-arches; aarch64 includes `SCMP_ARCH_ARM`.
+- The clone-arg filter (which blocks `CLONE_NEW*` namespace flags via a bitmap check on syscall-arg index 0) is skipped on s390x and ppc64le because those ABIs place the flags bitmap at arg index 1, not 0. Defense on those arches is best-effort: `cap-drop=ALL` + host userns sysctl + no-new-privileges.
+- Core (without SI) has **no architecture restriction** — the seccomp profile is only loaded on `core+si`.
 
 ---
 
@@ -93,15 +103,22 @@ Every dependency in this section is load-bearing for at least one normative path
 
 ## 4. TLS, network, and discovery surfaces
 
-| Endpoint | Protocol | Spec |
-|---|---|---|
-| `https://<origin>/.well-known/agent-card.json` + `agent-card.jws` | HTTPS (TLS 1.3), `ETag`, `Cache-Control: max-age ≤ 300` | Core §6.1, §6.1.1 |
-| Runner stream `https://<runner-origin>/stream/v1/{session_id}` | HTTPS (TLS 1.3) + mTLS + bearer (RFC 8693 token) | Core §14.3 |
-| UI Gateway discovery `https://<gateway>/.well-known/soa-ui-config.json` | HTTPS (TLS 1.3) | UI §7.1 |
-| UI Gateway WS `wss://<gateway>/ui/v1/connect` | TLS 1.3 + bearer + DPoP (public clients) | UI §6, §7.6 |
-| Local IPC (CLI/IDE) | Unix socket OR Windows named pipe; peer-cred check + `{op:authenticate}` first frame | UI §6.1.1 |
-| A2A JSON-RPC `https://<origin>/a2a/v1` | HTTPS (TLS 1.3) + mTLS (required) + signed JWT | Core §17.1 |
-| MANIFEST JWS chain | Detached JWS over JCS(MANIFEST.json); verified against §5.3 bootstrap anchor | Core §6.1.1, §9.7.1 |
+| Surface              | Path or form                                   | Transport / auth             | Spec            |
+| -------------------- | ---------------------------------------------- | ---------------------------- | --------------- |
+| Agent Card           | `/.well-known/agent-card.json` + `.jws`        | HTTPS / TLS 1.3              | §6.1, §6.1.1    |
+| Runner stream        | `/stream/v1/{session_id}`                      | HTTPS + mTLS + bearer token  | §14.3           |
+| UI discovery         | `/.well-known/soa-ui-config.json`              | HTTPS / TLS 1.3              | UI §7.1         |
+| UI WebSocket         | `/ui/v1/connect`                               | WSS + bearer + DPoP          | UI §6, §7.6    |
+| Local IPC            | Unix socket `/` named pipe                     | Peer-cred + authenticate op  | UI §6.1.1       |
+| A2A JSON-RPC         | `/a2a/v1`                                      | HTTPS + mTLS + signed JWT    | §17.1           |
+| Release MANIFEST JWS | `MANIFEST.json.jws` (detached)                 | JCS(MANIFEST.json) + JWS     | §6.1.1, §9.7.1  |
+
+Notes on the table:
+- All HTTPS surfaces REQUIRE TLS 1.3 — TLS 1.2 is non-conformant.
+- Agent Card responses MUST include `ETag` and `Cache-Control: max-age ≤ 300` (§6.1).
+- Runner-stream bearer is obtained via RFC 8693 token exchange (UI §7.4) with scope `stream:read:{session_id}`.
+- Local IPC first-frame auth: the client sends `{"op":"authenticate","access_token":"…"}` before any `subscribe`.
+- MANIFEST JWS is verified against the bootstrap-supplied trust anchor (§5.3), not against the manifest itself.
 
 ---
 
@@ -119,13 +136,17 @@ Every dependency in this section is load-bearing for at least one normative path
 
 The spec imposes no minimum hardware floor. The values below are a sensible starting point for a single-Runner deployment serving light interactive traffic; resize based on traffic, model context length, and benchmark workload.
 
-| Category | Starting point | Notes |
-|---|---|---|
-| CPU | 4 vCPU | §9.5 benchmarks parallelize; scale with task count. |
-| RAM | 8 GB | Excludes model weights if running local inference. |
-| Disk | 20 GB free | Session files + audit trail + `/artifacts/self_improvement/` grow over time; plan for rotation. |
-| Network | 100 Mbit/s symmetric | SSE stream + artifact downloads under load. |
-| GPU | Optional | Only for local benchmark inference. |
+| Category | Baseline             | Scales with                     |
+| -------- | -------------------- | ------------------------------- |
+| CPU      | 4 vCPU               | §9.5 benchmark task count       |
+| RAM      | 8 GB                 | Model context length            |
+| Disk     | 20 GB free           | Audit trail + SI artifacts      |
+| Network  | 100 Mbit/s symmetric | SSE stream + artifact downloads |
+| GPU      | Optional             | Local benchmark inference only  |
+
+Notes on the table:
+- Excludes model weights if the deployment runs local inference (add disk + RAM accordingly).
+- Plan for audit-trail rotation; `/artifacts/self_improvement/<iteration-id>/` accumulates one directory per SI iteration.
 
 ---
 
@@ -153,24 +174,28 @@ Copy this into the deployment runbook:
 
 ## 8. Quick cross-reference to normative sections
 
-| Topic | Authoritative section |
-|---|---|
-| Bootstrap channels | Core §5.3 |
-| Agent Card schema + signing | Core §6 (schema in §6.2, signing profile in §6.1.1) |
-| Permission system | Core §10 |
-| Key management + CRL | Core §10.6, §10.6.1 |
-| Session atomicity | Core §12.3 |
-| Distributed coordination | Core §12.4 |
-| Stream subscription | Core §14.3 |
-| Self-improvement loop | Core §9 |
-| Docker isolation + host hardening | Core §9.7 |
-| Seccomp profile + manifest | Core §9.7.1, `soa-harness-profile-v1.json` |
-| A2A handoff | Core §17 |
-| Error taxonomy | Core §24 (Runner), UI §21 (UI-surface) |
-| UI transport | UI §6 |
-| UI auth + enrollment | UI §7 |
-| UI Gateway discovery | UI §7.1, `schemas/gateway-config.schema.json` |
-| Prompt nonce + replay cache | UI §11.4.1 |
-| Always-* step-up | UI §11.4 (hardware_backed + Fresh-Auth Proof) |
-| Conformance profiles | Core §18.3 |
-| Release bundle contents | Core §19 |
+| Topic                              | Authoritative section               |
+| ---------------------------------- | ----------------------------------- |
+| Bootstrap channels                 | Core §5.3                           |
+| Agent Card schema                  | Core §6.2                           |
+| Agent Card signing profile         | Core §6.1.1                         |
+| Permission system                  | Core §10                            |
+| Key management                     | Core §10.6                          |
+| CRL artifact format                | Core §10.6.1                        |
+| Session atomicity                  | Core §12.3                          |
+| Distributed coordination           | Core §12.4                          |
+| Stream subscription                | Core §14.3                          |
+| Self-improvement loop              | Core §9                             |
+| Docker isolation + host hardening  | Core §9.7                           |
+| Seccomp profile + manifest         | Core §9.7.1                         |
+| A2A handoff                        | Core §17                            |
+| A2A digest canonicalization        | Core §17.2                          |
+| Error taxonomy (Runner)            | Core §24                            |
+| Error taxonomy (UI)                | UI §21                              |
+| UI transport                       | UI §6                               |
+| UI auth + enrollment               | UI §7                               |
+| UI Gateway discovery               | UI §7.1                             |
+| Prompt nonce + replay cache        | UI §11.4.1                          |
+| Always-* step-up                   | UI §11.4                            |
+| Conformance profiles               | Core §18.3                          |
+| Release bundle contents            | Core §19                            |
