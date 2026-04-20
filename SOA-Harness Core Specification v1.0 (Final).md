@@ -116,7 +116,7 @@ An engineer implementing every MUST against the pinned normative references prod
 | Layer | Component | Primitives | File / Endpoint | Purpose |
 |-------|-----------|-----------|-----------------|---------|
 | Tooling & Data | MCP Servers | P1, P9 | MCP endpoints | Tools, files, DBs, APIs, benchmarks |
-| Identity & Discovery | A2A + Agent Card | P12 | `https://<origin>/.well-known/agent-card.json` + `.jws` | Persona, types, permissions |
+| Identity & Discovery | A2A + Agent Card | P12 | `https://<origin>/.well-known/agent-card.json` and `https://<origin>/.well-known/agent-card.jws` (two separate artifacts; see §6.1) | Persona, types, permissions |
 | Coordination | A2A JSON-RPC 2.0 | P11 | A2A endpoint (§17) | Cross-provider handoff |
 | Rules & Long-term Memory | AGENTS.md + Memory MCP | P10, P4 | Project root + Memory MCP | Rules, evolving/shareable memory |
 | State & Resumability | Session Persistence + Artifacts | P3, P4 | `/artifacts/` + `/sessions/` | Crash recovery, side-effect tracking |
@@ -1757,7 +1757,7 @@ SOA-Harness v1.0 §17 was authored against A2A v0.3.1 and MCP revision 2026-04-0
 
 ## 20. Adoption Checklist
 
-- [ ] `https://<origin>/.well-known/agent-card.json` and `.jws`, signed by a trust-anchor key.
+- [ ] `https://<origin>/.well-known/agent-card.json` and `https://<origin>/.well-known/agent-card.jws` (two separate endpoints per §6.1; the JWS path does NOT include `.json.`), signed by a trust-anchor key.
 - [ ] MCP servers: tools + memory + benchmarks, with scopes declared.
 - [ ] `AGENTS.md` with required H2 headings in order; bounded `@import`.
 - [ ] `program.md` + `program.md.jws` if `self_improvement.enabled = true`.

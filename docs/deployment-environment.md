@@ -105,7 +105,7 @@ Every dependency in this section is load-bearing for at least one normative path
 
 | Surface              | Path or form                                   | Transport / auth             | Spec            |
 | -------------------- | ---------------------------------------------- | ---------------------------- | --------------- |
-| Agent Card           | `/.well-known/agent-card.json` + `.jws`        | HTTPS / TLS 1.3              | §6.1, §6.1.1    |
+| Agent Card           | `/.well-known/agent-card.json` and `/.well-known/agent-card.jws` (two endpoints) | HTTPS / TLS 1.3              | §6.1, §6.1.1    |
 | Runner stream        | `/stream/v1/{session_id}`                      | HTTPS + mTLS + bearer token  | §14.3           |
 | UI discovery         | `/.well-known/soa-ui-config.json`              | HTTPS / TLS 1.3              | UI §7.1         |
 | UI WebSocket         | `/ui/v1/connect`                               | WSS + bearer + DPoP          | UI §6, §7.6    |
