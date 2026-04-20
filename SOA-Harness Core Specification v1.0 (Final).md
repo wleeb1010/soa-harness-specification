@@ -68,8 +68,8 @@ The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **
 
 Each reference is pinned to a specific, immutable artifact.
 
-- **[MCP-2026-04]** Model Context Protocol, specification revision **2026-04-03**, published at `https://modelcontextprotocol.io/specification/2026-04-03` (SHA-256 digest recorded in `soa-validate` manifest).
-- **[A2A-0.3]** Agent2Agent Protocol, version **0.3.1** (tag `v0.3.1` in the upstream repository); Agent Card section as of 2026-04-03. Compatible with A2A ≥ 0.3, < 0.4.
+- **[MCP-2026-04]** Model Context Protocol, specification revision **2026-04-03**. Normative content is identified by the SHA-256 digest recorded in `soa-validate` manifest entry `mcp-spec-2026-04-03`. The canonical URL `https://modelcontextprotocol.io/specification/2026-04-03` is **informative only**; per §19.4.3 upstream-drift policy, if the URL is unreachable or its content's digest no longer matches the manifest entry, implementations MUST obtain the normative revision from the release-bundle mirror at `artifacts/external/mcp-spec-2026-04-03.md`. Digest mismatch between the upstream URL and the manifest entry MUST be reported by `soa-validate` with warning `UpstreamDriftObserved` but does not fail conformance so long as the mirror is consumable.
+- **[A2A-0.3]** Agent2Agent Protocol, version **0.3.1** (tag `v0.3.1` in the upstream repository); Agent Card section as of 2026-04-03. SOA §17 takes the 0.3.1 message schema as its wire-level baseline. Runtime compatibility with newer upstream A2A versions is governed by §19.4.3 — an implementation declaring a newer `protocolVersion` is conformant when the §17 wire properties hold regardless of upstream version.
 - **[HARBOR-1.0]** Harbor Benchmark Format v1.0. The full format is inlined in §9.6.
 - **[BCP-14]** IETF BCP 14 (RFC 2119 + RFC 8174).
 - **[RFC-3339]** Date and Time on the Internet: Timestamps.
@@ -1727,6 +1727,22 @@ SemVer compatibility (§19.4) defines WHICH peer versions can interoperate. This
    - OTel `resource` attribute `soa.core.version` on every span emitted for that session.
 4. **Lifetime.** The negotiated version is frozen for the session's duration; mid-session renegotiation is NOT supported. A peer that updates its supported set during a session MUST close existing sessions before accepting traffic under the new set (graceful drain permitted).
 5. **Test coverage.** `SV-GOV-08` (empty-intersection → `VersionNegotiationFailed`), `SV-GOV-09` (highest-common selection across a three-version intersection), `SV-GOV-10` (JWT claim binding on A2A).
+
+#### 19.4.3 Upstream-Protocol Compatibility Horizon (Normative)
+
+SOA-Harness v1.0 §17 was authored against A2A v0.3.1 and MCP revision 2026-04-03; both upstream protocols are independently versioned and may advance faster than SOA-Harness minor releases. To keep the harness usable against newer upstream versions without forcing a synchronous SOA spec bump, the following compatibility horizon applies:
+
+1. **Wire-property baseline (A2A).** A SOA Runner MUST interoperate with any A2A peer whose declared `protocolVersion` differs from `a2a-0.3.x` provided ALL of the following §17 wire properties hold at runtime:
+   - JWT carrying `iss`/`sub`/`aud`/`iat`/`exp ≤ 300s`/`jti`/`agent_card_etag` (§17.1).
+   - Key discovery through the Agent Card signer `kid` or mTLS SPKI path (§17.1).
+   - `*_digest` canonicalization per §17.2.
+   - Replay cache with `jti` retention ≥ 330 s.
+   - JSON-RPC error code allocation for `HandoffRejected`, `VersionNegotiationFailed`, `CardVersionDrift`.
+   If any property fails, the Runner MUST reject the peer with `HandoffRejected` (reason `wire-incompatibility`) and report the failing property in the error payload.
+2. **Upstream-major transitions.** Upstream A2A major-version bumps (e.g., `a2a-2.0`) trigger a SOA-Harness **minor** release IF and ONLY IF the new major version breaks any §17 wire property listed above. A new A2A major that changes only fields SOA §17 does not depend on (e.g., expanded task-lifecycle metadata) is absorbed without a SOA spec change. `SV-GOV-12` (reserved in soa-validate-must-map.json) covers this detection logic.
+3. **MCP compatibility.** MCP revisions are handled symmetrically via the wire-property list implicit in Core §11 (tool registry) and §14.1.1 (payload schema). A Runner MUST refuse to load an MCP server whose reported capability set violates the Core §11 closed-enum `risk_class` values or the Core §14.1.1 envelope schema; other MCP additions are absorbed silently.
+4. **Normative-reference drift.** When the upstream URL for an external normative reference (MCP spec, A2A spec, RFC, JSON Schema meta-schema) becomes unreachable, conformance tools MUST fall back to the release-bundle mirror identified by the MANIFEST digest; see Core §2 drift-policy note.
+5. **Ecosystem-tracking cadence.** The SOA-WG reviews upstream A2A and MCP versions on at least a quarterly schedule and publishes either (a) a statement that the current SOA release remains wire-compatible, or (b) a minor-bump timeline for a specific wire-break. Absence of this review constitutes a §19 governance defect, not a wire-compatibility change.
 
 ### 19.5 Deprecation
 

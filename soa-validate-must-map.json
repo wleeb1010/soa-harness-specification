@@ -1743,6 +1743,13 @@
       "profile": "core",
       "assertion": "UI \u00a711.4.1 replay cache and \u00a712.2 tool idempotency are implemented as disjoint subsystems with independent metrics.",
       "status": "reserved"
+    },
+    "SV-GOV-12": {
+      "name": "Upstream A2A major-version wire-compatibility detection",
+      "section": "\u00a719.4.3",
+      "profile": "core",
+      "assertion": "Runner detects an upstream-A2A major-version bump that breaks any \u00a717 wire property and refuses the peer with HandoffRejected(reason=wire-incompatibility).",
+      "status": "reserved"
     }
   },
   "tests_by_category": {
@@ -2682,6 +2689,11 @@
     "\u00a712.2": {
       "tests": [
         "SV-SESS-12"
+      ]
+    },
+    "\u00a719.4.3": {
+      "tests": [
+        "SV-GOV-12"
       ]
     }
   },

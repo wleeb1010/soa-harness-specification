@@ -1,5 +1,14 @@
 # SOA-Harness Specification v1.0
 
+> **Status (as of 2026-04-19): draft specification + reference architecture, not a shipping production bundle.**
+>
+> - [`MANIFEST.json.jws`](./MANIFEST.json.jws) ships with a **placeholder signature**; the real SOA-WG release-signing key will be distributed per Core §5.3 bootstrap at first official release.
+> - [`SOA UI Gateway Reference Implementation Sketch.md`](./SOA%20UI%20Gateway%20Reference%20Implementation%20Sketch.md) is **illustrative only — not a conformant implementation** and explicitly labeled as such.
+> - External normative mirrors under [`artifacts/external/`](./artifacts/external/) are declared by Core §2 but **not yet populated** (mirroring is a release-bundle build step per Core §19.1.1).
+> - At least **one independent passing implementation per profile** is a prerequisite before conformance claims from downstream adopters are meaningful.
+>
+> Implementers may use the spec as a design contract today. Third-party claims of "SOA-Harness v1.0 conformant" are premature until the release-signing key is distributed and the reference implementations ship.
+
 Normative specification bundle for **Self-Operating Agents (SOA)** — a conformance-testable harness for agentic runtimes and their UI gateways.
 
 The bundle is self-contained: every MUST in the spec has a corresponding test ID in one of the two `*-validate` must-maps, every referenced JSON Schema is published as a standalone `.schema.json` under [`schemas/`](./schemas/), and every enumerated artifact is digest-pinned in [`MANIFEST.json`](./MANIFEST.json) (JCS-RFC-8785 for JSON, raw-utf8 for Markdown). `MANIFEST.json` itself is the root of the digest chain — per Core §19.1 it is not self-listed; its integrity is established by the detached JWS [`MANIFEST.json.jws`](./MANIFEST.json.jws) verified against the §5.3 bootstrap anchor.
