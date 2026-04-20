@@ -1,0 +1,21 @@
+{
+  "$schema": "https://soa-harness.org/schemas/v1.0/jcs-parity-input.schema.json",
+  "description": "Raw JSON inputs for IEEE-754 edge-case parity testing. Run generate-vectors.mjs to produce verified expected outputs in ../generated/floats.json. NEVER hand-author expected_canonical values — the whole point of the split is to eliminate that error class.",
+  "cases": [
+    { "name": "zero positive",                "input": { "n": 0 },                                "rationale": "baseline: integer zero is trivially canonical" },
+    { "name": "zero negative",                "input": { "n": -0.0 },                             "rationale": "RFC 8785 requires -0.0 to canonicalize to 0 (no signed-zero distinction)" },
+    { "name": "one",                          "input": { "n": 1 },                                "rationale": "baseline integer" },
+    { "name": "decimal one",                  "input": { "n": 1.0 },                              "rationale": "integer-valued floats canonicalize without trailing .0" },
+    { "name": "epsilon above one",            "input": { "n": 1.0000000000000002 },               "rationale": "smallest increment above 1.0 in IEEE-754 double; exercises shortest-representation" },
+    { "name": "pi double",                    "input": { "n": 3.141592653589793 },                "rationale": "irrational with many significant digits; round-trip precision" },
+    { "name": "one point five",               "input": { "n": 1.5 },                              "rationale": "exactly representable fraction" },
+    { "name": "tenth",                        "input": { "n": 0.1 },                              "rationale": "not exactly representable; shortest-representation algorithm" },
+    { "name": "sum floating error",           "input": { "n": 0.30000000000000004 },              "rationale": "classic 0.1 + 0.2 result; many libraries truncate incorrectly" },
+    { "name": "max safe integer plus one",    "input": { "n": 9007199254740992 },                 "rationale": "JS Number.MAX_SAFE_INTEGER + 1; integer-vs-float serialization boundary" },
+    { "name": "very small subnormal",         "input": { "n": 5e-324 },                           "rationale": "smallest positive double (Number.MIN_VALUE); subnormal exponent edge" },
+    { "name": "very large finite",            "input": { "n": 1.7976931348623157e308 },           "rationale": "Number.MAX_VALUE; upper exponent edge" },
+    { "name": "scientific notation 1e21",     "input": { "n": 1e21 },                             "rationale": "RFC 8785 canonical scientific notation above 1e21" },
+    { "name": "sub-one tenth",                "input": { "n": 0.001 },                            "rationale": "decimal-vs-scientific threshold; RFC requires decimal above 1e-6" },
+    { "name": "boundary 1e-7",                "input": { "n": 1e-7 },                             "rationale": "RFC 8785 boundary: values < 1e-6 use scientific notation" }
+  ]
+}

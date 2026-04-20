@@ -1,0 +1,17 @@
+{
+  "$schema": "https://soa-harness.org/schemas/v1.0/jcs-parity-input.schema.json",
+  "description": "Raw JSON inputs for nested-structure canonicalization. Object key sort order (UCS-2 code-unit per RFC 8785) is the most common cross-implementation divergence point.",
+  "cases": [
+    { "name": "empty object",           "input": {},                                                "rationale": "baseline" },
+    { "name": "empty array",            "input": [],                                                "rationale": "baseline" },
+    { "name": "alphabetical keys",      "input": { "a": 1, "b": 2, "c": 3 },                        "rationale": "already sorted; no reordering" },
+    { "name": "reverse alphabetical",   "input": { "c": 3, "b": 2, "a": 1 },                        "rationale": "keys sorted in UCS-2 code-unit order" },
+    { "name": "case sensitive sort",    "input": { "b": 1, "B": 2, "a": 3, "A": 4 },                "rationale": "UCS-2 sort: uppercase before lowercase (0x41 < 0x61)" },
+    { "name": "digit and letter keys",  "input": { "z": 1, "1": 2, "a": 3 },                        "rationale": "digits (0x30+) sort before letters" },
+    { "name": "unicode keys",           "input": { "日": 1, "a": 2, "z": 3 },                       "rationale": "ASCII sorts before BMP Unicode" },
+    { "name": "nested object",          "input": { "outer": { "inner_b": 2, "inner_a": 1 } },       "rationale": "recursive sort: inner keys also sorted" },
+    { "name": "array of objects",       "input": { "items": [{ "y": 1, "x": 2 }, { "b": 3, "a": 4 }] }, "rationale": "each object in array sorted independently; array order preserved" },
+    { "name": "mixed types nested",     "input": { "z": null, "a": true, "m": [1, 2, 3] },          "rationale": "null, boolean, array values canonicalize correctly; keys sorted" },
+    { "name": "deeply nested",          "input": { "l1": { "l2": { "l3": { "deepest": "value" } } } }, "rationale": "arbitrary depth; guards against stack-based bugs" }
+  ]
+}

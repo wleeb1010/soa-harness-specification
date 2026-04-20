@@ -1,0 +1,15 @@
+{
+  "$schema": "https://soa-harness.org/schemas/v1.0/jcs-parity-input.schema.json",
+  "description": "Raw JSON inputs for integer-range parity. Run generate-vectors.mjs to produce ../generated/integers.json with verified expected outputs.",
+  "cases": [
+    { "name": "zero",                "input": { "n": 0 },                    "rationale": "baseline" },
+    { "name": "one",                 "input": { "n": 1 },                    "rationale": "baseline" },
+    { "name": "negative one",        "input": { "n": -1 },                   "rationale": "negative sign preserved, no leading-zero variants" },
+    { "name": "max safe integer",    "input": { "n": 9007199254740991 },     "rationale": "Number.MAX_SAFE_INTEGER in JavaScript; precision boundary" },
+    { "name": "min safe integer",    "input": { "n": -9007199254740991 },    "rationale": "Number.MIN_SAFE_INTEGER" },
+    { "name": "int32 max",           "input": { "n": 2147483647 },           "rationale": "int32 max; Go default int on 32-bit platforms" },
+    { "name": "int32 min",           "input": { "n": -2147483648 },          "rationale": "int32 min" },
+    { "name": "ten",                 "input": { "n": 10 },                   "rationale": "no leading zeros, no trailing decimals" },
+    { "name": "hundred",             "input": { "n": 100 },                  "rationale": "multi-digit" }
+  ]
+}

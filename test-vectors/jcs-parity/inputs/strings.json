@@ -1,0 +1,18 @@
+{
+  "$schema": "https://soa-harness.org/schemas/v1.0/jcs-parity-input.schema.json",
+  "description": "Raw JSON inputs for string canonicalization. Run generate-vectors.mjs to produce ../generated/strings.json.",
+  "cases": [
+    { "name": "empty",                          "input": { "s": "" },          "rationale": "empty string baseline" },
+    { "name": "ascii",                          "input": { "s": "hello" },     "rationale": "plain ASCII" },
+    { "name": "quote and backslash",            "input": { "s": "a\"b\\c" },   "rationale": "RFC 8785 requires backslash escape for quote and backslash" },
+    { "name": "control newline",                "input": { "s": "a\nb" },      "rationale": "newline MUST be \\n, never raw or \\u000a" },
+    { "name": "control tab",                    "input": { "s": "a\tb" },      "rationale": "tab MUST be \\t" },
+    { "name": "control carriage return",        "input": { "s": "a\rb" },      "rationale": "CR MUST be \\r" },
+    { "name": "control backspace",              "input": { "s": "a\bb" },      "rationale": "backspace MUST be \\b" },
+    { "name": "control form feed",              "input": { "s": "a\fb" },      "rationale": "form feed MUST be \\f" },
+    { "name": "low control unicode",            "input": { "s": "a\u0001b" },  "rationale": "control chars below 0x20 without named escapes MUST use \\uXXXX lowercase hex" },
+    { "name": "unicode bmp",                    "input": { "s": "日本語" },    "rationale": "BMP Unicode passed through verbatim — no escaping above 0x20" },
+    { "name": "unicode supplementary",          "input": { "s": "🦀" },        "rationale": "supplementary plane; encoded as surrogate pair in UTF-16, preserved as single UTF-8 sequence" },
+    { "name": "forward slash",                  "input": { "s": "a/b" },       "rationale": "RFC 8785 does NOT require escaping forward slashes" }
+  ]
+}

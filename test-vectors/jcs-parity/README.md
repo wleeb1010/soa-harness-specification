@@ -1,62 +1,137 @@
 # JCS Parity Test Vectors
 
-Cross-language byte-equivalence test vectors for RFC 8785 JSON Canonicalization Scheme. Consumed by both `soa-harness-impl` (via `@filen/rfc8785`) and `soa-validate` (via `canonicaljson-go`) pinned at the spec's current MANIFEST digest.
+Cross-language byte-equivalence vectors for RFC 8785 JSON Canonicalization Scheme. Consumed by `soa-harness-impl` (via `@filen/rfc8785`) and `soa-validate` (via `canonicaljson-go`), pinned at this spec's MANIFEST digest.
 
 ## Why this exists
 
-JCS byte-equivalence across languages is the **single highest-risk technical invariant** in the SOA-Harness ecosystem. If TypeScript and Go canonicalize the same JSON to different bytes, every signed artifact (Agent Card JWS, MANIFEST JWS, PDA-JWS, audit hash chain) will silently fail cross-implementation verification.
+JCS byte-equivalence across languages is the **single highest-risk technical invariant** in the SOA-Harness ecosystem. If TypeScript and Go canonicalize the same JSON to different bytes, every signed artifact (Agent Card JWS, MANIFEST JWS, PDA-JWS, audit hash chain) silently fails cross-implementation verification.
 
-These vectors catch the edge cases where RFC 8785 implementations can diverge — floats at IEEE-754 extremes, special number values, and nested structures that exercise key-sorting order.
+## Directory layout
+
+```
+jcs-parity/
+├── inputs/                       # hand-authored: raw JSON cases + rationale
+│   ├── floats.json               # NO expected_canonical fields here
+│   ├── integers.json
+│   ├── strings.json
+│   └── nested.json
+├── generated/                    # machine-produced: verified expected outputs
+│   ├── floats.json               # written by generate-vectors.mjs
+│   ├── integers.json
+│   ├── strings.json
+│   └── nested.json
+├── generate-vectors.mjs          # the generator (JS; invokes TS + Go libraries)
+├── go-cli/                       # tiny Go helper the generator shells out to
+│   ├── main.go                   # reads stdin JSON, emits canonicaljson-go bytes on stdout
+│   ├── go.mod                    # pins canonicaljson-go version
+│   └── README.md                 # build instructions
+└── README.md                     # this file
+```
+
+**The split matters.** Humans author `inputs/` (test cases + why each case is interesting). The generator produces `generated/` by running both libraries and recording their agreed output. **Hand-authoring `expected_canonical` values is prohibited** — that's what produced the float-canonicalization divergence found in 2026-04-20's Week 0 parity check.
+
+## How to regenerate
+
+Prerequisites: Node 20+, Go 1.22+, `@filen/rfc8785` available from the spec-repo root (install via `npm install @filen/rfc8785` or let an outer package.json handle it).
+
+```sh
+# Build the Go helper once
+cd test-vectors/jcs-parity/go-cli
+go build -o jcs-cli            # Linux/macOS
+go build -o jcs-cli.exe        # Windows
+
+# Generate all vectors
+cd ..
+node generate-vectors.mjs
+
+# Or regenerate a subset
+node generate-vectors.mjs --files=floats.json,strings.json
+
+# CI drift check: regenerate and compare against committed generated/*.json
+node generate-vectors.mjs --verify
+```
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | All libraries agree on every case. `generated/` is up to date (or was verified in `--verify` mode). |
+| 1 | **Library divergence.** TS and Go produced different bytes for at least one case. Check `generated/*.json` for entries with `MANUAL_RESOLUTION_REQUIRED` — file upstream issue against the wrong library per RFC 8785 §3.2. |
+| 2 | **Drift** (only in `--verify` mode). Committed `generated/` disagrees with freshly-regenerated output. Either a library version changed or a case was edited; commit the regenerated files or pin the library back. |
+| 3 | Runtime error — missing dependency, missing Go helper binary, malformed input. |
 
 ## How implementations use these
 
 ### TypeScript (`soa-harness-impl`)
+
 ```typescript
 import { canonicalize } from "@filen/rfc8785";
-import vectors from "<spec-repo>/test-vectors/jcs-parity/floats.json";
+import vectors from "../../../../soa-harness=specification/test-vectors/jcs-parity/generated/floats.json";
 
-for (const v of vectors.cases) {
-  const result = canonicalize(v.input);
-  assert.equal(result, v.expected_canonical);
+for (const c of vectors.cases) {
+  if (!c.libraries_agree) {
+    throw new Error(`vector "${c.name}" requires manual resolution — do not use`);
+  }
+  const result = canonicalize(c.input);
+  assert.equal(result, c.expected_canonical);
 }
 ```
 
 ### Go (`soa-validate`)
+
 ```go
 import canonicaljson "github.com/gibson042/canonicaljson-go"
 
-for _, v := range vectors.Cases {
-    result, _ := canonicaljson.Marshal(v.Input)
-    if string(result) != v.ExpectedCanonical {
-        t.Errorf("divergence at case %q", v.Name)
+for _, c := range vectors.Cases {
+    if !c.LibrariesAgree {
+        t.Fatalf("vector %q requires manual resolution", c.Name)
+    }
+    result, _ := canonicaljson.Marshal(c.Input)
+    if string(result) != c.ExpectedCanonical {
+        t.Errorf("divergence at case %q", c.Name)
     }
 }
 ```
 
 ### Cross-language parity harness (in `soa-harness-impl`)
-A test in `packages/core/test/parity/ts-vs-go.test.ts` runs both libraries on the same input via `execa` and compares bytes directly. CI fails if either side disagrees with the `expected_canonical` field OR if the two libraries disagree with each other.
 
-## Vector files
+`packages/core/test/parity/ts-vs-go.test.ts` runs both libraries on the same inputs and compares bytes to the `expected_canonical` field. CI fails if either side disagrees with the recorded canonical form.
 
-| File | Purpose |
-|---|---|
-| `floats.json` | IEEE-754 edge cases: subnormals, ±infinity, NaN handling, smallest/largest representable, values where shortest-representation algorithm differs across implementations |
-| `integers.json` | Integer-range cases: 0, negative, max safe integer, bigints, leading zeros |
-| `strings.json` | Unicode normalization, surrogate pairs, control characters, long strings |
-| `nested.json` | Object key sort order (UCS-2 code-unit order per RFC 8785), nested arrays with mixed types, empty containers |
-| `arrays.json` | Array canonicalization edge cases (empty arrays, arrays of objects, heterogeneous element types) |
+## Vector file schemas
 
-## Vector file schema
-
+**Input schema** (`inputs/*.json`):
 ```json
 {
-  "$schema": "https://soa-harness.org/schemas/v1.0/jcs-parity-vector.schema.json",
+  "$schema": "https://soa-harness.org/schemas/v1.0/jcs-parity-input.schema.json",
+  "description": "Human-readable description of this file's scope",
   "cases": [
     {
       "name": "human-readable case name",
       "input": { "any": "JSON value" },
-      "expected_canonical": "<canonical bytes as string>",
       "rationale": "why this case is interesting — what divergence it guards against"
+    }
+  ]
+}
+```
+
+**Generated schema** (`generated/*.json`):
+```json
+{
+  "$schema": "https://soa-harness.org/schemas/v1.0/jcs-parity-generated.schema.json",
+  "generated_by": "generate-vectors.mjs",
+  "generated_at": "2026-04-20T15:39:00.000Z",
+  "libraries": {
+    "ts": { "name": "@filen/rfc8785", "version": "x.y.z" },
+    "go": { "name": "canonicaljson-go", "version": "1.0.3" }
+  },
+  "source_inputs": "inputs/<same filename>",
+  "cases": [
+    {
+      "name": "...",
+      "input": { ... },
+      "rationale": "...",
+      "expected_canonical": "<bytes both libraries agree on>",
+      "libraries_agree": true
     }
   ]
 }
@@ -64,13 +139,11 @@ A test in `packages/core/test/parity/ts-vs-go.test.ts` runs both libraries on th
 
 ## Governance
 
-These vectors are **normative** for conformance. Changes here:
-- Require spec-repo PR with 48-hour discussion window
-- Bump the spec MANIFEST digest
-- Trigger both impl and validate to run their pinning protocol
+- **Changes to `inputs/`**: require spec-repo PR with 48h discussion window. Regenerate `generated/` in the same PR.
+- **Changes to `generated/` without matching `inputs/` change**: forbidden. Always regenerate from `inputs/` via the script.
+- **Library version bumps** (`@filen/rfc8785` in npm or `canonicaljson-go` in `go-cli/go.mod`): reviewable PR. Regenerate. CI `--verify` catches silent drift.
+- **Removing a case**: major-version spec bump only (breaks downstream implementations that pinned to the vector).
 
-New cases SHOULD be added when a new edge case is discovered (bug reports, cross-language divergence found during testing, new RFC 8785 errata). Never remove a case without a major spec version bump.
+## History
 
-## Initial authoring status
-
-The current vectors are **initial drafts** pending cross-validation between `@filen/rfc8785` and `canonicaljson-go`. During Week 0 of impl M1, the parity harness runs both libraries on these vectors — the first discrepancy discovered blocks M1 until resolved. `expected_canonical` fields may need updating once both libraries agree on the correct output for each case.
+This directory was initially authored with hand-written `expected_canonical` fields (commit `2e0a3fc`). During Week 0 parity testing, the validate session found divergence on every float case — not because the libraries disagreed with each other, but because the hand-authored expected values were imprecise guesses. The `inputs/` + `generated/` + generator split was introduced to eliminate that error class entirely. Implementers should consume only `generated/`.
