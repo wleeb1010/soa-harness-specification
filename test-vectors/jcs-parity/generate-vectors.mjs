@@ -3,7 +3,7 @@
 //
 // Reads inputs/{floats,integers,strings,nested}.json, runs every case through
 // BOTH `canonicalize` (npm; RFC 8785 JS reference by co-author Samuel Erdtman)
-// AND canonicaljson-go (Go side, invoked as subprocess), writes
+// AND github.com/gowebpki/jcs (Go side, invoked as subprocess), writes
 // generated/{same}.json with the verified expected_canonical field populated
 // from agreed library output.
 //
@@ -92,7 +92,7 @@ for (const filename of FILES_SUBSET) {
     "generated_at": new Date().toISOString(),
     "libraries": {
       "ts": { "name": "canonicalize", "version": getPkgVersion("canonicalize") },
-      "go": { "name": "canonicaljson-go", "version": "see go-cli/go.mod" }
+      "go": { "name": "github.com/gowebpki/jcs", "version": "see go-cli/go.mod" }
     },
     "source_inputs": `inputs/${filename}`,
     "cases": []

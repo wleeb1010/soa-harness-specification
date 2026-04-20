@@ -1,6 +1,6 @@
 # JCS Parity Test Vectors
 
-Cross-language byte-equivalence vectors for RFC 8785 JSON Canonicalization Scheme. Consumed by `soa-harness-impl` (via `canonicalize`) and `soa-validate` (via `canonicaljson-go`), pinned at this spec's MANIFEST digest.
+Cross-language byte-equivalence vectors for RFC 8785 JSON Canonicalization Scheme. Consumed by `soa-harness-impl` (via `canonicalize`) and `soa-validate` (via `gowebpki/jcs`), pinned at this spec's MANIFEST digest.
 
 ## Why this exists
 
@@ -22,8 +22,8 @@ jcs-parity/
 │   └── nested.json
 ├── generate-vectors.mjs          # the generator (JS; invokes TS + Go libraries)
 ├── go-cli/                       # tiny Go helper the generator shells out to
-│   ├── main.go                   # reads stdin JSON, emits canonicaljson-go bytes on stdout
-│   ├── go.mod                    # pins canonicaljson-go version
+│   ├── main.go                   # reads stdin JSON, emits gowebpki/jcs bytes on stdout
+│   ├── go.mod                    # pins gowebpki/jcs version
 │   └── README.md                 # build instructions
 └── README.md                     # this file
 ```
@@ -80,7 +80,7 @@ for (const c of vectors.cases) {
 ### Go (`soa-validate`)
 
 ```go
-import canonicaljson "github.com/gibson042/canonicaljson-go"
+import canonicaljson "github.com/gibson042/gowebpki/jcs"
 
 for _, c := range vectors.Cases {
     if !c.LibrariesAgree {
@@ -122,7 +122,7 @@ for _, c := range vectors.Cases {
   "generated_at": "2026-04-20T15:39:00.000Z",
   "libraries": {
     "ts": { "name": "canonicalize", "version": "x.y.z" },
-    "go": { "name": "canonicaljson-go", "version": "1.0.3" }
+    "go": { "name": "gowebpki/jcs", "version": "1.0.3" }
   },
   "source_inputs": "inputs/<same filename>",
   "cases": [
@@ -141,7 +141,7 @@ for _, c := range vectors.Cases {
 
 - **Changes to `inputs/`**: require spec-repo PR with 48h discussion window. Regenerate `generated/` in the same PR.
 - **Changes to `generated/` without matching `inputs/` change**: forbidden. Always regenerate from `inputs/` via the script.
-- **Library version bumps** (`canonicalize` in npm or `canonicaljson-go` in `go-cli/go.mod`): reviewable PR. Regenerate. CI `--verify` catches silent drift.
+- **Library version bumps** (`canonicalize` in npm or `gowebpki/jcs` in `go-cli/go.mod`): reviewable PR. Regenerate. CI `--verify` catches silent drift.
 - **Removing a case**: major-version spec bump only (breaks downstream implementations that pinned to the vector).
 
 ## History

@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "3cd2ce57ba2e164224d76ac8b8415a3b6afabacecb87f389d01e96bf2cb9cfc7",
+        "sha256": "f8da8b8590f19b7f429e6a9f0559640803426300c230afdaa309785751ffab45",
         "canonicalization": "raw-utf8"
       },
       {
@@ -160,13 +160,13 @@
       {
         "name": "README.md",
         "path": "test-vectors/jcs-parity/README.md",
-        "sha256": "6ffab7c4675589d5998a2ac6d18420ca9ee12a62184bebe0e7fa27d40ceb4e4b",
+        "sha256": "0dc195feb7d2873a3f6ff3dc7ea0325054aa143121485cd54bbfcc405995d1aa",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "generate-vectors.mjs",
         "path": "test-vectors/jcs-parity/generate-vectors.mjs",
-        "sha256": "38cc92903b3e945ed121175916a99561e4c056e1a814bc7817094b57ac51660f",
+        "sha256": "5698eef6b2d1a4485a4d78b4ebe6f9e0b9d165b1d3f62585438b612391ccd4d5",
         "canonicalization": "raw-utf8"
       },
       {
@@ -178,13 +178,13 @@
       {
         "name": "README.md",
         "path": "test-vectors/jcs-parity/go-cli/README.md",
-        "sha256": "14a09d6d6f93d0ccae011d6e35f0ea683df3ed236ccd1afc0e7ce513104e1a9c",
+        "sha256": "0eb5e722aebf645e0d9bc6dc54732b9520a1ddd1c4ed2dd50d9aae429ed65289",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "go.mod",
         "path": "test-vectors/jcs-parity/go-cli/go.mod",
-        "sha256": "1d6ffc97229368031003ed0f7979e2acca9f044cb9137d61748969ff97a3f78c",
+        "sha256": "0e8b8cc5f80643ff9312ab4f0c45f1fc437326922773c1146eee002ec205e4b4",
         "canonicalization": "raw-utf8"
       },
       {
@@ -196,7 +196,7 @@
       {
         "name": "main.go",
         "path": "test-vectors/jcs-parity/go-cli/main.go",
-        "sha256": "b60e503fa8950737df2e0a5dbf2df3301542664c241441bda9e2e65d02c444b6",
+        "sha256": "4d1ee7b65975e938b175b6e3afbc39e0d6b4a9686b1d193373293ff9ad4f1600",
         "canonicalization": "raw-utf8"
       },
       {
