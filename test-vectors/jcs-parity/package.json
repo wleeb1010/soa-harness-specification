@@ -1,0 +1,14 @@
+{
+  "name": "soa-harness-jcs-parity",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local scope for generate-vectors.mjs dependencies. Not published.",
+  "type": "module",
+  "dependencies": {
+    "canonicalize": "^3.0.0"
+  },
+  "scripts": {
+    "generate": "node generate-vectors.mjs",
+    "verify": "node generate-vectors.mjs --verify"
+  }
+}

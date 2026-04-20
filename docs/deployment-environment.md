@@ -62,7 +62,7 @@ Every dependency in this section is load-bearing for at least one normative path
 
 - **TLS 1.3** ([RFC-8446]). TLS 1.2 is non-conformant.
 - **JSON Schema 2020-12 validator** — needed to validate Agent Cards, the Gateway discovery document, `canonical_decision` PDAs, etc.
-- **RFC 8785 JCS library** ([RFC-8785], cited in Core §2 and §1). Required for signed Agent Card JWS, MANIFEST JWS, PDA-JWS, audit canonical hashing, and the A2A digest fields (§17.2). Reference implementations: `@filen/rfc8785` (JavaScript), `canonicaljson-go`, `rfc8785` (Python). A subset JCS that handles only integers/strings is acceptable in build tooling that never touches floats (see Core §1).
+- **RFC 8785 JCS library** ([RFC-8785], cited in Core §2 and §1). Required for signed Agent Card JWS, MANIFEST JWS, PDA-JWS, audit canonical hashing, and the A2A digest fields (§17.2). Reference implementations: `canonicalize` (JavaScript, npm — authored by RFC 8785 co-author Samuel Erdtman), `canonicaljson-go` (Go), `rfc8785` (Python). A subset JCS that handles only integers/strings is acceptable in build tooling that never touches floats (see Core §1).
 - **POSIX-semantics file system** or Windows NTFS with atomic rename support — required for §12.3 session persistence.
 - **OS-level key storage** (Windows DPAPI, macOS Keychain, Linux kernel keyring) OR an HSM — plaintext handler keys on disk are forbidden (§10.6).
 - **Git** ≥ 2.30 — required by the self-improvement stage-activate flow (§9.5 step 12d); `git verify-commit` is used for the novelty-quota unlock path (§23). Pure `core` deployments may omit.

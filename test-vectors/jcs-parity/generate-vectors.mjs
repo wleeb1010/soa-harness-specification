@@ -2,9 +2,10 @@
 // generate-vectors.mjs — produces cross-language-verified JCS parity vectors.
 //
 // Reads inputs/{floats,integers,strings,nested}.json, runs every case through
-// BOTH @filen/rfc8785 (TypeScript/JavaScript side) AND canonicaljson-go
-// (Go side, invoked as subprocess), writes generated/{same}.json with the
-// verified expected_canonical field populated from agreed library output.
+// BOTH `canonicalize` (npm; RFC 8785 JS reference by co-author Samuel Erdtman)
+// AND canonicaljson-go (Go side, invoked as subprocess), writes
+// generated/{same}.json with the verified expected_canonical field populated
+// from agreed library output.
 //
 // Usage:
 //   node generate-vectors.mjs              # regenerate all
@@ -35,16 +36,17 @@ const FILES_SUBSET = FILES_ARG
   : ["floats.json", "integers.json", "strings.json", "nested.json"];
 
 // ─── TypeScript-side canonicalizer ───────────────────────────────
-// Loads @filen/rfc8785 lazily so the script fails gracefully with a
-// clear message if the package isn't installed yet.
+// Loads `canonicalize` (Erdtman's RFC 8785 reference) lazily so the
+// script fails gracefully if the package isn't installed yet. The
+// package exports a default function, not a named export.
 let canonicalizeTS;
 try {
-  const { canonicalize } = await import("@filen/rfc8785");
-  canonicalizeTS = canonicalize;
+  const mod = await import("canonicalize");
+  canonicalizeTS = mod.default ?? mod;
 } catch (err) {
-  console.error("[generate-vectors] FATAL: @filen/rfc8785 not installed.");
-  console.error("[generate-vectors]        Run: npm install @filen/rfc8785");
-  console.error("[generate-vectors]        (from the spec repo root, or set up a package.json here)");
+  console.error("[generate-vectors] FATAL: 'canonicalize' (npm) not installed.");
+  console.error("[generate-vectors]        Run: npm install canonicalize");
+  console.error("[generate-vectors]        (from the spec repo root, or set up a package.json in jcs-parity/)");
   process.exit(3);
 }
 
@@ -89,7 +91,7 @@ for (const filename of FILES_SUBSET) {
     "generated_by": "generate-vectors.mjs",
     "generated_at": new Date().toISOString(),
     "libraries": {
-      "ts": { "name": "@filen/rfc8785", "version": getPkgVersion("@filen/rfc8785") },
+      "ts": { "name": "canonicalize", "version": getPkgVersion("canonicalize") },
       "go": { "name": "canonicaljson-go", "version": "see go-cli/go.mod" }
     },
     "source_inputs": `inputs/${filename}`,

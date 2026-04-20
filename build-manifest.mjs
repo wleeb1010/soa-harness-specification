@@ -15,7 +15,7 @@ const DL = process.env.SOA_BUNDLE_ROOT
 // Minimal JCS — sufficient for this bundle's schema content (strings / objects /
 // arrays / safe-range integers only). Per Core §1, production signing paths that
 // may encounter non-integer numbers MUST use a library-grade RFC 8785 implementation
-// (e.g. `@filen/rfc8785`, `canonicaljson-go`, Python `rfc8785`). This builder is
+// (e.g. `canonicalize` by Erdtman for JS, `canonicaljson-go`, Python `rfc8785`). This builder is
 // audited to not hit those cases — schemas and must-maps are integer-only.
 function jcs(value) {
   if (value === null) return "null";

@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "1aee3d2814d13eb6a984ad133e76f9c57da0099a400cfe28115b4ae64b88ba9f",
+        "sha256": "3cd2ce57ba2e164224d76ac8b8415a3b6afabacecb87f389d01e96bf2cb9cfc7",
         "canonicalization": "raw-utf8"
       },
       {
@@ -152,15 +152,21 @@
         "canonicalization": "raw-utf8"
       },
       {
+        "name": ".gitignore",
+        "path": "test-vectors/jcs-parity/.gitignore",
+        "sha256": "88b6b09796bc021a6f46b5964be1cbe30ef7a25d613ee43f868e720ee4d15587",
+        "canonicalization": "raw-utf8"
+      },
+      {
         "name": "README.md",
         "path": "test-vectors/jcs-parity/README.md",
-        "sha256": "198ce284e6dd16e6b26e5b7889cebdf383565870e3d337dc701eeed898ebdde8",
+        "sha256": "6ffab7c4675589d5998a2ac6d18420ca9ee12a62184bebe0e7fa27d40ceb4e4b",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "generate-vectors.mjs",
         "path": "test-vectors/jcs-parity/generate-vectors.mjs",
-        "sha256": "1f2c2bb609ba5295f529a2ee30fc87e03136c11125e507661b895f4be3790004",
+        "sha256": "38cc92903b3e945ed121175916a99561e4c056e1a814bc7817094b57ac51660f",
         "canonicalization": "raw-utf8"
       },
       {
@@ -179,6 +185,12 @@
         "name": "go.mod",
         "path": "test-vectors/jcs-parity/go-cli/go.mod",
         "sha256": "1d6ffc97229368031003ed0f7979e2acca9f044cb9137d61748969ff97a3f78c",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "go.sum",
+        "path": "test-vectors/jcs-parity/go-cli/go.sum",
+        "sha256": "0c96e52ca437222bf21175bdb5ddd1ff4f2735ca0f035df9991428bd99e5d913",
         "canonicalization": "raw-utf8"
       },
       {
@@ -209,6 +221,78 @@
         "name": "strings.json",
         "path": "test-vectors/jcs-parity/inputs/strings.json",
         "sha256": "3f311c87845907495a3d183b82b466f6fbe0dfe4309e57e89716b928ec25620c",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "canonicalize",
+        "path": "test-vectors/jcs-parity/node_modules/.bin/canonicalize",
+        "sha256": "d8ea9bec6364c937ed9219a9e33a704efce2749f27c417cb688f5f6f51bed770",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "canonicalize.cmd",
+        "path": "test-vectors/jcs-parity/node_modules/.bin/canonicalize.cmd",
+        "sha256": "416859fe201eb6f6d5ee1308a418be9fec86b6fee1b2a7b7e52404535760c571",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "canonicalize.ps1",
+        "path": "test-vectors/jcs-parity/node_modules/.bin/canonicalize.ps1",
+        "sha256": "bc6d337cfc09b0a8a3b9e761fa47c8c335fbe6d288c8a7d6e43dda6eec5e1196",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": ".package-lock.json",
+        "path": "test-vectors/jcs-parity/node_modules/.package-lock.json",
+        "sha256": "9d2e9be19d8c3ce2e7f10820618d902e967af7cbb1712bc811f768a38474fe7f",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "LICENSE",
+        "path": "test-vectors/jcs-parity/node_modules/canonicalize/LICENSE",
+        "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/jcs-parity/node_modules/canonicalize/README.md",
+        "sha256": "bf7bb912972b2787b393d3618a965d742b26185200fabce330df9de02d607844",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "canonicalize.js",
+        "path": "test-vectors/jcs-parity/node_modules/canonicalize/bin/canonicalize.js",
+        "sha256": "cf81826eee228ef4d56f14f2272e635f38bc262dd4d0faa0e2b1065a0ae388f0",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "canonicalize.d.ts",
+        "path": "test-vectors/jcs-parity/node_modules/canonicalize/lib/canonicalize.d.ts",
+        "sha256": "5eba409e1fe34c86e46af829f1f236645b654e405e3377277b2baeb5e5352124",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "canonicalize.js",
+        "path": "test-vectors/jcs-parity/node_modules/canonicalize/lib/canonicalize.js",
+        "sha256": "c0fd652bd174455567dcbbbab0f306fe5d40a9fb13b0f184b46aca083b29546e",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "package.json",
+        "path": "test-vectors/jcs-parity/node_modules/canonicalize/package.json",
+        "sha256": "3a67e99014fc5e40ad0c3a689fe0b94d3e97a370722cfc34cc2152d5fc182856",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "package-lock.json",
+        "path": "test-vectors/jcs-parity/package-lock.json",
+        "sha256": "bedf8fa8cb25b39f3a7ad71d265d19571d4ee737f937ea79592a78545f64bc21",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "package.json",
+        "path": "test-vectors/jcs-parity/package.json",
+        "sha256": "960c20cbe10938b8304a1dbeaef113d469b2129b5d55eb72969b178bd5332bef",
         "canonicalization": "JCS-RFC-8785"
       },
       {

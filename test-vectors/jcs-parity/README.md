@@ -1,6 +1,6 @@
 # JCS Parity Test Vectors
 
-Cross-language byte-equivalence vectors for RFC 8785 JSON Canonicalization Scheme. Consumed by `soa-harness-impl` (via `@filen/rfc8785`) and `soa-validate` (via `canonicaljson-go`), pinned at this spec's MANIFEST digest.
+Cross-language byte-equivalence vectors for RFC 8785 JSON Canonicalization Scheme. Consumed by `soa-harness-impl` (via `canonicalize`) and `soa-validate` (via `canonicaljson-go`), pinned at this spec's MANIFEST digest.
 
 ## Why this exists
 
@@ -32,7 +32,7 @@ jcs-parity/
 
 ## How to regenerate
 
-Prerequisites: Node 20+, Go 1.22+, `@filen/rfc8785` available from the spec-repo root (install via `npm install @filen/rfc8785` or let an outer package.json handle it).
+Prerequisites: Node 20+, Go 1.22+, and the `canonicalize` npm package (Samuel Erdtman's RFC 8785 reference) available from either the spec-repo root or a local `package.json` in `jcs-parity/`. Install: `npm install canonicalize`.
 
 ```sh
 # Build the Go helper once
@@ -65,7 +65,7 @@ node generate-vectors.mjs --verify
 ### TypeScript (`soa-harness-impl`)
 
 ```typescript
-import { canonicalize } from "@filen/rfc8785";
+import canonicalize from "canonicalize";  // default export, not named
 import vectors from "../../../../soa-harness=specification/test-vectors/jcs-parity/generated/floats.json";
 
 for (const c of vectors.cases) {
@@ -121,7 +121,7 @@ for _, c := range vectors.Cases {
   "generated_by": "generate-vectors.mjs",
   "generated_at": "2026-04-20T15:39:00.000Z",
   "libraries": {
-    "ts": { "name": "@filen/rfc8785", "version": "x.y.z" },
+    "ts": { "name": "canonicalize", "version": "x.y.z" },
     "go": { "name": "canonicaljson-go", "version": "1.0.3" }
   },
   "source_inputs": "inputs/<same filename>",
@@ -141,7 +141,7 @@ for _, c := range vectors.Cases {
 
 - **Changes to `inputs/`**: require spec-repo PR with 48h discussion window. Regenerate `generated/` in the same PR.
 - **Changes to `generated/` without matching `inputs/` change**: forbidden. Always regenerate from `inputs/` via the script.
-- **Library version bumps** (`@filen/rfc8785` in npm or `canonicaljson-go` in `go-cli/go.mod`): reviewable PR. Regenerate. CI `--verify` catches silent drift.
+- **Library version bumps** (`canonicalize` in npm or `canonicaljson-go` in `go-cli/go.mod`): reviewable PR. Regenerate. CI `--verify` catches silent drift.
 - **Removing a case**: major-version spec bump only (breaks downstream implementations that pinned to the vector).
 
 ## History
