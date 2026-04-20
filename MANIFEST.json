@@ -154,31 +154,61 @@
       {
         "name": "README.md",
         "path": "test-vectors/jcs-parity/README.md",
-        "sha256": "2dc1e261c3979260c5f2a3820f1ecc1ecbf9f93702b1331cfcc35680f34178b7",
+        "sha256": "198ce284e6dd16e6b26e5b7889cebdf383565870e3d337dc701eeed898ebdde8",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "generate-vectors.mjs",
+        "path": "test-vectors/jcs-parity/generate-vectors.mjs",
+        "sha256": "1f2c2bb609ba5295f529a2ee30fc87e03136c11125e507661b895f4be3790004",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": ".gitignore",
+        "path": "test-vectors/jcs-parity/go-cli/.gitignore",
+        "sha256": "bfc74f589e6789af83ed3ce120121931a4351c130b95f9febea12795adcd8553",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/jcs-parity/go-cli/README.md",
+        "sha256": "14a09d6d6f93d0ccae011d6e35f0ea683df3ed236ccd1afc0e7ce513104e1a9c",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "go.mod",
+        "path": "test-vectors/jcs-parity/go-cli/go.mod",
+        "sha256": "1d6ffc97229368031003ed0f7979e2acca9f044cb9137d61748969ff97a3f78c",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "main.go",
+        "path": "test-vectors/jcs-parity/go-cli/main.go",
+        "sha256": "b60e503fa8950737df2e0a5dbf2df3301542664c241441bda9e2e65d02c444b6",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "floats.json",
-        "path": "test-vectors/jcs-parity/floats.json",
-        "sha256": "707e76defb4f235138e86abb5cf5fed518597e9db9d7e46f2f007110536a114f",
+        "path": "test-vectors/jcs-parity/inputs/floats.json",
+        "sha256": "cc50115d58d448a198a5bb217526fd4aabe75d8079e68729354cec47d4e2724e",
         "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": "integers.json",
-        "path": "test-vectors/jcs-parity/integers.json",
-        "sha256": "b21fd471fa6d5208a8e1c4c588d2c6084c7cd6834bad541132de864cb28704bb",
+        "path": "test-vectors/jcs-parity/inputs/integers.json",
+        "sha256": "a4854113813d3e707cee45d3afabbf8f7bd8fbb5e6b4c0d0321b47e74817b738",
         "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": "nested.json",
-        "path": "test-vectors/jcs-parity/nested.json",
-        "sha256": "db7680532d9b289ea28c4081c8f923170ef843407b607221c4621178084b4144",
+        "path": "test-vectors/jcs-parity/inputs/nested.json",
+        "sha256": "9849f381200b133573bcd0590d17c9e649f8b83608d46805b1eae295248d23a9",
         "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": "strings.json",
-        "path": "test-vectors/jcs-parity/strings.json",
-        "sha256": "5ebb9a21f2685a12716d26ffa21b3be9328a9fcf97933f18597c9f84789818e1",
+        "path": "test-vectors/jcs-parity/inputs/strings.json",
+        "sha256": "3f311c87845907495a3d183b82b466f6fbe0dfe4309e57e89716b928ec25620c",
         "canonicalization": "JCS-RFC-8785"
       },
       {
