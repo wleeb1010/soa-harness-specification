@@ -907,11 +907,11 @@
     },
     "SV-PERM-01": {
       "name": "Capability lattice",
-      "section": "\u00a710.3",
-      "section_title": "Resolution Algorithm",
+      "section": "\u00a710.3, \u00a710.3.1",
+      "section_title": "Resolution Algorithm + Permission Decision Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "ReadOnly rejects Mutating; WorkspaceWrite rejects Destructive."
+      "assertion": "ReadOnly rejects Mutating; WorkspaceWrite rejects Destructive. Vector path: schema validation of test-vectors/permission-prompt/ PDA-JWS and canonical-decision bundle. Live path: validator issues GET /permissions/resolve per \u00a710.3.1 across the pinned Tool Registry and asserts decision=CapabilityDenied for (ReadOnly, Mutating) and (WorkspaceWrite, Destructive) pairs; asserts not-a-side-effect property by reading audit-log tail hash before and after the query batch."
     },
     "SV-PERM-02": {
       "name": "Resolution precedence",

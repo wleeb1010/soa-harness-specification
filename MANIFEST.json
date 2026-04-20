@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "a5142af7e8d26476d68b08f21ec4a914a1df398853369ca9b8640faea17b29f6",
+        "sha256": "a7d4ed85d63a7710e28ce96cf20de1891208c3b8efbe46d2ed921b359d59605f",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "889ec3fbcf50e6aa40c2ae08b414696c92b2234599030c6fe53b63acfa6b1e1f",
+        "sha256": "bc44d6ab23d0969f239c289bfd7c99b416746fa96990aa41f203f3a442152384",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -89,6 +89,12 @@
         "name": "locale-map.schema.json",
         "path": "schemas/locale-map.schema.json",
         "sha256": "59b50c1043aa949e76d98cbc6630a0bbbce588719a932c655a31b7508a306379",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "permissions-resolve-response.schema.json",
+        "path": "schemas/permissions-resolve-response.schema.json",
+        "sha256": "0d6e1a7ee350358997f31173947d84f61d490817b3a5fbc7e717450e463f1553",
         "canonicalization": "JCS-RFC-8785"
       },
       {

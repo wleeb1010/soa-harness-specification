@@ -75,6 +75,19 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Destination:** `docs/deployment-environment.md` or a new `docs/adoption-patterns.md` — as a recommended (not required) organizational pattern for v1.0 adopters who want conformance claims stronger than self-certification.
 - **Milestone target:** M1 close.
 
+### L-09 — Permission decision observability `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · Week 2 close, SV-PERM-01 live-path divergence between impl (claimed green) and validator (correctly observed skip)
+- **What:** `SV-PERM-01` is a normative conformance test, but §10.3 defined permission resolution as an in-process function with no externally observable surface. The validator's source-grep of the impl's registered routes confirmed no `/permissions/…` path existed — meaning the conformance test had no window to observe.
+- **Why it matters:** the gap was structural, not implementation-defect. Any impl passing §10.3 in-process could still fail to expose the decision externally, making `SV-PERM-01` live-testing impossible without an impl-specific backdoor. The three-repo architecture's independent-judge property surfaced the contradiction in Week 2 day 2.
+- **Root-cause fix:** added §10.3.1 **Permission Decision Observability (Normative)** to Core — `GET /permissions/resolve?tool=…&session_id=…`, session-scoped bearer auth, 60-rpm rate limit, a closed-enum response schema (`schemas/permissions-resolve-response.schema.json`), and an explicit **not-a-side-effect property** enforced by `SV-PERM-01`'s live path (validator reads audit-log tail hash before and after the query batch). This is a first-class public endpoint — operators legitimately need it for policy review and incident response, not a test-only hook.
+- **Versioning note:** the addition is strictly additive; no existing §10.3 step-1-through-5 behavior changes. Runners claiming `soaHarnessVersion: "1.0"` MUST ship the new endpoint.
+- **Destination edits landed this commit:**
+    - Core spec §10.3.1 (new subsection, ~1 screen of normative text)
+    - `schemas/permissions-resolve-response.schema.json` (new)
+    - `soa-validate-must-map.json` — SV-PERM-01 assertion text expanded to describe vector-path + live-path
+- **Commit landing this edit:** the same patch that added this L-09 entry. Check `git log --follow IMPLEMENTATION_LESSONS.md` for the exact SHA.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

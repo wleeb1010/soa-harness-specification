@@ -964,6 +964,46 @@ For each tool invocation the Runner MUST resolve `(capability, control, handler)
    - `Prompt` → block, emit `PermissionPrompt`, wait for signed decision, proceed or abort.
    - `Deny` → emit `PermissionDenied`, do NOT invoke.
 
+#### 10.3.1 Permission Decision Observability (Normative)
+
+**Rationale.** §10.3 defines permission resolution as an in-process function with deterministic inputs (`tool.risk_class`, `activeMode`, `permissions.toolRequirements[tool.name]`, optional `policyEndpoint` response). An in-process function with no externally observable surface cannot be independently verified by a conformance validator or inspected by an operator: the Runner's claim "I would decide X" carries only the weight of the Runner's own unit tests. Every other normative subsystem in this specification exposes a window onto its state (`/health`, `/ready`, `/.well-known/agent-card.*`, the audit sink, StreamEvent feed); permission resolution requires the same treatment. This section defines the window — a first-class endpoint, not a test-only hook. Operators legitimately need to know "what would the resolver decide for user X calling tool Y under session Z" for policy review, incident response, and capability-planning work; validators need the same window for `SV-PERM-01` live-path conformance.
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+GET /permissions/resolve?tool=<tool_name>&session_id=<session_id>
+```
+
+- **Transport:** HTTPS / TLS 1.3. Plain HTTP is NOT permitted. The endpoint MAY be additionally reachable over a loopback-only listener (Unix socket, named pipe) for operator tools running co-located with the Runner; that listener MAY be plain.
+- **Authentication:** the request MUST present a session-scoped bearer token obtained via §12.3's session handshake (the same token class used for `/stream/v1/{session_id}`). Unauthenticated requests return `401 Unauthorized`. Bearer tokens not authorized for the named `session_id` return `403 Forbidden`. Unauthenticated probes to this endpoint MUST NOT leak Tool Registry (§11) contents, existing session identifiers, or trust-anchor state in either the response body or response timing.
+- **Rate limiting:** the endpoint MUST be rate-limited per-bearer-token at no more than 60 requests/minute. Exceeding the limit returns `429 Too Many Requests` with `Retry-After`. Conformance: `SV-PERM-19`.
+
+**Response (200 OK).** JSON body conforming to `schemas/permissions-resolve-response.schema.json`. The Runner computes the response by executing steps 1–4 of §10.3 against the `(tool, session_id)` pair and reporting the terminal state WITHOUT reaching step 5 (no dispatch, no invocation, no handler activation).
+
+**Other responses:**
+- `400 Bad Request` — malformed query parameters (missing `tool` or `session_id`, unrecognized characters).
+- `401 Unauthorized` — missing or invalid bearer.
+- `403 Forbidden` — bearer not authorized for the named session.
+- `404 Not Found` — `tool` not in the Tool Registry (§11) OR `session_id` does not map to an active session.
+- `429 Too Many Requests` — rate-limit exceeded.
+- `503 Service Unavailable` — `/ready` is 503 (the resolver cannot be queried before boot completes). Body conforms to the §5.4 readiness-failure shape.
+
+**Not-a-side-effect property (normative MUST).** A `/permissions/resolve` query MUST NOT produce any of the following:
+1. An entry in `/audit/permissions.log` (§10.5) or any change to the audit hash chain. Conformance: `SV-PERM-01` validators issue `GET /permissions/resolve` twice and assert the audit log's terminal `this_hash` is unchanged between the two reads.
+2. A StreamEvent (§14) emission on any session's stream.
+3. A mutation to session state (§12), Tool Registry state (§11), CRL cache state (§10.6.1), or any other Runner-internal counter, clock, or handler-activation record.
+4. A `PermissionPrompt` request, even when the resolved decision is `Prompt`. The response body carries `decision: "Prompt"`; no prompt is issued, no handler is contacted.
+
+The Runner MAY invoke `policyEndpoint` (step 4) when computing the response because that is the only way to produce an accurate decision, and `policyEndpoint` is by its own contract an idempotent query service. When the Runner does invoke `policyEndpoint`, `policy_endpoint_applied: true` appears in the response. Operators who need a view of permission resolution WITHOUT the external network call can compare responses across two queries differing only by Runner configuration (policyEndpoint set vs unset on a test deployment).
+
+**Deterministic query fixture.** The §10.3 algorithm receives `args_digest` as an input at step 4 (the `policyEndpoint` POST payload). `/permissions/resolve` does not carry real arguments; the Runner MUST substitute the literal fixed string `"SOA-PERM-RESOLVE-QUERY"` for `args_digest` when forwarding to `policyEndpoint`. This value is reserved — `policyEndpoint` implementations MUST either (a) treat it as "answer based on tool and capability only, ignoring args" or (b) respond with a tightening `Prompt` or `Deny`. Any `policyEndpoint` that loosens the decision on the basis of this reserved args_digest is non-conformant.
+
+**Versioning.** Addition of this endpoint is strictly additive — no existing §10.3 behavior changes. Runners claiming `soaHarnessVersion: "1.0"` MUST ship this endpoint. Validators MAY accept a `501 Not Implemented` response on this endpoint from Runners claiming a pre-1.0 version, but such a Runner fails `SV-PERM-01` live-path conformance.
+
+**Conformance linkage.** `SV-PERM-01` is fulfilled by two paths:
+  1. **Vector path** — schema validation of `test-vectors/permission-prompt/` PDA-JWS and canonical-decision bundle (§18).
+  2. **Live path** — validator establishes a session (out-of-band, via whatever bearer-provisioning surface the deployment provides), then for each entry in the pinned Tool Registry fixture issues `GET /permissions/resolve?tool=<name>&session_id=<validator session>` under each of the three `activeMode` values exercised in the fixture, and asserts that every response's `decision` matches the deterministic output of §10.3 steps 1–4 applied to the same inputs. The validator separately asserts the not-a-side-effect property by reading the audit log's tail hash before and after the query batch.
+
 ### 10.4 Autonomous Handler and High-Risk Actions
 
 - **High-risk action** = any self-edit (§9), any tool with `risk_class = Destructive`, or a self-improvement iteration with `|training_score - baseline_training_score| > 0.10`.
