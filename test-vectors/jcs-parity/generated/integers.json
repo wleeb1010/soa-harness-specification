@@ -1,0 +1,99 @@
+{
+  "$schema": "https://soa-harness.org/schemas/v1.0/jcs-parity-generated.schema.json",
+  "generated_by": "generate-vectors.mjs",
+  "generated_at": "2026-04-20T21:47:20.717Z",
+  "libraries": {
+    "ts": {
+      "name": "canonicalize",
+      "version": "3.0.0"
+    },
+    "go": {
+      "name": "github.com/gowebpki/jcs",
+      "version": "see go-cli/go.mod"
+    }
+  },
+  "source_inputs": "inputs/integers.json",
+  "cases": [
+    {
+      "name": "zero",
+      "input": {
+        "n": 0
+      },
+      "rationale": "baseline",
+      "expected_canonical": "{\"n\":0}",
+      "libraries_agree": true
+    },
+    {
+      "name": "one",
+      "input": {
+        "n": 1
+      },
+      "rationale": "baseline",
+      "expected_canonical": "{\"n\":1}",
+      "libraries_agree": true
+    },
+    {
+      "name": "negative one",
+      "input": {
+        "n": -1
+      },
+      "rationale": "negative sign preserved, no leading-zero variants",
+      "expected_canonical": "{\"n\":-1}",
+      "libraries_agree": true
+    },
+    {
+      "name": "max safe integer",
+      "input": {
+        "n": 9007199254740991
+      },
+      "rationale": "Number.MAX_SAFE_INTEGER in JavaScript; precision boundary",
+      "expected_canonical": "{\"n\":9007199254740991}",
+      "libraries_agree": true
+    },
+    {
+      "name": "min safe integer",
+      "input": {
+        "n": -9007199254740991
+      },
+      "rationale": "Number.MIN_SAFE_INTEGER",
+      "expected_canonical": "{\"n\":-9007199254740991}",
+      "libraries_agree": true
+    },
+    {
+      "name": "int32 max",
+      "input": {
+        "n": 2147483647
+      },
+      "rationale": "int32 max; Go default int on 32-bit platforms",
+      "expected_canonical": "{\"n\":2147483647}",
+      "libraries_agree": true
+    },
+    {
+      "name": "int32 min",
+      "input": {
+        "n": -2147483648
+      },
+      "rationale": "int32 min",
+      "expected_canonical": "{\"n\":-2147483648}",
+      "libraries_agree": true
+    },
+    {
+      "name": "ten",
+      "input": {
+        "n": 10
+      },
+      "rationale": "no leading zeros, no trailing decimals",
+      "expected_canonical": "{\"n\":10}",
+      "libraries_agree": true
+    },
+    {
+      "name": "hundred",
+      "input": {
+        "n": 100
+      },
+      "rationale": "multi-digit",
+      "expected_canonical": "{\"n\":100}",
+      "libraries_agree": true
+    }
+  ]
+}

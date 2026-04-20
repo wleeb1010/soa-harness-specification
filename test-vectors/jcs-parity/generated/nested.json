@@ -1,0 +1,148 @@
+{
+  "$schema": "https://soa-harness.org/schemas/v1.0/jcs-parity-generated.schema.json",
+  "generated_by": "generate-vectors.mjs",
+  "generated_at": "2026-04-20T21:47:20.882Z",
+  "libraries": {
+    "ts": {
+      "name": "canonicalize",
+      "version": "3.0.0"
+    },
+    "go": {
+      "name": "github.com/gowebpki/jcs",
+      "version": "see go-cli/go.mod"
+    }
+  },
+  "source_inputs": "inputs/nested.json",
+  "cases": [
+    {
+      "name": "empty object",
+      "input": {},
+      "rationale": "baseline",
+      "expected_canonical": "{}",
+      "libraries_agree": true
+    },
+    {
+      "name": "empty array",
+      "input": [],
+      "rationale": "baseline",
+      "expected_canonical": "[]",
+      "libraries_agree": true
+    },
+    {
+      "name": "alphabetical keys",
+      "input": {
+        "a": 1,
+        "b": 2,
+        "c": 3
+      },
+      "rationale": "already sorted; no reordering",
+      "expected_canonical": "{\"a\":1,\"b\":2,\"c\":3}",
+      "libraries_agree": true
+    },
+    {
+      "name": "reverse alphabetical",
+      "input": {
+        "c": 3,
+        "b": 2,
+        "a": 1
+      },
+      "rationale": "keys sorted in UCS-2 code-unit order",
+      "expected_canonical": "{\"a\":1,\"b\":2,\"c\":3}",
+      "libraries_agree": true
+    },
+    {
+      "name": "case sensitive sort",
+      "input": {
+        "b": 1,
+        "B": 2,
+        "a": 3,
+        "A": 4
+      },
+      "rationale": "UCS-2 sort: uppercase before lowercase (0x41 < 0x61)",
+      "expected_canonical": "{\"A\":4,\"B\":2,\"a\":3,\"b\":1}",
+      "libraries_agree": true
+    },
+    {
+      "name": "digit and letter keys",
+      "input": {
+        "1": 2,
+        "z": 1,
+        "a": 3
+      },
+      "rationale": "digits (0x30+) sort before letters",
+      "expected_canonical": "{\"1\":2,\"a\":3,\"z\":1}",
+      "libraries_agree": true
+    },
+    {
+      "name": "unicode keys",
+      "input": {
+        "日": 1,
+        "a": 2,
+        "z": 3
+      },
+      "rationale": "ASCII sorts before BMP Unicode",
+      "expected_canonical": "{\"a\":2,\"z\":3,\"日\":1}",
+      "libraries_agree": true
+    },
+    {
+      "name": "nested object",
+      "input": {
+        "outer": {
+          "inner_b": 2,
+          "inner_a": 1
+        }
+      },
+      "rationale": "recursive sort: inner keys also sorted",
+      "expected_canonical": "{\"outer\":{\"inner_a\":1,\"inner_b\":2}}",
+      "libraries_agree": true
+    },
+    {
+      "name": "array of objects",
+      "input": {
+        "items": [
+          {
+            "y": 1,
+            "x": 2
+          },
+          {
+            "b": 3,
+            "a": 4
+          }
+        ]
+      },
+      "rationale": "each object in array sorted independently; array order preserved",
+      "expected_canonical": "{\"items\":[{\"x\":2,\"y\":1},{\"a\":4,\"b\":3}]}",
+      "libraries_agree": true
+    },
+    {
+      "name": "mixed types nested",
+      "input": {
+        "z": null,
+        "a": true,
+        "m": [
+          1,
+          2,
+          3
+        ]
+      },
+      "rationale": "null, boolean, array values canonicalize correctly; keys sorted",
+      "expected_canonical": "{\"a\":true,\"m\":[1,2,3],\"z\":null}",
+      "libraries_agree": true
+    },
+    {
+      "name": "deeply nested",
+      "input": {
+        "l1": {
+          "l2": {
+            "l3": {
+              "deepest": "value"
+            }
+          }
+        }
+      },
+      "rationale": "arbitrary depth; guards against stack-based bugs",
+      "expected_canonical": "{\"l1\":{\"l2\":{\"l3\":{\"deepest\":\"value\"}}}}",
+      "libraries_agree": true
+    }
+  ]
+}

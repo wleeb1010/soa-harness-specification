@@ -1,0 +1,126 @@
+{
+  "$schema": "https://soa-harness.org/schemas/v1.0/jcs-parity-generated.schema.json",
+  "generated_by": "generate-vectors.mjs",
+  "generated_at": "2026-04-20T21:47:20.788Z",
+  "libraries": {
+    "ts": {
+      "name": "canonicalize",
+      "version": "3.0.0"
+    },
+    "go": {
+      "name": "github.com/gowebpki/jcs",
+      "version": "see go-cli/go.mod"
+    }
+  },
+  "source_inputs": "inputs/strings.json",
+  "cases": [
+    {
+      "name": "empty",
+      "input": {
+        "s": ""
+      },
+      "rationale": "empty string baseline",
+      "expected_canonical": "{\"s\":\"\"}",
+      "libraries_agree": true
+    },
+    {
+      "name": "ascii",
+      "input": {
+        "s": "hello"
+      },
+      "rationale": "plain ASCII",
+      "expected_canonical": "{\"s\":\"hello\"}",
+      "libraries_agree": true
+    },
+    {
+      "name": "quote and backslash",
+      "input": {
+        "s": "a\"b\\c"
+      },
+      "rationale": "RFC 8785 requires backslash escape for quote and backslash",
+      "expected_canonical": "{\"s\":\"a\\\"b\\\\c\"}",
+      "libraries_agree": true
+    },
+    {
+      "name": "control newline",
+      "input": {
+        "s": "a\nb"
+      },
+      "rationale": "newline MUST be \\n, never raw or \\u000a",
+      "expected_canonical": "{\"s\":\"a\\nb\"}",
+      "libraries_agree": true
+    },
+    {
+      "name": "control tab",
+      "input": {
+        "s": "a\tb"
+      },
+      "rationale": "tab MUST be \\t",
+      "expected_canonical": "{\"s\":\"a\\tb\"}",
+      "libraries_agree": true
+    },
+    {
+      "name": "control carriage return",
+      "input": {
+        "s": "a\rb"
+      },
+      "rationale": "CR MUST be \\r",
+      "expected_canonical": "{\"s\":\"a\\rb\"}",
+      "libraries_agree": true
+    },
+    {
+      "name": "control backspace",
+      "input": {
+        "s": "a\bb"
+      },
+      "rationale": "backspace MUST be \\b",
+      "expected_canonical": "{\"s\":\"a\\bb\"}",
+      "libraries_agree": true
+    },
+    {
+      "name": "control form feed",
+      "input": {
+        "s": "a\fb"
+      },
+      "rationale": "form feed MUST be \\f",
+      "expected_canonical": "{\"s\":\"a\\fb\"}",
+      "libraries_agree": true
+    },
+    {
+      "name": "low control unicode",
+      "input": {
+        "s": "a\u0001b"
+      },
+      "rationale": "control chars below 0x20 without named escapes MUST use \\uXXXX lowercase hex",
+      "expected_canonical": "{\"s\":\"a\\u0001b\"}",
+      "libraries_agree": true
+    },
+    {
+      "name": "unicode bmp",
+      "input": {
+        "s": "日本語"
+      },
+      "rationale": "BMP Unicode passed through verbatim — no escaping above 0x20",
+      "expected_canonical": "{\"s\":\"日本語\"}",
+      "libraries_agree": true
+    },
+    {
+      "name": "unicode supplementary",
+      "input": {
+        "s": "🦀"
+      },
+      "rationale": "supplementary plane; encoded as surrogate pair in UTF-16, preserved as single UTF-8 sequence",
+      "expected_canonical": "{\"s\":\"🦀\"}",
+      "libraries_agree": true
+    },
+    {
+      "name": "forward slash",
+      "input": {
+        "s": "a/b"
+      },
+      "rationale": "RFC 8785 does NOT require escaping forward slashes",
+      "expected_canonical": "{\"s\":\"a/b\"}",
+      "libraries_agree": true
+    }
+  ]
+}
