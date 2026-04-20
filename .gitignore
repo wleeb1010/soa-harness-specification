@@ -1,2 +1,5 @@
 image.jpg
 graphify-out/
+
+# Per-session local state (Claude Code)
+.claude/
