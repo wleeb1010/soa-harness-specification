@@ -59,6 +59,9 @@
 - **[RFC-8705]** OAuth 2.0 Mutual-TLS Client Authentication.
 - **[RFC-8693]** OAuth 2.0 Token Exchange.
 - **[RFC-8628]** OAuth 2.0 Device Authorization Grant.
+- **[RFC-7636]** Proof Key for Code Exchange (PKCE). Required by §7.2 for the authorization-code flow.
+- **[RFC-7662]** OAuth 2.0 Token Introspection. Used in §21.2 as the authoritative check for bearer-token liveness when opaque tokens are in play.
+- **[RFC-6570]** URI Template (Level 1). Used in §7.1 (`stream_scope_template`) for per-session scope composition during §7.4 token exchange.
 - **[WebAuthn-L3]** Web Authentication: An API for accessing Public Key Credentials, Level 3.
 - **[COSE]** RFC 9052 CBOR Object Signing and Encryption.
 - **[RFC-7515]** JSON Web Signature (JWS).
@@ -441,7 +444,7 @@ On `/ui/v1/connect` attach, Gateway MUST mint a per-session capability token wit
 | REST (`POST /ui/v1/commands/*`, uploads, enroll) | `DPoP` HTTP header on every request carrying a command or state-changing intent. Gateway verifies per RFC 9449 (alg allowlist EdDSA/ES256, `htu`/`htm` match, `jti` single-use per (key, 5 min)) |
 | Server-Sent Events (`GET /ui/v1/stream`) | `DPoP` HTTP header on the initial subscribe request; the long-lived stream inherits the proof because SSE commands flow back over REST |
 | WebSocket (`GET /ui/v1/connect`) | `DPoP` HTTP header on the upgrade handshake (bound to the original HTTP `GET` per RFC 9449). After upgrade, each WebSocket command frame MUST carry a `dpop` field containing a fresh DPoP JWT with `htm=WS-COMMAND`, `htu=<command.type>`, and a `jti` single-use per (key, 5 min). Gateway MUST reject frames missing the `dpop` field or re-using `jti` with `ui.dpop-invalid` close code 4007 |
-| Loopback IPC (Unix socket, Windows named pipe) | Possession is established by kernel-enforced peer credentials (`SO_PEERCRED`, `GetNamedPipeClientProcessId`) matching the enrolled operator identity. DPoP is NOT required on IPC; the IPC file-system permissions replace it. Gateway MUST verify peer-cred on EVERY command, not just first attach |
+| Loopback IPC (Unix socket, Windows named pipe) | Possession is established by kernel-enforced peer credentials (`SO_PEERCRED`, `GetNamedPipeClientProcessId`) matching the enrolled operator identity per the normative socket / pipe contract in §6.1.1 (Local IPC Contract). DPoP is NOT required on IPC; the IPC file-system permissions replace it. Gateway MUST verify peer-cred on EVERY command, not just first attach |
 
 Any command-bearing frame that the Gateway cannot tie to an mTLS thumbprint, a valid DPoP proof, or a verified IPC peer-cred MUST be rejected with `ui.dpop-invalid` (HTTP 401 / WS 4007 / IPC: connection close). The metric `soa_ui_possession_proof_mode` MUST carry the string `mtls | dpop-rest | dpop-ws | ipc-peercred` for the active session.
 
@@ -492,6 +495,8 @@ Every event is wrapped; the inner Runner event is passed through unmodified.
 ### 8.2 Event Catalog (Closed)
 
 The Gateway delivers exactly the union of (a) the 25 Core `StreamEvent.type` values unmodified and (b) the 12 UI-derived events below. Unknown types on the wire MUST be logged and skipped by UIs (forward-compat).
+
+**Schema binding (normative).** Every Core pass-through `type` MUST carry a payload that validates against its schema as defined in Core §14.1.1 (Per-Type Payload Schemas); every UI-derived `type` MUST carry a payload that validates against its schema as defined in UI §8.2.1 (UI-Derived Event Payload Schemas). The `trust_class` field on every delivered envelope MUST be assigned by the Gateway strictly per the closed mapping in Core §14.1.2 (Event Type → Trust Class Mapping); the Gateway MUST NOT compute `trust_class` from payload content. Event types not enumerated here, in Core §14.1, or in UI §8.2.1 MUST be rejected by Gateway with `ui.gateway-config-invalid` (reason `unknown-event-type`). Covered by UV-E-08 (closed-set), UV-TRUST-01..03 (mapping fidelity), and UV-E-09 (UI-derived schema validation).
 
 **Core pass-through types** (from Core §14.1, reproduced here as the authoritative set this profile binds to):
 
@@ -740,6 +745,8 @@ A "Reveal args" control is enabled only when (a) caller holds `ui.admin`, or (b)
 ### 11.4 Attestation
 
 All `PromptDecision` commands MUST carry a **Prompt Decision Attestation** (PDA) in one of two formats:
+
+**Relationship to Core §6.1.1 Artifact Signing Profile (normative clarification).** PDA-JWS is a specific application of the Core §6.1.1 Artifact Signing Profile with `typ = "soa-pda+jws"`; the algorithm allowlist (EdDSA / ES256 / RS256 ≥ 3072) and detached-vs-compact distinction are governed by Core §6.1.1, not re-specified here. PDA-WebAuthn is NOT a JWS profile — it is a WebAuthn-L3 assertion whose `clientDataJSON` includes the canonicalized decision as the challenge. The two attestation formats are independent: implementations MUST accept at least one and MAY accept both, but a single `PromptDecision` carries exactly one PDA format (chosen per §11.4 matrix). The §25.3 attack-surface row "Forge `PermissionDecision`" is mitigated identically by either format once the signature, trust anchor, and replay cache checks pass. (UV-P-22)
 
 The `canonical_decision` object MUST validate against the JSON Schema 2020-12 document below. `additionalProperties: false` forces all implementations to agree on the exact field set; unknown fields are rejected by conformant verifiers.
 
@@ -1300,7 +1307,9 @@ All UI-surface errors use stable `ui.*` codes.
 | `ui.artifact-too-large` | Content | 413 | — | Range requested exceeds policy |
 | `ui.artifact-retention-expired` | Content | 410 | — | — |
 
-(UV-ERR-01: observed error codes are a subset of this closed set)
+(UV-ERR-01: observed error codes are a subset of this closed set; UV-ERR-02..19 verify individual emission triggers per §21.2.)
+
+Gateway implementations MUST emit each code above exactly when the condition in §21.2 applies and MUST NOT emit a code outside this table. Implementations MAY emit no error (i.e., success) for any condition not enumerated here.
 
 ### 21.1 Diagnostic Counters (Not Errors)
 
@@ -1312,6 +1321,31 @@ These identifiers appear in observability dashboards and OTel metrics but are NO
 
 Notes on the table:
 - **`ui.backpressure`** fires when the Gateway is shedding non-essential events under load (§17.3). The counter increments at most once per minute per session; it never appears in a UI-visible error envelope, so `UV-ERR-01` excludes it from the closed error set.
+
+### 21.2 Emission Triggers (Normative)
+
+Each emission clause below binds a closed-set code from §21 to the exact condition under which a Gateway MUST emit it. Where a code's trigger appears already in a preceding section, §21.2 references that section rather than restating. Where a code was previously only enumerated, §21.2 supplies the binding.
+
+| Code | Gateway MUST emit when | Owning section | Test ID |
+|---|---|---|---|
+| `ui.auth-required` | A protected Gateway endpoint (REST, WS upgrade, SSE subscribe) receives a request carrying no `Authorization` bearer token and no valid session-capability cookie. | §7.2 | UV-ERR-02 |
+| `ui.token-expired` | The presented bearer token's `exp` claim is ≤ `now() - §1-clock-skew`, or RFC 7662 introspection returns `active:false`. Distinct from `ui.auth-required` (missing token) — reserved for the expired-but-well-formed case. | §7.2 | UV-ERR-03 |
+| `ui.scope-insufficient` | The caller's access-token scopes do not include any scope granting the requested operation (e.g., `ui.command` for submit, `ui.admin` for admin-dismiss) per §7.5. | §7.5 | UV-ERR-04 |
+| `ui.session-cap-expired` | The per-session capability token (§7.6) has expired or been revoked via `POST /ui/v1/revoke`. | §7.6 | UV-ERR-05 |
+| `ui.idp-discovery-failed` | The Gateway cannot reach the configured `issuer` OIDC discovery endpoint within 5 s × 3 retries, or the retrieved document fails JSON-Schema validation against §7.1. | §7.1 | UV-ERR-06 |
+| `ui.transport-unsupported` | The client requests a transport (WS, SSE, REST-long-poll) that the Gateway's discovery document did not advertise as supported, or requests TLS < 1.3 per §6.1. | §6.1 | UV-ERR-07 |
+| `ui.frame-too-large` | An inbound WS frame or REST request body exceeds the discovery-declared `max_event_bytes` (§7.1). | §8 | UV-ERR-08 |
+| `ui.rate-limited` | A caller exceeds any per-profile ceiling enumerated in §17 (command rate, subscribe rate, upload rate). Gateway MUST include `Retry-After` per RFC 9110. | §17 | UV-ERR-09 |
+| `ui.unknown-session` | A subscribe, command, or prompt-decision references a `session_id` the Gateway has no record of (never created, purged past retention, or owned by a different project). | §9, §14.3 | UV-ERR-10 |
+| `ui.command-rejected` | The upstream Runner returns a 4xx rejecting a forwarded command that the Gateway had no grounds to pre-reject. Distinct from `ui.dpop-invalid`, `ui.upload-sha-mismatch`, etc. | §10 | UV-ERR-11 |
+| `ui.prompt-not-assigned` | A caller with `ui.read` scope only (read-only observer) attempts to submit a `PromptDecision`. | §11, §7.5 | UV-ERR-12 |
+| `ui.handoff-observe-only` | A read-only observer (ui.read) attempts to cancel or steer a handoff they did not originate per §12. | §12 | UV-ERR-13 |
+| `ui.gateway-unavailable` | Gateway is not accepting traffic due to planned maintenance or unhealthy `/health` / `/ready` state; MUST be returned BEFORE any session-level processing and MUST include `Retry-After` ≥ 5 s. | §7.1 | UV-ERR-14 |
+| `ui.artifact-not-found` | An artifact URL's `artifact_id` path component does not correspond to any artifact the Gateway is authorized to serve for the caller's session. | §14.3 | UV-ERR-15 |
+| `ui.artifact-too-large` | A Range request asks for bytes beyond the artifact's declared size, or the Gateway's per-profile artifact-size ceiling. | §14.3 | UV-ERR-16 |
+| `ui.artifact-retention-expired` | Artifact exists in catalog metadata but its bytes have been purged per retention policy (Core §10.7). | §14.3 | UV-ERR-17 |
+
+**Invariants across all triggers.** Gateway MUST NOT emit a §21 code as a side effect of a successful operation (the code enumerates *failure* or *rejection*); `ui.duplicate-command` with `200 (cached)` is the sole dual-purpose surface and is informational-on-success by design. Gateway MUST populate the error envelope with stable `code`, operator-readable `message`, and (for 4xx) a `www-authenticate` hint when the failure is authentication-class.
 
 ---
 

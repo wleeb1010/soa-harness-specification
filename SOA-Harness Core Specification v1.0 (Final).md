@@ -149,6 +149,8 @@ Primitives P1–P10 and P12–P14 are REQUIRED for every `core`-profile Runner. 
 
 ### 5.3 External Bootstrap Root (Normative)
 
+**Rationale.** Every subsequent signature check in the spec (Agent Card, MANIFEST, program.md, PDA) eventually chains to the trust anchor configured here. If the anchor itself could be discovered from an artifact in the bundle, an attacker who swaps both the artifact and its "pointer to trust" could produce a self-consistent but fraudulent chain — the anchor MUST therefore arrive through a channel the attacker cannot simultaneously forge. Out-of-band delivery (SDK pin, operator-bundled file, DNSSEC) moves the trust decision outside the artifact flow and into a channel with independent integrity guarantees. The three options trade off deployment convenience vs. update agility: SDK pin is strongest but requires a client update to rotate; DNSSEC is most agile but depends on DNSSEC being deployed end-to-end; operator-bundled is the pragmatic middle ground for enterprise deployments. A deployment that picks NONE of the three has no non-circular trust root and MUST fail closed.
+
 The Agent Card signature chain terminates at a trust anchor published under `security.trustAnchors`. The trust anchor itself is not discoverable from any artifact in this bundle — doing so would be circular. v1.0 therefore REQUIRES that the initial trust root be delivered *out of band* via exactly ONE of the following channels per deployment:
 
 - **SDK-pinned.** The operator's SOA client SDK ships with a hard-coded `{publisher_kid, spki_sha256, issuer}` triple identifying the SOA-WG release-signing key. Runners loading an Agent Card whose `security.trustAnchors[].publisher_kid` does not match the SDK-pinned value MUST emit `HostHardeningInsufficient` (reason `bootstrap-missing`) and refuse to load the Card.
@@ -221,6 +223,8 @@ Gateways expose the same two endpoints with Gateway-appropriate readiness checks
 - `Cache-Control: max-age` MUST NOT exceed 300 seconds. v1.0 does not define a signed TTL extension; any longer cache lifetime observed on the wire is presumed to originate from an unsigned intermediary (proxy, CDN) and MUST be ignored by the client (client MUST refresh no later than 300 s).
 
 ### 6.1.1 Artifact Signing Profile (Normative)
+
+**Rationale.** Every signed artifact in the bundle shares the same small set of cryptographic choices so implementations and verifiers converge on one interoperable profile rather than diverging per artifact class. EdDSA (Ed25519) is the preferred baseline for new deployments (no curve-parameter footguns, deterministic signatures, fast verification); ES256 is included for hardware-attestation paths that commonly ship P-256 keys (WebAuthn, YubiKey PIV); RS256 is included only where legacy PKI already issues RSA certificates at ≥3072 bits. MANIFEST specifically forbids RS256 because the release-signing path is bootstrap-critical and RSA adds no security over Ed25519 while increasing verification time and signature size. `typ` is required on every JWS so a verifier cannot be tricked into accepting a signed agent-card bound to the wrong role (e.g., a leaked program.md signature used to attest a decision). The allowlist is intentionally short: extending it requires a spec-level change (§19.4), not a per-deployment policy decision, because a single deployment accepting a weak algorithm undermines every peer it interoperates with.
 
 All signed artifacts in the SOA-Harness v1.0 bundle MUST conform to the following per-artifact profile. Verifiers MUST reject any JWS whose `alg` is not in the allowlist, whose `typ` does not match the artifact class, or whose required header fields are absent.
 
@@ -685,7 +689,7 @@ Each iteration MUST execute the following steps strictly in order. Any step's fa
     c. Write `activation.record.json` containing `{ iteration_id, staging_sha, memory_note_id, fingerprint, decision_time }` atomically (tempfile + `fsync` + rename; on Windows use `MoveFileExW` with `MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH`).
     d. Fast-forward `main` to `staging_sha` using `git update-ref --create-reflog` with a signed commit (`commit.gpgsign=true` REQUIRED). Commit author is `soa-harness-meta <meta@agent.local>` with message `"self-improvement[<iteration-id>]: +<delta> (<training_score>/<holdout_score>)"`.
     e. Emit `SelfImprovementAccepted` on StreamEvent and OTel span.
-13. **Artifact Write.** Write `improvement.log.md` (§9.8) and produced artifacts under `/artifacts/self_improvement/<iteration-id>/`.
+13. **Artifact Write.** Write `improvement.log.md` (§9.8) and produced artifacts under `/artifacts/self_improvement/<iteration-id>/`. The task-directory layout, `task.json` schema, and scoring contract referenced throughout steps 2–10 are normatively defined in §9.6 (Harbor-Format) and its subsections §9.6.1–§9.6.3; non-conforming task bundles MUST be rejected at S3 gate with `HarborFormatInvalid`.
 
 ### 9.6 Harbor-Format (Normative)
 
@@ -751,6 +755,8 @@ task_id<TAB>partition<TAB>score<TAB>wall_clock_ms<TAB>status<TAB>notes
 The first row MUST be the header above verbatim. Aggregation: `training_score = mean(score where partition=train AND status=pass, counting fail/error as 0.0)`. Identical computation for `holdout_score`.
 
 ### 9.7 Docker Isolation Baseline (Normative)
+
+**Rationale.** Self-improvement tasks execute arbitrary code that the agent proposed and the harness has not yet validated — by definition these are the least-trusted processes in the system. The baseline is an intersection of the smallest-surface Linux isolation primitives whose combined effect is that a successful RCE in the task process still cannot (a) reach the host filesystem outside `/output`, (b) escalate beyond UID 65534, (c) make outbound network calls, (d) persist after the wall-clock timeout, or (e) affect sibling tasks. Docker was chosen over raw seccomp+namespaces because operator familiarity reduces misconfiguration risk, and over stronger sandboxes (gVisor, Firecracker) because the additional isolation comes at a startup-time cost that would dominate the inner-loop iteration rate self-improvement depends on. The `soa-harness-profile-v1` seccomp policy is explicitly enumerated (rather than "default Docker") so that a silent Docker-version default-change cannot weaken isolation without tripping conformance. Operators whose threat model requires stronger isolation (untrusted multi-tenant, regulatory) are expected to layer a VM boundary *outside* the Docker boundary — the baseline is a floor, not a ceiling.
 
 Each benchmark task container MUST be launched with the following settings.
 
@@ -980,6 +986,8 @@ For each tool invocation the Runner MUST resolve `(capability, control, handler)
 
 #### 10.5.1 Runtime Audit-Sink Failure (Normative)
 
+**Rationale.** The naïve choices at sink failure are (a) fail-closed immediately — halt everything the moment a single audit write fails — or (b) fail-open — keep serving and silently drop audit records. Both are wrong. (a) turns a transient network blip into a full outage and incentivizes operators to disable audit at the first false alarm. (b) means a motivated adversary with momentary sink access can silence logging during their attack window with no observable effect. The three-state model splits the difference by bounding *exposure* rather than *availability*: the Runner tolerates short blips for ReadOnly traffic indefinitely (those cannot mutate state worth forging), while refusing Mutating/Destructive operations whenever audit cannot prove it will later ship the record. The 60 s / 1000-record thresholds are deliberately tight — long enough to weather routine sink-side restarts and route flaps, short enough that an attacker cannot accumulate a significant horizon of un-audited mutating activity. The `AuditSinkDegraded` → `AuditSinkUnreachable` → `AuditSinkRecovered` events ensure operators see the state transition even when the sink itself is the blind spot.
+
 Readiness rules at §5.4 prevent a Runner from accepting new traffic when the sink is unreachable at startup. This subsection defines behavior when the sink becomes unreachable **during an active session** after readiness was previously green. The Runner MUST operate a three-state degradation model:
 
 | State | Trigger | Behavior |
@@ -1173,6 +1181,13 @@ This gives **at-least-once** semantics on resume: `pending` tools are replayed; 
 A tool whose dedupe horizon is shorter than this floor MUST be classified `risk_class = Destructive` (alongside the no-idempotency rule) because a late replay could re-execute the action. Tools declare their actual retention horizon in their MCP manifest as `idempotency_retention_seconds`; a tool declaring < 3600 seconds whose `risk_class` is not `Destructive` MUST be rejected by the Runner at tool-pool assembly with `ToolPoolStale` (reason `idempotency-retention-insufficient`). (`SV-SESS-11`)
 
 Tools without any idempotency support MUST be classified `risk_class = Destructive` and run only under `control = Prompt` with a re-prompt on resume.
+
+**Relationship to UI §11.4.1 Prompt Nonce Replay Cache (normative clarification).** §12.2 tool idempotency and UI §11.4.1 prompt-nonce replay prevention are **disjoint, non-substitutable mechanisms** operating at different layers:
+
+- §12.2 dedupes *tool invocations* keyed by `X-Soa-Idempotency-Key` (UUIDv4 per invocation). It protects against the Runner re-executing a tool after a crash/resume where the same tool call would otherwise fire twice. Its cache lives in the tool's own storage and survives Runner restarts for at least the retention window above.
+- UI §11.4.1 dedupes *user permission decisions* keyed by `(session_id, prompt.nonce)` (Gateway-minted per-prompt). It protects against a replayed or reused PDA granting a fresh authorization window to an attacker. Its cache lives in the Gateway and its persistence rules are profile-gated per UI §11.4.1.
+
+The two caches MUST NOT share storage or key space. A tool idempotency hit does NOT authorize a later PDA to bypass the nonce cache, and a PDA replay-cache hit does NOT cause the Runner to skip tool-side idempotency checks. Implementations bridging these layers (e.g., a Gateway that proxies both prompt decisions and tool calls) MUST maintain the two caches as independent subsystems with independent metrics (`soa_ui_replay_cache_*` for UI §11.4.1; `soa_tool_idempotency_*` for §12.2). (`SV-SESS-12`)
 
 ### 12.3 Atomic Writes
 
@@ -1499,7 +1514,7 @@ Every HR-\* test has canonical input fixtures shipped with `soa-validate`.
 5. **S5 Execute** — For each tool: permission (§10.3) → PreToolUse → tool → PostToolUse → audit + stream + persist (§15.4).
 6. **S6 Terminate or Loop** — Evaluate `StopReason`; if none, back to S3.
 
-Termination reasons are the closed `StopReason` enum (§13.4).
+Termination reasons are the closed `StopReason` enum (§13.4). Conflict resolution between any two of these six phases — and between S-phases and the orthogonal concerns of §10 Permission System, §11 Tool Registry, §12 Session Persistence, §17 A2A Wire Protocol — is governed by the normative matrix in §16.2 below. Implementations MUST resolve every listed interaction exactly as specified; any case not in the matrix MUST halt the turn with `StopReason::UnhandledInteraction` rather than picking an implementation-defined behavior.
 
 ### 16.2 Cross-Interaction Matrix (Normative Resolutions)
 
@@ -1605,8 +1620,9 @@ Every profile (including the Self-Improvement and Handoff add-ons) inherits the 
 - **Core (required)**: preamble + §4, §5, §6, §7, §8, §10, §11, §12, §13, §14, §15, §16, §18. (§§4–5 added so their normative MUSTs — lean design, failure-path definition, primitive unit-testability, file-system grounding, composition — are inside formal coverage; corresponding tests are `SV-PRIN-01..05` and `SV-STACK-01..02` in the must-map.)
 - **Self-Improvement (optional)**: Core + §9, §23. An implementation without self-improvement advertises `self_improvement.enabled = false` and skips §9 tests.
 - **Handoff (optional)**: Core + §17. An implementation without A2A advertises no `/a2a/v1` endpoint; `agent.describe` via Card fetch is still required.
+- **Full**: Core + Self-Improvement + Handoff. Full is the union of all three add-on profiles and is the only profile permitted to claim `implementation_capabilities = ["core","core+si","core+handoff"]` simultaneously in the Agent Card. Full-profile implementations MUST pass every test in `SV-*` and `UV-*` catalogs including the optional §9 and §17 suites.
 
-A "Core-only" implementation is a valid SOA-Harness v1.0 implementation provided it satisfies the preamble and Core sections.
+Profile names in the Agent Card `implementation_capabilities` field are drawn from the closed set {`core`, `core+si`, `core+handoff`, `full`}. An implementation MUST declare exactly one profile in its Agent Card; declaring `full` is equivalent to declaring all three constituent profiles and is the canonical way to advertise universal capability. A "Core-only" implementation declares `core`, satisfies the preamble and Core sections, and is a valid SOA-Harness v1.0 implementation.
 
 ### 18.4 Invocation
 
@@ -1891,6 +1907,13 @@ This appendix is **informative**. It names the adversaries v1.0 defends against,
 | UI-asset injection via Runner                     | UI §4 "Runner MUST NOT serve UI assets" + `UV-PRIN-01`           |
 | DNS hijack of bootstrap channel                   | DNSSEC required for the TXT-bootstrap channel (§5.3); AD bit enforced |
 | Stale CRL allowing revoked key                    | UI §7.3.1 fail-closed past `not_after` or > 2 h unreachable      |
+| Audit-sink unavailability masking malicious activity | §10.5.1 three-state degradation (normal / degraded / halted); Runner MUST halt new significant-event execution when audit-sink enters `halted` for > 60 s; metrics `soa_audit_sink_state` observable by operators |
+| Privacy-data mishandling / retention overrun      | §10.7 data-class-aware retention + per-subject `privacy.delete_subject`; `data_class` tagging enforced by schema (§14.1.1); violations emit `PrivacyPolicyViolation` at audit layer |
+| Cross-border data egress violating residency policy | §10.7.2 layered residency defence: config-declared allowed regions, per-artifact `data_region` field, Runner egress block with `ResidencyViolation` on mismatch; operator-owned outer boundary (network egress policy) is layer-2 defense |
+| Trust-class mis-labelling at event-type boundary  | §14.1.2 closed `type → trust_class` mapping enforced by Runner; unknown `type` → `UnknownEventType` rather than defaulting to a permissive class; UV-E-08 verifies closed-set behavior |
+| Trust-signal spoofing in UI chrome                | UI §12.3 normative indicator rules (position, dismissability, accessibility); UI MUST render from Gateway-labelled `trust_class` only, never re-compute; UV-TRUST-* verifies rendering parity across profiles |
+| Log-based PII exfiltration                        | UI §15.6 logging-privacy redaction rules; Gateway MUST strip fields tagged with `data_class` value `personal`, `sensitive-personal`, or `confidential` (closed enum per §10.7) from any log output before disk write; UV-LOG-* verifies redaction under representative payloads |
+| Replay-buffer memory exhaustion / poisoning       | UI §17.5 `buffer_events` / `buffer_seconds` ceilings + eviction policy; Gateway MUST reject subscribe with `ui.replay-gap` when requested sequence is before retention horizon; UV-REPL-* verifies buffer bounds |
 
 ### 25.4 Out of scope / residual risk
 

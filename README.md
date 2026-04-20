@@ -148,10 +148,11 @@ Per Core §19, the following vectors are **required** release-bundle content —
 | `test-vectors/topology-probe.md` | `UV-SESS-06†`, `UV-SESS-06a` |
 | `test-vectors/tasks-fingerprint/` + `compute.mjs` | `SV-GOOD-07` (Core §23 novelty quota) |
 | `test-vectors/permission-prompt/` (prompt + decision + PDA-JWS) | `UV-P-17..20` (UI §11.4.1 prompt-nonce / replay / deadline) |
+| [`test-vectors/RESERVED.md`](./test-vectors/RESERVED.md) | Reserved test IDs (UV-ERR-02..17, UV-P-22, SV-SESS-12, UV-TRUST-01..03, UV-E-09, UV-LOG-01..03, UV-REPL-01..04) — scope locked, vectors pending |
 
 ## Conformance stance
 
-Every MUST in either spec has a corresponding test ID in one of the two must-maps; there are zero orphan tests and zero uncovered MUSTs. Signing paths REQUIRE a library-grade RFC 8785 JCS implementation (the in-repo [`build-manifest.mjs`](./build-manifest.mjs) JCS is a documented subset — integer/string content only).
+Every MUST in either spec has a corresponding test ID in one of the two must-maps. Test IDs listed in [`test-vectors/RESERVED.md`](./test-vectors/RESERVED.md) are normatively cited but do not yet have published reference vectors; conformance tools running in `--strict` mode treat them as "assertion present, evidence pending" and implementers SHOULD author local vectors matching the reserved scope. Signing paths REQUIRE a library-grade RFC 8785 JCS implementation (the in-repo [`build-manifest.mjs`](./build-manifest.mjs) JCS is a documented subset — integer/string content only).
 
 ## Rebuilding the bundle
 

@@ -5,302 +5,1897 @@
   "bound_to_core": "1.0",
   "generated": "2026-04-18",
   "profiles": {
-    "web":    "Web browser SPA; WebSocket + CSP + WebAuthn.",
-    "ide":    "VS Code/JetBrains/Neovim extension; local IPC or WebSocket.",
+    "web": "Web browser SPA; WebSocket + CSP + WebAuthn.",
+    "ide": "VS Code/JetBrains/Neovim extension; local IPC or WebSocket.",
     "mobile": "iOS/Android; WebSocket or long-poll; biometric attestation.",
-    "cli":    "Terminal dashboard; long-poll or local IPC; line-delimited.",
-    "all":    "Required for every profile."
+    "cli": "Terminal dashboard; long-poll or local IPC; line-delimited.",
+    "all": "Required for every profile."
   },
   "test_categories": {
-    "UV-T":    "Transport: WebSocket/SSE/REST framing, reconnect, replay, close codes.",
-    "UV-E":    "Envelope: encoding, sequence, trust_class, redactions, event catalog.",
-    "UV-A":    "Auth: OAuth, token exchange, scope filtering, DPoP/mTLS.",
-    "UV-P":    "Prompt: payload, stub, redaction reveal, attestation (JWS + WebAuthn), assignment.",
-    "UV-H":    "Handoff.",
-    "UV-C":    "Cost & observability surfaces.",
+    "UV-T": "Transport: WebSocket/SSE/REST framing, reconnect, replay, close codes.",
+    "UV-E": "Envelope: encoding, sequence, trust_class, redactions, event catalog.",
+    "UV-A": "Auth: OAuth, token exchange, scope filtering, DPoP/mTLS.",
+    "UV-P": "Prompt: payload, stub, redaction reveal, attestation (JWS + WebAuthn), assignment.",
+    "UV-H": "Handoff.",
+    "UV-C": "Cost & observability surfaces.",
     "UV-SESS": "Session / artifact read API.",
-    "UV-SC":   "Content safety (unified).",
-    "UV-CLI":  "CLI content-safety overlay.",
-    "UV-S":    "Transport security headers (CSP, HSTS, frame, CSRF, topology).",
-    "UV-X":    "Accessibility (automated subset; † = partially-automated requiring manual addendum).",
-    "UV-I":    "Internationalization.",
-    "UV-F":    "Profile declaration + profile-specific features.",
-    "UV-CMD":  "Client command RPC.",
+    "UV-SC": "Content safety (unified).",
+    "UV-CLI": "CLI content-safety overlay.",
+    "UV-S": "Transport security headers (CSP, HSTS, frame, CSRF, topology).",
+    "UV-X": "Accessibility (automated subset; \u2020 = partially-automated requiring manual addendum).",
+    "UV-I": "Internationalization.",
+    "UV-F": "Profile declaration + profile-specific features.",
+    "UV-CMD": "Client command RPC.",
     "UV-PERF": "Performance & backpressure.",
-    "UV-GOV":  "Governance + versioning.",
-    "UV-ERR":  "Error taxonomy emission."
+    "UV-GOV": "Governance + versioning.",
+    "UV-ERR": "Error taxonomy emission."
   },
-  "manual_addendum_required_for": ["web", "ide"],
-  "manual_addendum_tests": ["UV-X-05†"],
-
+  "manual_addendum_required_for": [
+    "web",
+    "ide"
+  ],
+  "manual_addendum_tests": [
+    "UV-X-05\u2020"
+  ],
   "tests": {
-    "UV-E-01": { "name": "UTF-8 LF encoding",           "section": "§1",    "profile": "all", "assertion": "All JSON over the wire is UTF-8 with LF." },
-    "UV-E-02": { "name": "RFC 3339 timestamps",         "section": "§1",    "profile": "all", "assertion": "Every timestamp emitted has timezone offset and ≥ ms precision." },
-    "UV-E-03": { "name": "≤256-byte IDs",               "section": "§1",    "profile": "all", "assertion": "No identifier on the wire exceeds 256 bytes." },
-    "UV-E-04": { "name": "Envelope schema",             "section": "§8.1",  "profile": "all", "assertion": "Every envelope validates against ui-envelope.schema.json v1.0." },
-    "UV-E-05": { "name": "Event catalog closed",        "section": "§8.2",  "profile": "all", "assertion": "Observed event types ⊆ Core 25 ∪ UI-derived 12." },
-    "UV-E-06": { "name": "Sequence monotonic gap-free", "section": "§8.3",  "profile": "all", "assertion": "ui_sequence per session is strictly increasing with no gaps." },
-
-    "UV-T-01": { "name": "TLS 1.3+",                    "section": "§6.1",  "profile": "all", "assertion": "Any networked transport refuses handshake below TLS 1.3." },
-    "UV-T-02": { "name": "No plain HTTP",               "section": "§6.1",  "profile": "all", "assertion": "http:// or ws:// requests are rejected." },
-    "UV-T-03": { "name": "Single JSON per WS frame",    "section": "§6.3",  "profile": "all", "assertion": "WebSocket text frame contains exactly one envelope; binary frames NEVER used on the UI-facing WebSocket (artifact download is separate HTTP on a distinct origin per §14.3)." },
-    "UV-T-04": { "name": "Close-code set closed",       "section": "§6.4",  "profile": "all", "assertion": "All 4xxx close codes observed are in the enumerated set." },
-    "UV-T-05": { "name": "Replay backfill bound",       "section": "§9.1",  "profile": "all", "assertion": "Exceeding max_backfill emits ConnectionResumed{partial:true, resume_from}." },
-    "UV-T-06": { "name": "Ack within 30s",              "section": "§9.2",  "profile": "all", "assertion": "ack_required events without ack within 30s → Gateway buffers." },
-    "UV-T-07": { "name": "10-min reconnect grace",      "section": "§9.3",  "profile": "all", "assertion": "Normal-close sessions retain state ≥ 10 min for resume." },
-    "UV-T-08": { "name": "Client backoff",              "section": "§9.3",  "profile": "all", "assertion": "Client reconnects with exponential backoff (0.5s base, ×2, jitter ±25%, ceiling 30s)." },
-    "UV-T-09": { "name": "Resume from ack",             "section": "§9.3",  "profile": "all", "assertion": "Reconnect with last_ack_sequence resumes or returns ConnectionResumed." },
-    "UV-T-10": { "name": "Artifact CORP cross-origin",   "section": "§5.1",  "profile": "all", "assertion": "Artifact responses served from artifacts_origin MUST carry Cross-Origin-Resource-Policy: cross-origin (not same-site or same-origin, which would block the UI origin's eTLD+1 from embedding the artifact). Missing-header and stricter-value responses fail the topology probe." },
-
-    "UV-A-01": { "name": "Gateway terminates UI transport", "section": "§5.1", "profile": "all", "assertion": "UI never connects directly to Runner." },
-    "UV-A-02": { "name": "Gateway authenticates UIs",   "section": "§5.1",  "profile": "all", "assertion": "Every endpoint rejects unauthenticated requests." },
-    "UV-A-03": { "name": "Gateway exchanges tokens",    "section": "§5.1",  "profile": "all", "assertion": "Runner credentials never appear in UI responses." },
-    "UV-A-04": { "name": "Gateway filters per scope",   "section": "§5.1",  "profile": "all", "assertion": "ui.read cannot see unredacted PermissionPrompt." },
-    "UV-A-05": { "name": "JWT algo set",                "section": "§7.2",  "profile": "all", "assertion": "Gateway accepts only RS256/ES256/EdDSA (opaque → introspection)." },
-    "UV-A-06": { "name": "≤60-min access token",        "section": "§7.2",  "profile": "all", "assertion": "Tokens > 60 min rejected." },
-    "UV-A-07": { "name": "Device flow supported",       "section": "§7.2",  "profile": "cli,ide", "assertion": "RFC 8628 device flow works end-to-end." },
-    "UV-A-07a":{ "name": "Device endpoint advertised",  "section": "§7.1, §7.2", "profile": "cli,ide", "assertion": "When supported_profiles contains cli or ide, the discovery document MUST include device_authorization_endpoint (enforced by the gateway-config.schema.json if/then conditional)." },
-    "UV-A-08": { "name": "Token exchange to Runner",    "section": "§7.4",  "profile": "all", "assertion": "Gateway performs RFC 8693 exchange before any Runner call." },
-    "UV-A-08a":{ "name": "RFC 8693 delegation profile", "section": "§7.4",  "profile": "all", "assertion": "Token-exchange request carries grant_type=urn:ietf:params:oauth:grant-type:token-exchange, subject_token=UI access token, subject_token_type=urn:ietf:params:oauth:token-type:access_token, actor_token=Gateway service-principal token, requested_token_type=urn:ietf:params:oauth:token-type:access_token, audience=runner_endpoint, scope=expanded stream_scope_template. Issued token carries act (with act.sub=Gateway client_id), iss, sub (=UI user), aud (=runner_endpoint), exp ≤ 300 s, iat, scope, soa_core_version. Missing claim → AuthFailed(claim-missing). Missing or wrong act → AuthFailed(delegation-missing)." },
-    "UV-A-10a":{ "name": "Possession proof across transports","section":"§7.6","profile":"all","assertion":"REST commands carry DPoP header; SSE subscribe HTTP handshake carries DPoP; WebSocket upgrade carries DPoP and every command frame carries a {dpop} field with htm=WS-COMMAND, htu=<command.type>, and jti single-use per (key, 5 min); IPC commands verified via SO_PEERCRED / GetNamedPipeClientProcessId on every command. Any command-bearing frame without mTLS, DPoP, or verified peer-cred is rejected (ui.dpop-invalid 401/4007/IPC close). Metric soa_ui_possession_proof_mode ∈ {mtls, dpop-rest, dpop-ws, ipc-peercred}." },
-    "UV-A-09": { "name": "ui.read gets stub prompt",    "section": "§7.5",  "profile": "all", "assertion": "ui.read receives StubPromptPlaceholder in place of PermissionPrompt." },
-    "UV-A-10": { "name": "Capability token binding",    "section": "§7.6",  "profile": "all", "assertion": "Capability token requires mTLS cnf OR DPoP proof when public client." },
-    "UV-A-11": { "name": "Revocation endpoint",         "section": "§7.6",  "profile": "all", "assertion": "POST /ui/v1/revoke invalidates capability within 10s." },
-
-    "UV-P-01": { "name": "attestation_required synth",  "section": "§11.1", "profile": "all", "assertion": "Gateway sets attestation_required from Core §10.4 rules; Runner payload unchanged." },
-    "UV-P-02": { "name": "recent_decisions scope",      "section": "§11.1", "profile": "all", "assertion": "ui.command sees only own prior decisions; ui.admin sees audit trail." },
-    "UV-P-03": { "name": "Stub prompt schema",          "section": "§11.2", "profile": "all", "assertion": "ui.read receives StubPromptPlaceholder matching schema; no args/reasoning." },
-    "UV-P-04": { "name": "Redaction rendering",         "section": "§11.3", "profile": "web,ide,mobile", "assertion": "UIs display <redacted:*> markers for redacted fields." },
-    "UV-P-05": { "name": "Reveal emits DecisionReveal", "section": "§11.3", "profile": "all", "assertion": "Admin reveal emits DecisionReveal event + audit entry." },
-    "UV-P-06": { "name": "PDA-WebAuthn verification",   "section": "§11.4", "profile": "all", "assertion": "clientDataJSON.challenge equals SHA-256(canonical_decision); authenticatorData.rpIdHash matches SHA-256 of the Gateway's declared webauthn_rp_id (§7.1); clientDataJSON.origin appears in the Gateway's UI-origin allowlist for that RP ID; userVerified required for high-risk; COSE signature verifies against enrolled credential." },
-    "UV-P-07": { "name": "PDA-JWS verification",        "section": "§11.4", "profile": "all", "assertion": "typ=soa-pda+jws; kid resolved in the enrolled credential store (not security.trustAnchors); signature verifies; CRL check against the issuing trust anchor passes." },
-    "UV-P-08": { "name": "PDA → Runner decision",      "section": "§11.4", "profile": "all", "assertion": "Gateway translates PDA into Core-compatible signed decision before forwarding." },
-    "UV-P-09": { "name": "Always-* scope gate",         "section": "§11.5", "profile": "all", "assertion": "always-this-tool / always-this-session rejected without userVerification (WebAuthn) or HSM+fresh-auth (JWS)." },
-    "UV-P-10": { "name": "Cross-profile step-up parity","section": "§11.5", "profile": "all", "assertion": "Web WebAuthn UV, Mobile biometric, IDE OS auth, CLI device flow are equivalently enforced." },
-    "UV-P-11": { "name": "Enrollment flow",             "section": "§7.3",  "profile": "all", "assertion": "POST /ui/v1/enroll returns a kid with not_after ≤ 90d; audit entry written." },
-    "UV-P-12": { "name": "Multi-credential enrollment", "section": "§7.3",  "profile": "all", "assertion": "A user may enroll multiple credentials; kid unique per credential." },
-    "UV-P-13": { "name": "Headless delegation",         "section": "§7.3",  "profile": "cli",  "assertion": "Headless CLI signs via device-flow-delegated authenticator, not a local key." },
-    "UV-P-16": { "name": "Gateway CRL cache SLA",       "section": "§7.3.1","profile": "all",  "assertion": "Gateway refreshes each trust-anchor CRL at least hourly; past crl.not_after or after >2h unreachable, Gateway rejects decisions signed under the affected anchor with ui.prompt-signature-invalid(reason=crl-stale) or ui.gateway-config-invalid(reason=crl-unreachable); metrics soa_ui_crl_cache_age_seconds and soa_ui_crl_refresh_failures_total exposed." },
-    "UV-P-17": { "name": "Gateway mints prompt nonce",  "section": "§11.4.1","profile": "all",  "assertion": "Every PermissionPrompt emitted by the Gateway carries payload.nonce matching ^[A-Za-z0-9_-]{22,}$ (≥128 bits of entropy per Core §14.1.1); values are fresh per prompt (no reuse across prompts observed in a soa-validate sample)." },
-    "UV-P-21": { "name": "Replay cache multi-replica consistency","section": "§11.4.1","profile": "all", "assertion": "When replica_count > 1, Gateway exposes soa_ui_replay_cache_consistency metric ∈ {linearizable, session-pinned, single-replica}. Linearizable mode: writes to (session_id, nonce) land in a shared store with linearizable reads (no stale reads from a Redis replica). Session-pinned mode: load balancer pins session_id to one replica for deadline+skew; failover invalidates un-consumed nonces. Any other configuration fails with HostHardeningInsufficient(reason=replay-cache-split)." },
-    "UV-P-18": { "name": "Nonce equality enforced",     "section": "§11.4.1","profile": "all",  "assertion": "Gateway rejects a PDA whose canonical_decision.nonce does not equal PermissionPrompt.payload.nonce with ui.prompt-signature-invalid(reason=nonce-mismatch); applies to both PDA-JWS and PDA-WebAuthn." },
-    "UV-P-19": { "name": "Nonce replay rejected",       "section": "§11.4.1","profile": "all",  "assertion": "Submitting a previously-accepted PDA for the same (session_id,nonce) a second time is rejected with ui.prompt-signature-invalid(reason=replay); cache persists across Gateway restart within the deadline+skew horizon." },
-    "UV-P-20": { "name": "Deadline enforced on both paths","section":"§11.4.1","profile":"all", "assertion": "PDA-JWS and PDA-WebAuthn both reject decisions whose PermissionPrompt.payload.deadline has passed (past now - skew) with ui.prompt-expired; skew ≤ 30s per Core §1." },
-    "UV-P-14": { "name": "Prompt assignment algorithm", "section": "§11.6", "profile": "all", "assertion": "Most-recent-UserInput UI owns prompt; fallback to earliest ui.command capability; else unassigned with admin override." },
-
-    "UV-H-01": { "name": "Handoff indicator persistent","section": "§12.2", "profile": "web,ide,mobile", "assertion": "Between HandoffStart and complete/failed, UI shows destination agent." },
-    "UV-H-02": { "name": "CancelTurn during handoff",   "section": "§12.2", "profile": "all", "assertion": "CancelTurn translates to A2A handoff.return with cancellation." },
-    "UV-H-03": { "name": "agent-peer trust class",      "section": "§12.3", "profile": "all", "assertion": "Post-handoff ContentBlockDelta is trust_class=agent-peer." },
-    "UV-H-04": { "name": "CardSignatureFailed event",   "section": "§12.3", "profile": "all", "assertion": "Destination Card JWS failure emits CardSignatureFailed; UI shows badge." },
-
-    "UV-C-01": { "name": "CostUpdate cadence",          "section": "§13.2", "profile": "all", "assertion": "≤ 1 CostUpdate per 5s during turn; exactly 1 at turn end." },
-    "UV-C-02": { "name": "CostUpdate backpressure",     "section": "§13.2", "profile": "all", "assertion": "Non-final CostUpdates may be dropped under backpressure; turn-end CostUpdate always delivered." },
-    "UV-C-03": { "name": "Advisory currency marking",   "section": "§13.2", "profile": "all", "assertion": "currency_estimate.source == 'advisory' when present." },
-    "UV-C-04": { "name": "MemoryLoad admin only",       "section": "§13.3", "profile": "all", "assertion": "loaded_notes visible only to ui.admin." },
-    "UV-C-05": { "name": "Digest-only tool surfaces",   "section": "§13.3", "profile": "all", "assertion": "ToolInputDelta and ToolResult debug surfaces expose args_digest/output_digest, not raw content, unless ui.admin policy opts in." },
-    "UV-C-06": { "name": "SpanSummary fields",          "section": "§13.3", "profile": "all", "assertion": "SpanSummary contains span_name, duration_ms, status, soa.session.id, soa.turn.id." },
-    "UV-C-07": { "name": "Severity map complete",       "section": "§13.4", "profile": "all", "assertion": "Every Core System Log category has a UI severity mapping." },
-
-    "UV-SESS-01": { "name": "List sessions",             "section": "§14.1", "profile": "all", "assertion": "GET /ui/v1/sessions returns owner-scoped paginated list." },
-    "UV-SESS-02": { "name": "Phase filtering",           "section": "§14.2", "profile": "all", "assertion": "pending/inflight side effects never leak to any scope; committed/compensated visible." },
-    "UV-SESS-03": { "name": "Artifact list",             "section": "§14.3", "profile": "all", "assertion": "Returns {id,path,size,content_type,created_at,sha256,digest_verified}." },
-    "UV-SESS-04": { "name": "Artifact bytes headers",    "section": "§14.3", "profile": "all", "assertion": "Serves Content-Type, Content-Length, ETag, Content-Disposition." },
-    "UV-SESS-05": { "name": "Range requests > 16 MiB",   "section": "§14.3", "profile": "all", "assertion": "Accept-Ranges: bytes for large artifacts." },
-    "UV-SESS-06": { "name": "Artifact origin separation","section": "§14.3", "profile": "all", "assertion": "Artifacts served from origin distinct from UI origin; fully cookie-less (no Set-Cookie on artifact responses — not UI-scoped, not host-only on the artifact origin itself). Verified by topology probe step 3 + config review." },
-    "UV-SESS-07": { "name": "nosniff on artifacts",      "section": "§14.3", "profile": "all", "assertion": "X-Content-Type-Options: nosniff present." },
-    "UV-SESS-08": { "name": "Artifact-origin CSP",       "section": "§14.3", "profile": "all", "assertion": "default-src 'none'; sandbox; served on every artifact response." },
-    "UV-SESS-09": { "name": "sha256 verifiable",         "section": "§14.3", "profile": "all", "assertion": "Client-side digest of downloaded bytes equals listed sha256; mismatch → ui.artifact-sha-mismatch." },
-    "UV-SESS-10": { "name": "Search scope",              "section": "§14.4", "profile": "all", "assertion": "Search limited to user-visible sessions; excludes pending/inflight side effects." },
-
-    "UV-SC-01": { "name": "system class gating",         "section": "§15.1", "profile": "web,ide,mobile", "assertion": "Gateway rejects outbound envelopes labeling tool/model/peer content as system." },
-    "UV-SC-02": { "name": "user class escaping",         "section": "§15.1", "profile": "web,ide,mobile", "assertion": "User echo HTML-escaped." },
-    "UV-SC-03": { "name": "model class safelist",        "section": "§15.1", "profile": "web,ide,mobile", "assertion": "Markdown passed through safelist sanitizer; no script/iframe/object/embed/form/data-URI/javascript-URI." },
-    "UV-SC-04": { "name": "tool-output banner + collapse","section":"§15.1", "profile": "web,ide,mobile", "assertion": "tool-output renders with 'Tool Output' banner + <details> collapsed + max-height." },
-    "UV-SC-05": { "name": "untrusted plain text",        "section": "§15.1", "profile": "web,ide,mobile", "assertion": "untrusted class: all markup escaped, no link detection." },
-    "UV-SC-06": { "name": "agent-peer attribution",      "section": "§15.1", "profile": "web,ide,mobile", "assertion": "agent-peer renders with 'From Agent X' attribution line." },
-    "UV-SC-07": { "name": "Link rel safety",             "section": "§15.1", "profile": "web,ide,mobile", "assertion": "Model/tool-output/agent-peer links carry rel='noopener noreferrer nofollow'." },
-    "UV-SC-08": { "name": "Redaction indicator",         "section": "§15.2", "profile": "all", "assertion": "UI displays visible icon/tooltip when redactions is non-empty." },
-    "UV-SC-09": { "name": "Reference CSP served",        "section": "§15.3", "profile": "web,ide", "assertion": "CSP header equals or is stricter than reference CSP (§15.3)." },
-    "UV-SC-10": { "name": "No auto-resubmit of output",  "section": "§15.4", "profile": "all", "assertion": "Tool output never resubmitted as user input without explicit user action." },
-    "UV-SC-11": { "name": "No auto-follow links",        "section": "§15.4", "profile": "web,ide,mobile", "assertion": "Hover preview / click-through in tool-output never fires an automatic network request." },
-    "UV-SC-12": { "name": "No auto-execute code",        "section": "§15.4", "profile": "web,ide,mobile", "assertion": "Code-run affordances require explicit user action." },
-    "UV-SC-13": { "name": "No iframe-embedded prompts",  "section": "§15.5", "profile": "web,ide", "assertion": "PermissionPrompt refuses to render in an iframe." },
-    "UV-SC-14": { "name": "No client analytics leak",    "section": "§15.6", "profile": "all", "assertion": "Tool args / model output / user input NOT sent to client analytics." },
-    "UV-SC-15": { "name": "Pre-envelope redactor",       "section": "§15.6", "profile": "all", "assertion": "Pre-envelope errors apply default redactor before any reporting." },
-    "UV-SC-16": { "name": "Web WebAuthn UV for always-*","section":"§15.7", "profile": "web", "assertion": "always-* gate requires WebAuthn userVerification=required." },
-    "UV-SC-17": { "name": "Mobile biometric",            "section": "§15.7", "profile": "mobile", "assertion": "Biometric prompt presented before always-* signing." },
-    "UV-SC-18": { "name": "IDE OS auth",                 "section": "§15.7", "profile": "ide", "assertion": "OS authentication dialog required before always-* signing." },
-    "UV-SC-19": { "name": "CLI device delegation",       "section": "§15.7", "profile": "cli", "assertion": "always-* routed via RFC 8628 device flow." },
-    "UV-SC-20": { "name": "Forbidden content",           "section": "§15.8", "profile": "web,ide,mobile", "assertion": "No auto-open of data: URIs; no auto-exec code blocks; no auto-follow links from model/tool/peer/untrusted classes." },
-
-    "UV-CLI-01": { "name": "Prefix labels",              "section": "§15.9", "profile": "cli", "assertion": "Every rendered event carries [system]/[user]/[model]/[tool-output]/[untrusted]/[agent-peer] prefix." },
-    "UV-CLI-02": { "name": "Box-drawing tool-output",    "section": "§15.9", "profile": "cli", "assertion": "tool-output rendered in Unicode box-drawing block, collapsed by pager." },
-    "UV-CLI-03": { "name": "ANSI stripping",             "section": "§15.9", "profile": "cli", "assertion": "Control characters in tool-output/model/agent-peer/untrusted stripped or escaped." },
-    "UV-CLI-04": { "name": "No auto-linkify",            "section": "§15.9", "profile": "cli", "assertion": "URLs rendered as plain text; no terminal link hyperlinks." },
-    "UV-CLI-05": { "name": "Typed confirmation Destructive","section":"§15.9","profile":"cli","assertion": "Destructive Prompt requires typing 'yes' + Enter; no single-key allow." },
-    "UV-CLI-06": { "name": "NO_COLOR honored",           "section": "§15.9", "profile": "cli", "assertion": "NO_COLOR env disables color while preserving text risk markers." },
-
-    "UV-S-01":  { "name": "CSP served",                  "section": "§6.5",  "profile": "web,ide", "assertion": "UI origin serves CSP header matching §15.3 reference." },
-    "UV-S-02":  { "name": "Token storage hygiene",       "section": "§6.5",  "profile": "web,ide,mobile", "assertion": "Access tokens in memory only; refresh tokens via HttpOnly SameSite=Strict cookies only." },
-    "UV-S-03":  { "name": "CSRF protections",            "section": "§6.5",  "profile": "web,ide", "assertion": "State-changing endpoints require double-submit CSRF OR SameSite=Strict + Origin validation; WS upgrade Origin allowlisted." },
-    "UV-S-04":  { "name": "frame-ancestors enforced",    "section": "§6.5",  "profile": "web,ide", "assertion": "Gateway sends frame-ancestors 'self'; prompts never in iframe." },
-    "UV-S-05":  { "name": "HSTS",                        "section": "§6.5",  "profile": "web,ide,mobile", "assertion": "Strict-Transport-Security max-age=31536000 includeSubDomains served." },
-
-    "UV-X-01":  { "name": "ARIA prompt announcement",    "section": "§11.7", "profile": "web,ide", "assertion": "PermissionPrompt fires aria-live='assertive' region update." },
-    "UV-X-02":  { "name": "Esc=Deny; Allow explicit",    "section": "§11.7", "profile": "web,ide", "assertion": "Enter alone does not Allow; Allow requires explicit confirm." },
-    "UV-X-03":  { "name": "Risk: not color alone",       "section": "§11.7", "profile": "web,ide,mobile", "assertion": "Risk class conveyed by icon + text label in addition to color." },
-    "UV-X-04":  { "name": "WCAG automated subset",       "section": "§16.1", "profile": "web,ide", "assertion": "Automated checks in Appendix B all pass." },
-    "UV-X-05†": { "name": "WCAG manual addendum",        "section": "§16.1, App. B", "profile": "web,ide", "assertion": "Signed addendum covering the manual criteria present and schema-valid.", "partial_auto": true },
-    "UV-X-06":  { "name": "Screen-reader default",       "section": "§16.2", "profile": "web,ide", "assertion": "Default announcement at MessageEnd/ContentBlockEnd, not per-delta." },
-    "UV-X-07":  { "name": "prefers-reduced-motion",      "section": "§16.2", "profile": "web,ide,mobile", "assertion": "reduce-motion disables live delta announcement." },
-    "UV-X-08":  { "name": "IDE keyboard-first",          "section": "§18.3", "profile": "ide", "assertion": "Every action reachable without mouse." },
-
-    "UV-I-01":  { "name": "Accept-Language negotiation", "section": "§16.3", "profile": "all", "assertion": "Accept-Language negotiated or explicit preference honored." },
-    "UV-I-02":  { "name": "Enum labels via locale map",  "section": "§16.3", "profile": "all", "assertion": "Enum labels (risk_class/stop_reason/a2a_error/ui_error) resolved via locale map." },
-    "UV-I-03":  { "name": "Locale map schema",           "section": "§16.3", "profile": "all", "assertion": "Published maps validate against locale-map.schema.json." },
-    "UV-I-04":  { "name": "RTL rendering",               "section": "§16.3", "profile": "web,ide,mobile", "assertion": "dir='rtl' for RTL locales; risk badge placement RTL-correct." },
-    "UV-I-05":  { "name": "Locale formatters",           "section": "§16.3", "profile": "web,ide,mobile", "assertion": "Dates/numbers/currency use locale formatter." },
-    "UV-I-06":  { "name": "IME-safe submit",             "section": "§16.4", "profile": "web,ide,mobile", "assertion": "Enter during IME composition does not submit." },
-
-    "UV-F-01":  { "name": "Profile declaration required","section": "§18.1", "profile": "all", "assertion": "First subscribe op includes soa_ui_profile field." },
-    "UV-F-02":  { "name": "Profile fixes rate tier",     "section": "§18.1", "profile": "all", "assertion": "Gateway applies rate limits per §17.1 table to declared profile." },
-    "UV-F-03":  { "name": "IDE PTY hint",                "section": "§18.3", "profile": "ide", "assertion": "ui_hint: 'requires-pty' set on ToolInputStart for terminal-interactive tools." },
-    "UV-F-04":  { "name": "Mobile push prompt",          "section": "§18.4", "profile": "mobile", "assertion": "Backgrounded app receives push notification for in-flight PermissionPrompt." },
-    "UV-F-05":  { "name": "CLI attestation path",        "section": "§18.5", "profile": "cli", "assertion": "CLI uses PDA-JWS via OS keystore OR device-flow delegation; never uses a local unattested key." },
-
-    "UV-CMD-01":{ "name": "Closed command set",          "section": "§10.1", "profile": "all", "assertion": "Unknown command.type → ui.unknown-command." },
-    "UV-CMD-02":{ "name": "command_id required",         "section": "§10.3", "profile": "all", "assertion": "Commands without command_id rejected." },
-    "UV-CMD-03":{ "name": "Idempotency dedupe",          "section": "§10.3", "profile": "all", "assertion": "Same command_id within 10 min returns original response." },
-    "UV-CMD-04":{ "name": "Upload sha256 verify",        "section": "§10.4", "profile": "all", "assertion": "Gateway verifies uploaded bytes sha256 before forwarding to Runner." },
-
-    "UV-PERF-01":{ "name": "Per-profile rate limits",    "section": "§17.1", "profile": "all", "assertion": "Gateway enforces profile ceilings for events/sec, bytes/sec, max event size." },
-    "UV-PERF-02":{ "name": "Delta coalescing",           "section": "§17.2", "profile": "all", "assertion": "Coalesced delta total ≤ max_event_bytes; partial flag honored." },
-    "UV-PERF-03":{ "name": "Backpressure emission",      "section": "§17.3", "profile": "all", "assertion": "ObservabilityBackpressure emitted ≤ 1/min while dropping/coalescing." },
-    "UV-PERF-04":{ "name": "Turn-end CostUpdate",        "section": "§17.3", "profile": "all", "assertion": "Exactly one CostUpdate at turn end, never dropped." },
-    "UV-PERF-05":{ "name": "Mobile backoff",             "section": "§17.4", "profile": "mobile", "assertion": "Mobile client uses long-poll or push when backgrounded; resyncs via ConnectionResumed." },
-    "UV-PERF-06":{ "name": "Buffer horizon",             "section": "§17.5", "profile": "all",    "assertion": "Gateway retains ≥ 10k events or ≥ 30 min, whichever is sooner." },
-    "UV-PERF-07":{ "name": "max_backfill cap",           "section": "§17.5", "profile": "all",    "assertion": "Subscribe with max_backfill > 5000 capped; ConnectionResumed{partial:true} emitted." },
-    "UV-PERF-08":{ "name": "Sequence-gap handling",      "section": "§17.5", "profile": "all",    "assertion": "Requested sequence below oldest_retained → ConnectionResumed{partial:true, resume_from:<oldest>}." },
-    "UV-PERF-09":{ "name": "Essential retention",        "section": "§17.5", "profile": "all",    "assertion": "Non-essential events evicted before essential under buffer pressure; essential over-horizon → 4009 close." },
-    "UV-PERF-10":{ "name": "Slow-observer disconnect",   "section": "§17.5", "profile": "all",    "assertion": "Observer exceeding horizon alone is disconnected with close code 4010 (observer lag)." },
-    "UV-PERF-11":{ "name": "Essential-retention close code","section": "§17.5","profile": "all",    "assertion": "Essential-event retention exceeding horizon → close code 4009 (not 4006 or 4010)." },
-    "UV-E-07":  { "name": "UI-derived payload schemas",  "section": "§8.2.1","profile": "all",    "assertion": "Every UI-derived event payload validates against ui-derived-payloads.schema.json $defs." },
-    "UV-E-08":  { "name": "Essential-event flag",        "section": "§8.2.2","profile": "all",    "assertion": "Gateway sets delivery.essential=true for PermissionPrompt, PermissionDecision, HandoffStart/Complete/Failed, SessionStart/End, CrashEvent, SelfImprovementAccepted/Rejected/Orphaned; non-essential otherwise." },
-    "UV-P-15":  { "name": "Canonical-decision schema",   "section": "§11.4", "profile": "all",    "assertion": "canonical_decision validates against canonical-decision.schema.json (additionalProperties:false); any unknown field rejected." },
-    "UV-A-12":  { "name": "Gateway-config schema",       "section": "§7.1",  "profile": "all",    "assertion": "Discovery doc at /.well-known/soa-ui-config.json validates against gateway-config.schema.json." },
-    "UV-A-13":  { "name": "Replay discoverability",      "section": "§7.1",  "profile": "all",    "assertion": "Discovery doc contains a 'replay' object with buffer_events ≥ 10000, buffer_seconds ≥ 1800, max_backfill ≤ 5000, grace_seconds ≥ 600." },
-    "UV-A-14":  { "name": "Runner-stream scope",         "section": "§7.4",  "profile": "all",    "assertion": "Gateway's RFC 8693 token-exchange requests exactly stream:read:<session_id> (or stream:read:all for admin) per Core §14.3; broader scopes refused." },
-    "UV-A-15":  { "name": "WebAuthn RP ID published",    "section": "§7.1, §7.3", "profile": "web,ide,mobile", "assertion": "Discovery doc exposes webauthn_rp_id; WebAuthn registration and verification use that RP ID; clientDataJSON.origin is validated against the Gateway's UI-origin allowlist sharing the RP ID." },
-    "UV-SC-21": { "name": "HMAC user_sub hash",          "section": "§11.2", "profile": "web,ide,mobile", "assertion": "StubPromptPlaceholder.assigned_to_user_sub_hmac is HMAC-SHA256 keyed with a per-session secret; identical subjects across sessions produce different hmac values." },
-    "UV-T-10":  { "name": "Local IPC contract",          "section": "§6.1.1","profile": "cli,ide","assertion": "When local_ipc is published, Gateway validates peer UID/SID via SO_PEERCRED/equivalent; authenticate-op precedes subscribe; newline-delimited framing." },
-    "UV-PRIN-01":{ "name": "Runner MUST NOT serve UI",   "section": "§4",    "profile": "all",   "assertion": "HEAD and GET on the Runner origin for /index.html, /static/*, /app/* return 404 (or are explicitly rejected with 403); the Runner serves no UI assets. Enforces UI §4 backend-stays-backend." },
-    "UV-CMD-05":{ "name": "decision enum simple",        "section": "§10.1, §11.4", "profile": "all", "assertion": "PromptDecision.decision ∈ {allow,deny} only; allow_once/deny_once are rejected." },
-    "UV-CMD-06":{ "name": "Signer-identity equality",    "section": "§11.4", "profile": "all", "assertion": "For PDA-JWS, canonical_decision.handler_kid equals JWS header.kid. For PDA-WebAuthn, canonical_decision.handler_kid equals wrapper.handler_kid and the kid bound to the verified credentialId in the enrolled-credential store. Mismatch → ui.prompt-signature-invalid(reason=signer-identity-mismatch). canonical_decision.handler_kid is authoritative for audit and revocation lookups." },
-    "UV-CMD-07":{ "name": "Command body fingerprint",    "section": "§10.3", "profile": "all", "assertion": "Gateway records sha256:hex(SHA-256(JCS(command_body))) on first observation of a command_id. Subsequent call with same (session_id, command_id) and matching fingerprint returns the original response; mismatching fingerprint rejects with ui.duplicate-command-mismatch (HTTP 409 / WS 4005), MUST NOT execute the new body, MUST emit an audit record." },
-    "UV-CMD-08":{ "name": "Upload lifecycle",            "section": "§10.4", "profile": "all", "assertion": "upload_id is bound at issuance to (session_id, user_sub) from the caller's capability token; single-use (second consumption rejected as already-consumed); cross-session or cross-user reference rejected as scope-mismatch; TTL 15 min; per-session cap of 16 unconsumed uploads; every issuance/consumption/rejection/expiry emits a Gateway WORM audit record. Failures emit ui.upload-scope-mismatch (HTTP 409 / WS 4005)." },
-
-    "UV-GOV-01":{ "name": "ui-validate pinned",          "section": "§19.1", "profile": "all", "assertion": "ui-validate binary digest matches release manifest." },
-    "UV-GOV-02":{ "name": "Addendum required for web/ide","section":"§19.4", "profile": "web,ide", "assertion": "ui-validate exit 0 requires --manual-addendum with valid signed addendum." },
-    "UV-GOV-03":{ "name": "SemVer binding to Core",      "section": "§20.1", "profile": "all", "assertion": "profile_version maps to compatible Core version per binding table." },
-    "UV-GOV-04":{ "name": "Gateway accepts N-1 UI",      "section": "§20.2", "profile": "all", "assertion": "Gateway accepts UIs one minor version behind." },
-    "UV-GOV-05":{ "name": "UI accepts N-1 Gateway",      "section": "§20.2", "profile": "all", "assertion": "UI accepts Gateway one minor version behind unless a required MUST is missing, in which case it presents an actionable upgrade message." },
-
-    "UV-ERR-01":{ "name": "Closed error set emission",   "section": "§21",   "profile": "all", "assertion": "Observed ui.* error codes ⊆ §21 table; each carries the specified HTTP status or WS close code. §21.1 diagnostic counters (e.g., ui.backpressure) are surfaced in observability metrics only and are explicitly outside the closed error set." },
-    "UV-A-16":  { "name": "Runner discovery fields",     "section": "§5, §7.1, §7.4", "profile": "all", "assertion": "Discovery doc exposes `runner_endpoint` (https URL) AND `runner_mtls_ca_digest` (sha256:<64 hex>) AND `stream_scope_template` OR explicitly declares co-hosted mode via `runner_endpoint: \"loopback\"`; Gateway composes SSE URL by the published template; broader token-exchange scopes refused by the authorization server." },
-    "UV-SESS-06a":{ "name": "Artifacts origin in discovery", "section": "§5.1, §7.1", "profile": "all", "assertion": "Discovery doc exposes `artifacts_origin` (https URL); its eTLD+1 differs from the UI origin's; topology-probe.md (automated) passes." }
+    "UV-E-01": {
+      "name": "UTF-8 LF encoding",
+      "section": "\u00a71",
+      "profile": "all",
+      "assertion": "All JSON over the wire is UTF-8 with LF."
+    },
+    "UV-E-02": {
+      "name": "RFC 3339 timestamps",
+      "section": "\u00a71",
+      "profile": "all",
+      "assertion": "Every timestamp emitted has timezone offset and \u2265 ms precision."
+    },
+    "UV-E-03": {
+      "name": "\u2264256-byte IDs",
+      "section": "\u00a71",
+      "profile": "all",
+      "assertion": "No identifier on the wire exceeds 256 bytes."
+    },
+    "UV-E-04": {
+      "name": "Envelope schema",
+      "section": "\u00a78.1",
+      "profile": "all",
+      "assertion": "Every envelope validates against ui-envelope.schema.json v1.0."
+    },
+    "UV-E-05": {
+      "name": "Event catalog closed",
+      "section": "\u00a78.2",
+      "profile": "all",
+      "assertion": "Observed event types \u2286 Core 25 \u222a UI-derived 12."
+    },
+    "UV-E-06": {
+      "name": "Sequence monotonic gap-free",
+      "section": "\u00a78.3",
+      "profile": "all",
+      "assertion": "ui_sequence per session is strictly increasing with no gaps."
+    },
+    "UV-T-01": {
+      "name": "TLS 1.3+",
+      "section": "\u00a76.1",
+      "profile": "all",
+      "assertion": "Any networked transport refuses handshake below TLS 1.3."
+    },
+    "UV-T-02": {
+      "name": "No plain HTTP",
+      "section": "\u00a76.1",
+      "profile": "all",
+      "assertion": "http:// or ws:// requests are rejected."
+    },
+    "UV-T-03": {
+      "name": "Single JSON per WS frame",
+      "section": "\u00a76.3",
+      "profile": "all",
+      "assertion": "WebSocket text frame contains exactly one envelope; binary frames NEVER used on the UI-facing WebSocket (artifact download is separate HTTP on a distinct origin per \u00a714.3)."
+    },
+    "UV-T-04": {
+      "name": "Close-code set closed",
+      "section": "\u00a76.4",
+      "profile": "all",
+      "assertion": "All 4xxx close codes observed are in the enumerated set."
+    },
+    "UV-T-05": {
+      "name": "Replay backfill bound",
+      "section": "\u00a79.1",
+      "profile": "all",
+      "assertion": "Exceeding max_backfill emits ConnectionResumed{partial:true, resume_from}."
+    },
+    "UV-T-06": {
+      "name": "Ack within 30s",
+      "section": "\u00a79.2",
+      "profile": "all",
+      "assertion": "ack_required events without ack within 30s \u2192 Gateway buffers."
+    },
+    "UV-T-07": {
+      "name": "10-min reconnect grace",
+      "section": "\u00a79.3",
+      "profile": "all",
+      "assertion": "Normal-close sessions retain state \u2265 10 min for resume."
+    },
+    "UV-T-08": {
+      "name": "Client backoff",
+      "section": "\u00a79.3",
+      "profile": "all",
+      "assertion": "Client reconnects with exponential backoff (0.5s base, \u00d72, jitter \u00b125%, ceiling 30s)."
+    },
+    "UV-T-09": {
+      "name": "Resume from ack",
+      "section": "\u00a79.3",
+      "profile": "all",
+      "assertion": "Reconnect with last_ack_sequence resumes or returns ConnectionResumed."
+    },
+    "UV-T-10": {
+      "name": "Local IPC contract",
+      "section": "\u00a76.1.1",
+      "profile": "cli,ide",
+      "assertion": "When local_ipc is published, Gateway validates peer UID/SID via SO_PEERCRED/equivalent; authenticate-op precedes subscribe; newline-delimited framing."
+    },
+    "UV-A-01": {
+      "name": "Gateway terminates UI transport",
+      "section": "\u00a75.1",
+      "profile": "all",
+      "assertion": "UI never connects directly to Runner."
+    },
+    "UV-A-02": {
+      "name": "Gateway authenticates UIs",
+      "section": "\u00a75.1",
+      "profile": "all",
+      "assertion": "Every endpoint rejects unauthenticated requests."
+    },
+    "UV-A-03": {
+      "name": "Gateway exchanges tokens",
+      "section": "\u00a75.1",
+      "profile": "all",
+      "assertion": "Runner credentials never appear in UI responses."
+    },
+    "UV-A-04": {
+      "name": "Gateway filters per scope",
+      "section": "\u00a75.1",
+      "profile": "all",
+      "assertion": "ui.read cannot see unredacted PermissionPrompt."
+    },
+    "UV-A-05": {
+      "name": "JWT algo set",
+      "section": "\u00a77.2",
+      "profile": "all",
+      "assertion": "Gateway accepts only RS256/ES256/EdDSA (opaque \u2192 introspection)."
+    },
+    "UV-A-06": {
+      "name": "\u226460-min access token",
+      "section": "\u00a77.2",
+      "profile": "all",
+      "assertion": "Tokens > 60 min rejected."
+    },
+    "UV-A-07": {
+      "name": "Device flow supported",
+      "section": "\u00a77.2",
+      "profile": "cli,ide",
+      "assertion": "RFC 8628 device flow works end-to-end."
+    },
+    "UV-A-07a": {
+      "name": "Device endpoint advertised",
+      "section": "\u00a77.1, \u00a77.2",
+      "profile": "cli,ide",
+      "assertion": "When supported_profiles contains cli or ide, the discovery document MUST include device_authorization_endpoint (enforced by the gateway-config.schema.json if/then conditional)."
+    },
+    "UV-A-08": {
+      "name": "Token exchange to Runner",
+      "section": "\u00a77.4",
+      "profile": "all",
+      "assertion": "Gateway performs RFC 8693 exchange before any Runner call."
+    },
+    "UV-A-08a": {
+      "name": "RFC 8693 delegation profile",
+      "section": "\u00a77.4",
+      "profile": "all",
+      "assertion": "Token-exchange request carries grant_type=urn:ietf:params:oauth:grant-type:token-exchange, subject_token=UI access token, subject_token_type=urn:ietf:params:oauth:token-type:access_token, actor_token=Gateway service-principal token, requested_token_type=urn:ietf:params:oauth:token-type:access_token, audience=runner_endpoint, scope=expanded stream_scope_template. Issued token carries act (with act.sub=Gateway client_id), iss, sub (=UI user), aud (=runner_endpoint), exp \u2264 300 s, iat, scope, soa_core_version. Missing claim \u2192 AuthFailed(claim-missing). Missing or wrong act \u2192 AuthFailed(delegation-missing)."
+    },
+    "UV-A-10a": {
+      "name": "Possession proof across transports",
+      "section": "\u00a77.6",
+      "profile": "all",
+      "assertion": "REST commands carry DPoP header; SSE subscribe HTTP handshake carries DPoP; WebSocket upgrade carries DPoP and every command frame carries a {dpop} field with htm=WS-COMMAND, htu=<command.type>, and jti single-use per (key, 5 min); IPC commands verified via SO_PEERCRED / GetNamedPipeClientProcessId on every command. Any command-bearing frame without mTLS, DPoP, or verified peer-cred is rejected (ui.dpop-invalid 401/4007/IPC close). Metric soa_ui_possession_proof_mode \u2208 {mtls, dpop-rest, dpop-ws, ipc-peercred}."
+    },
+    "UV-A-09": {
+      "name": "ui.read gets stub prompt",
+      "section": "\u00a77.5",
+      "profile": "all",
+      "assertion": "ui.read receives StubPromptPlaceholder in place of PermissionPrompt."
+    },
+    "UV-A-10": {
+      "name": "Capability token binding",
+      "section": "\u00a77.6",
+      "profile": "all",
+      "assertion": "Capability token requires mTLS cnf OR DPoP proof when public client."
+    },
+    "UV-A-11": {
+      "name": "Revocation endpoint",
+      "section": "\u00a77.6",
+      "profile": "all",
+      "assertion": "POST /ui/v1/revoke invalidates capability within 10s."
+    },
+    "UV-P-01": {
+      "name": "attestation_required synth",
+      "section": "\u00a711.1",
+      "profile": "all",
+      "assertion": "Gateway sets attestation_required from Core \u00a710.4 rules; Runner payload unchanged."
+    },
+    "UV-P-02": {
+      "name": "recent_decisions scope",
+      "section": "\u00a711.1",
+      "profile": "all",
+      "assertion": "ui.command sees only own prior decisions; ui.admin sees audit trail."
+    },
+    "UV-P-03": {
+      "name": "Stub prompt schema",
+      "section": "\u00a711.2",
+      "profile": "all",
+      "assertion": "ui.read receives StubPromptPlaceholder matching schema; no args/reasoning."
+    },
+    "UV-P-04": {
+      "name": "Redaction rendering",
+      "section": "\u00a711.3",
+      "profile": "web,ide,mobile",
+      "assertion": "UIs display <redacted:*> markers for redacted fields."
+    },
+    "UV-P-05": {
+      "name": "Reveal emits DecisionReveal",
+      "section": "\u00a711.3",
+      "profile": "all",
+      "assertion": "Admin reveal emits DecisionReveal event + audit entry."
+    },
+    "UV-P-06": {
+      "name": "PDA-WebAuthn verification",
+      "section": "\u00a711.4",
+      "profile": "all",
+      "assertion": "clientDataJSON.challenge equals SHA-256(canonical_decision); authenticatorData.rpIdHash matches SHA-256 of the Gateway's declared webauthn_rp_id (\u00a77.1); clientDataJSON.origin appears in the Gateway's UI-origin allowlist for that RP ID; userVerified required for high-risk; COSE signature verifies against enrolled credential."
+    },
+    "UV-P-07": {
+      "name": "PDA-JWS verification",
+      "section": "\u00a711.4",
+      "profile": "all",
+      "assertion": "typ=soa-pda+jws; kid resolved in the enrolled credential store (not security.trustAnchors); signature verifies; CRL check against the issuing trust anchor passes."
+    },
+    "UV-P-08": {
+      "name": "PDA \u2192 Runner decision",
+      "section": "\u00a711.4",
+      "profile": "all",
+      "assertion": "Gateway translates PDA into Core-compatible signed decision before forwarding."
+    },
+    "UV-P-09": {
+      "name": "Always-* scope gate",
+      "section": "\u00a711.5",
+      "profile": "all",
+      "assertion": "always-this-tool / always-this-session rejected without userVerification (WebAuthn) or HSM+fresh-auth (JWS)."
+    },
+    "UV-P-10": {
+      "name": "Cross-profile step-up parity",
+      "section": "\u00a711.5",
+      "profile": "all",
+      "assertion": "Web WebAuthn UV, Mobile biometric, IDE OS auth, CLI device flow are equivalently enforced."
+    },
+    "UV-P-11": {
+      "name": "Enrollment flow",
+      "section": "\u00a77.3",
+      "profile": "all",
+      "assertion": "POST /ui/v1/enroll returns a kid with not_after \u2264 90d; audit entry written."
+    },
+    "UV-P-12": {
+      "name": "Multi-credential enrollment",
+      "section": "\u00a77.3",
+      "profile": "all",
+      "assertion": "A user may enroll multiple credentials; kid unique per credential."
+    },
+    "UV-P-13": {
+      "name": "Headless delegation",
+      "section": "\u00a77.3",
+      "profile": "cli",
+      "assertion": "Headless CLI signs via device-flow-delegated authenticator, not a local key."
+    },
+    "UV-P-16": {
+      "name": "Gateway CRL cache SLA",
+      "section": "\u00a77.3.1",
+      "profile": "all",
+      "assertion": "Gateway refreshes each trust-anchor CRL at least hourly; past crl.not_after or after >2h unreachable, Gateway rejects decisions signed under the affected anchor with ui.prompt-signature-invalid(reason=crl-stale) or ui.gateway-config-invalid(reason=crl-unreachable); metrics soa_ui_crl_cache_age_seconds and soa_ui_crl_refresh_failures_total exposed."
+    },
+    "UV-P-17": {
+      "name": "Gateway mints prompt nonce",
+      "section": "\u00a711.4.1",
+      "profile": "all",
+      "assertion": "Every PermissionPrompt emitted by the Gateway carries payload.nonce matching ^[A-Za-z0-9_-]{22,}$ (\u2265128 bits of entropy per Core \u00a714.1.1); values are fresh per prompt (no reuse across prompts observed in a soa-validate sample)."
+    },
+    "UV-P-21": {
+      "name": "Replay cache multi-replica consistency",
+      "section": "\u00a711.4.1",
+      "profile": "all",
+      "assertion": "When replica_count > 1, Gateway exposes soa_ui_replay_cache_consistency metric \u2208 {linearizable, session-pinned, single-replica}. Linearizable mode: writes to (session_id, nonce) land in a shared store with linearizable reads (no stale reads from a Redis replica). Session-pinned mode: load balancer pins session_id to one replica for deadline+skew; failover invalidates un-consumed nonces. Any other configuration fails with HostHardeningInsufficient(reason=replay-cache-split)."
+    },
+    "UV-P-18": {
+      "name": "Nonce equality enforced",
+      "section": "\u00a711.4.1",
+      "profile": "all",
+      "assertion": "Gateway rejects a PDA whose canonical_decision.nonce does not equal PermissionPrompt.payload.nonce with ui.prompt-signature-invalid(reason=nonce-mismatch); applies to both PDA-JWS and PDA-WebAuthn."
+    },
+    "UV-P-19": {
+      "name": "Nonce replay rejected",
+      "section": "\u00a711.4.1",
+      "profile": "all",
+      "assertion": "Submitting a previously-accepted PDA for the same (session_id,nonce) a second time is rejected with ui.prompt-signature-invalid(reason=replay); cache persists across Gateway restart within the deadline+skew horizon."
+    },
+    "UV-P-20": {
+      "name": "Deadline enforced on both paths",
+      "section": "\u00a711.4.1",
+      "profile": "all",
+      "assertion": "PDA-JWS and PDA-WebAuthn both reject decisions whose PermissionPrompt.payload.deadline has passed (past now - skew) with ui.prompt-expired; skew \u2264 30s per Core \u00a71."
+    },
+    "UV-P-14": {
+      "name": "Prompt assignment algorithm",
+      "section": "\u00a711.6",
+      "profile": "all",
+      "assertion": "Most-recent-UserInput UI owns prompt; fallback to earliest ui.command capability; else unassigned with admin override."
+    },
+    "UV-H-01": {
+      "name": "Handoff indicator persistent",
+      "section": "\u00a712.2",
+      "profile": "web,ide,mobile",
+      "assertion": "Between HandoffStart and complete/failed, UI shows destination agent."
+    },
+    "UV-H-02": {
+      "name": "CancelTurn during handoff",
+      "section": "\u00a712.2",
+      "profile": "all",
+      "assertion": "CancelTurn translates to A2A handoff.return with cancellation."
+    },
+    "UV-H-03": {
+      "name": "agent-peer trust class",
+      "section": "\u00a712.3",
+      "profile": "all",
+      "assertion": "Post-handoff ContentBlockDelta is trust_class=agent-peer."
+    },
+    "UV-H-04": {
+      "name": "CardSignatureFailed event",
+      "section": "\u00a712.3",
+      "profile": "all",
+      "assertion": "Destination Card JWS failure emits CardSignatureFailed; UI shows badge."
+    },
+    "UV-C-01": {
+      "name": "CostUpdate cadence",
+      "section": "\u00a713.2",
+      "profile": "all",
+      "assertion": "\u2264 1 CostUpdate per 5s during turn; exactly 1 at turn end."
+    },
+    "UV-C-02": {
+      "name": "CostUpdate backpressure",
+      "section": "\u00a713.2",
+      "profile": "all",
+      "assertion": "Non-final CostUpdates may be dropped under backpressure; turn-end CostUpdate always delivered."
+    },
+    "UV-C-03": {
+      "name": "Advisory currency marking",
+      "section": "\u00a713.2",
+      "profile": "all",
+      "assertion": "currency_estimate.source == 'advisory' when present."
+    },
+    "UV-C-04": {
+      "name": "MemoryLoad admin only",
+      "section": "\u00a713.3",
+      "profile": "all",
+      "assertion": "loaded_notes visible only to ui.admin."
+    },
+    "UV-C-05": {
+      "name": "Digest-only tool surfaces",
+      "section": "\u00a713.3",
+      "profile": "all",
+      "assertion": "ToolInputDelta and ToolResult debug surfaces expose args_digest/output_digest, not raw content, unless ui.admin policy opts in."
+    },
+    "UV-C-06": {
+      "name": "SpanSummary fields",
+      "section": "\u00a713.3",
+      "profile": "all",
+      "assertion": "SpanSummary contains span_name, duration_ms, status, soa.session.id, soa.turn.id."
+    },
+    "UV-C-07": {
+      "name": "Severity map complete",
+      "section": "\u00a713.4",
+      "profile": "all",
+      "assertion": "Every Core System Log category has a UI severity mapping."
+    },
+    "UV-SESS-01": {
+      "name": "List sessions",
+      "section": "\u00a714.1",
+      "profile": "all",
+      "assertion": "GET /ui/v1/sessions returns owner-scoped paginated list."
+    },
+    "UV-SESS-02": {
+      "name": "Phase filtering",
+      "section": "\u00a714.2",
+      "profile": "all",
+      "assertion": "pending/inflight side effects never leak to any scope; committed/compensated visible."
+    },
+    "UV-SESS-03": {
+      "name": "Artifact list",
+      "section": "\u00a714.3",
+      "profile": "all",
+      "assertion": "Returns {id,path,size,content_type,created_at,sha256,digest_verified}."
+    },
+    "UV-SESS-04": {
+      "name": "Artifact bytes headers",
+      "section": "\u00a714.3",
+      "profile": "all",
+      "assertion": "Serves Content-Type, Content-Length, ETag, Content-Disposition."
+    },
+    "UV-SESS-05": {
+      "name": "Range requests > 16 MiB",
+      "section": "\u00a714.3",
+      "profile": "all",
+      "assertion": "Accept-Ranges: bytes for large artifacts."
+    },
+    "UV-SESS-06": {
+      "name": "Artifact origin separation",
+      "section": "\u00a714.3",
+      "profile": "all",
+      "assertion": "Artifacts served from origin distinct from UI origin; fully cookie-less (no Set-Cookie on artifact responses \u2014 not UI-scoped, not host-only on the artifact origin itself). Verified by topology probe step 3 + config review."
+    },
+    "UV-SESS-07": {
+      "name": "nosniff on artifacts",
+      "section": "\u00a714.3",
+      "profile": "all",
+      "assertion": "X-Content-Type-Options: nosniff present."
+    },
+    "UV-SESS-08": {
+      "name": "Artifact-origin CSP",
+      "section": "\u00a714.3",
+      "profile": "all",
+      "assertion": "default-src 'none'; sandbox; served on every artifact response."
+    },
+    "UV-SESS-09": {
+      "name": "sha256 verifiable",
+      "section": "\u00a714.3",
+      "profile": "all",
+      "assertion": "Client-side digest of downloaded bytes equals listed sha256; mismatch \u2192 ui.artifact-sha-mismatch."
+    },
+    "UV-SESS-10": {
+      "name": "Search scope",
+      "section": "\u00a714.4",
+      "profile": "all",
+      "assertion": "Search limited to user-visible sessions; excludes pending/inflight side effects."
+    },
+    "UV-SC-01": {
+      "name": "system class gating",
+      "section": "\u00a715.1",
+      "profile": "web,ide,mobile",
+      "assertion": "Gateway rejects outbound envelopes labeling tool/model/peer content as system."
+    },
+    "UV-SC-02": {
+      "name": "user class escaping",
+      "section": "\u00a715.1",
+      "profile": "web,ide,mobile",
+      "assertion": "User echo HTML-escaped."
+    },
+    "UV-SC-03": {
+      "name": "model class safelist",
+      "section": "\u00a715.1",
+      "profile": "web,ide,mobile",
+      "assertion": "Markdown passed through safelist sanitizer; no script/iframe/object/embed/form/data-URI/javascript-URI."
+    },
+    "UV-SC-04": {
+      "name": "tool-output banner + collapse",
+      "section": "\u00a715.1",
+      "profile": "web,ide,mobile",
+      "assertion": "tool-output renders with 'Tool Output' banner + <details> collapsed + max-height."
+    },
+    "UV-SC-05": {
+      "name": "untrusted plain text",
+      "section": "\u00a715.1",
+      "profile": "web,ide,mobile",
+      "assertion": "untrusted class: all markup escaped, no link detection."
+    },
+    "UV-SC-06": {
+      "name": "agent-peer attribution",
+      "section": "\u00a715.1",
+      "profile": "web,ide,mobile",
+      "assertion": "agent-peer renders with 'From Agent X' attribution line."
+    },
+    "UV-SC-07": {
+      "name": "Link rel safety",
+      "section": "\u00a715.1",
+      "profile": "web,ide,mobile",
+      "assertion": "Model/tool-output/agent-peer links carry rel='noopener noreferrer nofollow'."
+    },
+    "UV-SC-08": {
+      "name": "Redaction indicator",
+      "section": "\u00a715.2",
+      "profile": "all",
+      "assertion": "UI displays visible icon/tooltip when redactions is non-empty."
+    },
+    "UV-SC-09": {
+      "name": "Reference CSP served",
+      "section": "\u00a715.3",
+      "profile": "web,ide",
+      "assertion": "CSP header equals or is stricter than reference CSP (\u00a715.3)."
+    },
+    "UV-SC-10": {
+      "name": "No auto-resubmit of output",
+      "section": "\u00a715.4",
+      "profile": "all",
+      "assertion": "Tool output never resubmitted as user input without explicit user action."
+    },
+    "UV-SC-11": {
+      "name": "No auto-follow links",
+      "section": "\u00a715.4",
+      "profile": "web,ide,mobile",
+      "assertion": "Hover preview / click-through in tool-output never fires an automatic network request."
+    },
+    "UV-SC-12": {
+      "name": "No auto-execute code",
+      "section": "\u00a715.4",
+      "profile": "web,ide,mobile",
+      "assertion": "Code-run affordances require explicit user action."
+    },
+    "UV-SC-13": {
+      "name": "No iframe-embedded prompts",
+      "section": "\u00a715.5",
+      "profile": "web,ide",
+      "assertion": "PermissionPrompt refuses to render in an iframe."
+    },
+    "UV-SC-14": {
+      "name": "No client analytics leak",
+      "section": "\u00a715.6",
+      "profile": "all",
+      "assertion": "Tool args / model output / user input NOT sent to client analytics."
+    },
+    "UV-SC-15": {
+      "name": "Pre-envelope redactor",
+      "section": "\u00a715.6",
+      "profile": "all",
+      "assertion": "Pre-envelope errors apply default redactor before any reporting."
+    },
+    "UV-SC-16": {
+      "name": "Web WebAuthn UV for always-*",
+      "section": "\u00a715.7",
+      "profile": "web",
+      "assertion": "always-* gate requires WebAuthn userVerification=required."
+    },
+    "UV-SC-17": {
+      "name": "Mobile biometric",
+      "section": "\u00a715.7",
+      "profile": "mobile",
+      "assertion": "Biometric prompt presented before always-* signing."
+    },
+    "UV-SC-18": {
+      "name": "IDE OS auth",
+      "section": "\u00a715.7",
+      "profile": "ide",
+      "assertion": "OS authentication dialog required before always-* signing."
+    },
+    "UV-SC-19": {
+      "name": "CLI device delegation",
+      "section": "\u00a715.7",
+      "profile": "cli",
+      "assertion": "always-* routed via RFC 8628 device flow."
+    },
+    "UV-SC-20": {
+      "name": "Forbidden content",
+      "section": "\u00a715.8",
+      "profile": "web,ide,mobile",
+      "assertion": "No auto-open of data: URIs; no auto-exec code blocks; no auto-follow links from model/tool/peer/untrusted classes."
+    },
+    "UV-CLI-01": {
+      "name": "Prefix labels",
+      "section": "\u00a715.9",
+      "profile": "cli",
+      "assertion": "Every rendered event carries [system]/[user]/[model]/[tool-output]/[untrusted]/[agent-peer] prefix."
+    },
+    "UV-CLI-02": {
+      "name": "Box-drawing tool-output",
+      "section": "\u00a715.9",
+      "profile": "cli",
+      "assertion": "tool-output rendered in Unicode box-drawing block, collapsed by pager."
+    },
+    "UV-CLI-03": {
+      "name": "ANSI stripping",
+      "section": "\u00a715.9",
+      "profile": "cli",
+      "assertion": "Control characters in tool-output/model/agent-peer/untrusted stripped or escaped."
+    },
+    "UV-CLI-04": {
+      "name": "No auto-linkify",
+      "section": "\u00a715.9",
+      "profile": "cli",
+      "assertion": "URLs rendered as plain text; no terminal link hyperlinks."
+    },
+    "UV-CLI-05": {
+      "name": "Typed confirmation Destructive",
+      "section": "\u00a715.9",
+      "profile": "cli",
+      "assertion": "Destructive Prompt requires typing 'yes' + Enter; no single-key allow."
+    },
+    "UV-CLI-06": {
+      "name": "NO_COLOR honored",
+      "section": "\u00a715.9",
+      "profile": "cli",
+      "assertion": "NO_COLOR env disables color while preserving text risk markers."
+    },
+    "UV-S-01": {
+      "name": "CSP served",
+      "section": "\u00a76.5",
+      "profile": "web,ide",
+      "assertion": "UI origin serves CSP header matching \u00a715.3 reference."
+    },
+    "UV-S-02": {
+      "name": "Token storage hygiene",
+      "section": "\u00a76.5",
+      "profile": "web,ide,mobile",
+      "assertion": "Access tokens in memory only; refresh tokens via HttpOnly SameSite=Strict cookies only."
+    },
+    "UV-S-03": {
+      "name": "CSRF protections",
+      "section": "\u00a76.5",
+      "profile": "web,ide",
+      "assertion": "State-changing endpoints require double-submit CSRF OR SameSite=Strict + Origin validation; WS upgrade Origin allowlisted."
+    },
+    "UV-S-04": {
+      "name": "frame-ancestors enforced",
+      "section": "\u00a76.5",
+      "profile": "web,ide",
+      "assertion": "Gateway sends frame-ancestors 'self'; prompts never in iframe."
+    },
+    "UV-S-05": {
+      "name": "HSTS",
+      "section": "\u00a76.5",
+      "profile": "web,ide,mobile",
+      "assertion": "Strict-Transport-Security max-age=31536000 includeSubDomains served."
+    },
+    "UV-X-01": {
+      "name": "ARIA prompt announcement",
+      "section": "\u00a711.7",
+      "profile": "web,ide",
+      "assertion": "PermissionPrompt fires aria-live='assertive' region update."
+    },
+    "UV-X-02": {
+      "name": "Esc=Deny; Allow explicit",
+      "section": "\u00a711.7",
+      "profile": "web,ide",
+      "assertion": "Enter alone does not Allow; Allow requires explicit confirm."
+    },
+    "UV-X-03": {
+      "name": "Risk: not color alone",
+      "section": "\u00a711.7",
+      "profile": "web,ide,mobile",
+      "assertion": "Risk class conveyed by icon + text label in addition to color."
+    },
+    "UV-X-04": {
+      "name": "WCAG automated subset",
+      "section": "\u00a716.1",
+      "profile": "web,ide",
+      "assertion": "Automated checks in Appendix B all pass."
+    },
+    "UV-X-05\u2020": {
+      "name": "WCAG manual addendum",
+      "section": "\u00a716.1, App. B",
+      "profile": "web,ide",
+      "assertion": "Signed addendum covering the manual criteria present and schema-valid.",
+      "partial_auto": true
+    },
+    "UV-X-06": {
+      "name": "Screen-reader default",
+      "section": "\u00a716.2",
+      "profile": "web,ide",
+      "assertion": "Default announcement at MessageEnd/ContentBlockEnd, not per-delta."
+    },
+    "UV-X-07": {
+      "name": "prefers-reduced-motion",
+      "section": "\u00a716.2",
+      "profile": "web,ide,mobile",
+      "assertion": "reduce-motion disables live delta announcement."
+    },
+    "UV-X-08": {
+      "name": "IDE keyboard-first",
+      "section": "\u00a718.3",
+      "profile": "ide",
+      "assertion": "Every action reachable without mouse."
+    },
+    "UV-I-01": {
+      "name": "Accept-Language negotiation",
+      "section": "\u00a716.3",
+      "profile": "all",
+      "assertion": "Accept-Language negotiated or explicit preference honored."
+    },
+    "UV-I-02": {
+      "name": "Enum labels via locale map",
+      "section": "\u00a716.3",
+      "profile": "all",
+      "assertion": "Enum labels (risk_class/stop_reason/a2a_error/ui_error) resolved via locale map."
+    },
+    "UV-I-03": {
+      "name": "Locale map schema",
+      "section": "\u00a716.3",
+      "profile": "all",
+      "assertion": "Published maps validate against locale-map.schema.json."
+    },
+    "UV-I-04": {
+      "name": "RTL rendering",
+      "section": "\u00a716.3",
+      "profile": "web,ide,mobile",
+      "assertion": "dir='rtl' for RTL locales; risk badge placement RTL-correct."
+    },
+    "UV-I-05": {
+      "name": "Locale formatters",
+      "section": "\u00a716.3",
+      "profile": "web,ide,mobile",
+      "assertion": "Dates/numbers/currency use locale formatter."
+    },
+    "UV-I-06": {
+      "name": "IME-safe submit",
+      "section": "\u00a716.4",
+      "profile": "web,ide,mobile",
+      "assertion": "Enter during IME composition does not submit."
+    },
+    "UV-F-01": {
+      "name": "Profile declaration required",
+      "section": "\u00a718.1",
+      "profile": "all",
+      "assertion": "First subscribe op includes soa_ui_profile field."
+    },
+    "UV-F-02": {
+      "name": "Profile fixes rate tier",
+      "section": "\u00a718.1",
+      "profile": "all",
+      "assertion": "Gateway applies rate limits per \u00a717.1 table to declared profile."
+    },
+    "UV-F-03": {
+      "name": "IDE PTY hint",
+      "section": "\u00a718.3",
+      "profile": "ide",
+      "assertion": "ui_hint: 'requires-pty' set on ToolInputStart for terminal-interactive tools."
+    },
+    "UV-F-04": {
+      "name": "Mobile push prompt",
+      "section": "\u00a718.4",
+      "profile": "mobile",
+      "assertion": "Backgrounded app receives push notification for in-flight PermissionPrompt."
+    },
+    "UV-F-05": {
+      "name": "CLI attestation path",
+      "section": "\u00a718.5",
+      "profile": "cli",
+      "assertion": "CLI uses PDA-JWS via OS keystore OR device-flow delegation; never uses a local unattested key."
+    },
+    "UV-CMD-01": {
+      "name": "Closed command set",
+      "section": "\u00a710.1",
+      "profile": "all",
+      "assertion": "Unknown command.type \u2192 ui.unknown-command."
+    },
+    "UV-CMD-02": {
+      "name": "command_id required",
+      "section": "\u00a710.3",
+      "profile": "all",
+      "assertion": "Commands without command_id rejected."
+    },
+    "UV-CMD-03": {
+      "name": "Idempotency dedupe",
+      "section": "\u00a710.3",
+      "profile": "all",
+      "assertion": "Same command_id within 10 min returns original response."
+    },
+    "UV-CMD-04": {
+      "name": "Upload sha256 verify",
+      "section": "\u00a710.4",
+      "profile": "all",
+      "assertion": "Gateway verifies uploaded bytes sha256 before forwarding to Runner."
+    },
+    "UV-PERF-01": {
+      "name": "Per-profile rate limits",
+      "section": "\u00a717.1",
+      "profile": "all",
+      "assertion": "Gateway enforces profile ceilings for events/sec, bytes/sec, max event size."
+    },
+    "UV-PERF-02": {
+      "name": "Delta coalescing",
+      "section": "\u00a717.2",
+      "profile": "all",
+      "assertion": "Coalesced delta total \u2264 max_event_bytes; partial flag honored."
+    },
+    "UV-PERF-03": {
+      "name": "Backpressure emission",
+      "section": "\u00a717.3",
+      "profile": "all",
+      "assertion": "ObservabilityBackpressure emitted \u2264 1/min while dropping/coalescing."
+    },
+    "UV-PERF-04": {
+      "name": "Turn-end CostUpdate",
+      "section": "\u00a717.3",
+      "profile": "all",
+      "assertion": "Exactly one CostUpdate at turn end, never dropped."
+    },
+    "UV-PERF-05": {
+      "name": "Mobile backoff",
+      "section": "\u00a717.4",
+      "profile": "mobile",
+      "assertion": "Mobile client uses long-poll or push when backgrounded; resyncs via ConnectionResumed."
+    },
+    "UV-PERF-06": {
+      "name": "Buffer horizon",
+      "section": "\u00a717.5",
+      "profile": "all",
+      "assertion": "Gateway retains \u2265 10k events or \u2265 30 min, whichever is sooner."
+    },
+    "UV-PERF-07": {
+      "name": "max_backfill cap",
+      "section": "\u00a717.5",
+      "profile": "all",
+      "assertion": "Subscribe with max_backfill > 5000 capped; ConnectionResumed{partial:true} emitted."
+    },
+    "UV-PERF-08": {
+      "name": "Sequence-gap handling",
+      "section": "\u00a717.5",
+      "profile": "all",
+      "assertion": "Requested sequence below oldest_retained \u2192 ConnectionResumed{partial:true, resume_from:<oldest>}."
+    },
+    "UV-PERF-09": {
+      "name": "Essential retention",
+      "section": "\u00a717.5",
+      "profile": "all",
+      "assertion": "Non-essential events evicted before essential under buffer pressure; essential over-horizon \u2192 4009 close."
+    },
+    "UV-PERF-10": {
+      "name": "Slow-observer disconnect",
+      "section": "\u00a717.5",
+      "profile": "all",
+      "assertion": "Observer exceeding horizon alone is disconnected with close code 4010 (observer lag)."
+    },
+    "UV-PERF-11": {
+      "name": "Essential-retention close code",
+      "section": "\u00a717.5",
+      "profile": "all",
+      "assertion": "Essential-event retention exceeding horizon \u2192 close code 4009 (not 4006 or 4010)."
+    },
+    "UV-E-07": {
+      "name": "UI-derived payload schemas",
+      "section": "\u00a78.2.1",
+      "profile": "all",
+      "assertion": "Every UI-derived event payload validates against ui-derived-payloads.schema.json $defs."
+    },
+    "UV-E-08": {
+      "name": "Essential-event flag",
+      "section": "\u00a78.2.2",
+      "profile": "all",
+      "assertion": "Gateway sets delivery.essential=true for PermissionPrompt, PermissionDecision, HandoffStart/Complete/Failed, SessionStart/End, CrashEvent, SelfImprovementAccepted/Rejected/Orphaned; non-essential otherwise."
+    },
+    "UV-P-15": {
+      "name": "Canonical-decision schema",
+      "section": "\u00a711.4",
+      "profile": "all",
+      "assertion": "canonical_decision validates against canonical-decision.schema.json (additionalProperties:false); any unknown field rejected."
+    },
+    "UV-A-12": {
+      "name": "Gateway-config schema",
+      "section": "\u00a77.1",
+      "profile": "all",
+      "assertion": "Discovery doc at /.well-known/soa-ui-config.json validates against gateway-config.schema.json."
+    },
+    "UV-A-13": {
+      "name": "Replay discoverability",
+      "section": "\u00a77.1",
+      "profile": "all",
+      "assertion": "Discovery doc contains a 'replay' object with buffer_events \u2265 10000, buffer_seconds \u2265 1800, max_backfill \u2264 5000, grace_seconds \u2265 600."
+    },
+    "UV-A-14": {
+      "name": "Runner-stream scope",
+      "section": "\u00a77.4",
+      "profile": "all",
+      "assertion": "Gateway's RFC 8693 token-exchange requests exactly stream:read:<session_id> (or stream:read:all for admin) per Core \u00a714.3; broader scopes refused."
+    },
+    "UV-A-15": {
+      "name": "WebAuthn RP ID published",
+      "section": "\u00a77.1, \u00a77.3",
+      "profile": "web,ide,mobile",
+      "assertion": "Discovery doc exposes webauthn_rp_id; WebAuthn registration and verification use that RP ID; clientDataJSON.origin is validated against the Gateway's UI-origin allowlist sharing the RP ID."
+    },
+    "UV-SC-21": {
+      "name": "HMAC user_sub hash",
+      "section": "\u00a711.2",
+      "profile": "web,ide,mobile",
+      "assertion": "StubPromptPlaceholder.assigned_to_user_sub_hmac is HMAC-SHA256 keyed with a per-session secret; identical subjects across sessions produce different hmac values."
+    },
+    "UV-PRIN-01": {
+      "name": "Runner MUST NOT serve UI",
+      "section": "\u00a74",
+      "profile": "all",
+      "assertion": "HEAD and GET on the Runner origin for /index.html, /static/*, /app/* return 404 (or are explicitly rejected with 403); the Runner serves no UI assets. Enforces UI \u00a74 backend-stays-backend."
+    },
+    "UV-CMD-05": {
+      "name": "decision enum simple",
+      "section": "\u00a710.1, \u00a711.4",
+      "profile": "all",
+      "assertion": "PromptDecision.decision \u2208 {allow,deny} only; allow_once/deny_once are rejected."
+    },
+    "UV-CMD-06": {
+      "name": "Signer-identity equality",
+      "section": "\u00a711.4",
+      "profile": "all",
+      "assertion": "For PDA-JWS, canonical_decision.handler_kid equals JWS header.kid. For PDA-WebAuthn, canonical_decision.handler_kid equals wrapper.handler_kid and the kid bound to the verified credentialId in the enrolled-credential store. Mismatch \u2192 ui.prompt-signature-invalid(reason=signer-identity-mismatch). canonical_decision.handler_kid is authoritative for audit and revocation lookups."
+    },
+    "UV-CMD-07": {
+      "name": "Command body fingerprint",
+      "section": "\u00a710.3",
+      "profile": "all",
+      "assertion": "Gateway records sha256:hex(SHA-256(JCS(command_body))) on first observation of a command_id. Subsequent call with same (session_id, command_id) and matching fingerprint returns the original response; mismatching fingerprint rejects with ui.duplicate-command-mismatch (HTTP 409 / WS 4005), MUST NOT execute the new body, MUST emit an audit record."
+    },
+    "UV-CMD-08": {
+      "name": "Upload lifecycle",
+      "section": "\u00a710.4",
+      "profile": "all",
+      "assertion": "upload_id is bound at issuance to (session_id, user_sub) from the caller's capability token; single-use (second consumption rejected as already-consumed); cross-session or cross-user reference rejected as scope-mismatch; TTL 15 min; per-session cap of 16 unconsumed uploads; every issuance/consumption/rejection/expiry emits a Gateway WORM audit record. Failures emit ui.upload-scope-mismatch (HTTP 409 / WS 4005)."
+    },
+    "UV-GOV-01": {
+      "name": "ui-validate pinned",
+      "section": "\u00a719.1",
+      "profile": "all",
+      "assertion": "ui-validate binary digest matches release manifest."
+    },
+    "UV-GOV-02": {
+      "name": "Addendum required for web/ide",
+      "section": "\u00a719.4",
+      "profile": "web,ide",
+      "assertion": "ui-validate exit 0 requires --manual-addendum with valid signed addendum."
+    },
+    "UV-GOV-03": {
+      "name": "SemVer binding to Core",
+      "section": "\u00a720.1",
+      "profile": "all",
+      "assertion": "profile_version maps to compatible Core version per binding table."
+    },
+    "UV-GOV-04": {
+      "name": "Gateway accepts N-1 UI",
+      "section": "\u00a720.2",
+      "profile": "all",
+      "assertion": "Gateway accepts UIs one minor version behind."
+    },
+    "UV-GOV-05": {
+      "name": "UI accepts N-1 Gateway",
+      "section": "\u00a720.2",
+      "profile": "all",
+      "assertion": "UI accepts Gateway one minor version behind unless a required MUST is missing, in which case it presents an actionable upgrade message."
+    },
+    "UV-ERR-01": {
+      "name": "Closed error set emission",
+      "section": "\u00a721",
+      "profile": "all",
+      "assertion": "Observed ui.* error codes \u2286 \u00a721 table; each carries the specified HTTP status or WS close code. \u00a721.1 diagnostic counters (e.g., ui.backpressure) are surfaced in observability metrics only and are explicitly outside the closed error set."
+    },
+    "UV-A-16": {
+      "name": "Runner discovery fields",
+      "section": "\u00a75, \u00a77.1, \u00a77.4",
+      "profile": "all",
+      "assertion": "Discovery doc exposes `runner_endpoint` (https URL) AND `runner_mtls_ca_digest` (sha256:<64 hex>) AND `stream_scope_template` OR explicitly declares co-hosted mode via `runner_endpoint: \"loopback\"`; Gateway composes SSE URL by the published template; broader token-exchange scopes refused by the authorization server."
+    },
+    "UV-SESS-06a": {
+      "name": "Artifacts origin in discovery",
+      "section": "\u00a75.1, \u00a77.1",
+      "profile": "all",
+      "assertion": "Discovery doc exposes `artifacts_origin` (https URL); its eTLD+1 differs from the UI origin's; topology-probe.md (automated) passes."
+    },
+    "UV-ERR-02": {
+      "name": "ui.auth-required emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.auth-required when no bearer is presented on a protected endpoint.",
+      "status": "reserved"
+    },
+    "UV-ERR-03": {
+      "name": "ui.token-expired emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.token-expired when bearer exp is past + \u00a71 skew.",
+      "status": "reserved"
+    },
+    "UV-ERR-04": {
+      "name": "ui.scope-insufficient emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.scope-insufficient when required scope is missing per \u00a77.5.",
+      "status": "reserved"
+    },
+    "UV-ERR-05": {
+      "name": "ui.session-cap-expired emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.session-cap-expired when capability token expires.",
+      "status": "reserved"
+    },
+    "UV-ERR-06": {
+      "name": "ui.idp-discovery-failed emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.idp-discovery-failed on unreachable issuer or bad discovery doc.",
+      "status": "reserved"
+    },
+    "UV-ERR-07": {
+      "name": "ui.transport-unsupported emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.transport-unsupported on un-advertised transport or TLS<1.3.",
+      "status": "reserved"
+    },
+    "UV-ERR-08": {
+      "name": "ui.frame-too-large emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.frame-too-large when frame exceeds max_event_bytes.",
+      "status": "reserved"
+    },
+    "UV-ERR-09": {
+      "name": "ui.rate-limited emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.rate-limited with Retry-After when per-profile ceiling exceeded.",
+      "status": "reserved"
+    },
+    "UV-ERR-10": {
+      "name": "ui.unknown-session emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.unknown-session when session_id is unknown.",
+      "status": "reserved"
+    },
+    "UV-ERR-11": {
+      "name": "ui.command-rejected emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.command-rejected when Runner rejects forwarded command.",
+      "status": "reserved"
+    },
+    "UV-ERR-12": {
+      "name": "ui.prompt-not-assigned emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.prompt-not-assigned when read-only observer submits decision.",
+      "status": "reserved"
+    },
+    "UV-ERR-13": {
+      "name": "ui.handoff-observe-only emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.handoff-observe-only when observer tries to cancel handoff.",
+      "status": "reserved"
+    },
+    "UV-ERR-14": {
+      "name": "ui.gateway-unavailable emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.gateway-unavailable with Retry-After on degraded /ready.",
+      "status": "reserved"
+    },
+    "UV-ERR-15": {
+      "name": "ui.artifact-not-found emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.artifact-not-found on unknown artifact_id.",
+      "status": "reserved"
+    },
+    "UV-ERR-16": {
+      "name": "ui.artifact-too-large emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.artifact-too-large when range exceeds artifact size.",
+      "status": "reserved"
+    },
+    "UV-ERR-17": {
+      "name": "ui.artifact-retention-expired emission",
+      "section": "\u00a721.2",
+      "profile": "all",
+      "assertion": "Gateway emits ui.artifact-retention-expired when artifact past retention.",
+      "status": "reserved"
+    },
+    "UV-P-22": {
+      "name": "PDA format independence",
+      "section": "\u00a711.4",
+      "profile": "all",
+      "assertion": "Gateway accepts PDA-JWS and PDA-WebAuthn independently; rejects mixed-format flip.",
+      "status": "reserved"
+    },
+    "UV-TRUST-01": {
+      "name": "trust_class mapping fidelity",
+      "section": "\u00a78.2",
+      "profile": "all",
+      "assertion": "Gateway delivers every Core type with exact trust_class per Core \u00a714.1.2.",
+      "status": "reserved"
+    },
+    "UV-TRUST-02": {
+      "name": "system trust_class gated by scope",
+      "section": "\u00a78.2",
+      "profile": "all",
+      "assertion": "Gateway rejects system-trust events for ui.read callers per \u00a711.2.",
+      "status": "reserved"
+    },
+    "UV-TRUST-03": {
+      "name": "unknown event type rejection",
+      "section": "\u00a78.2",
+      "profile": "all",
+      "assertion": "Gateway rejects events with unknown type via ui.gateway-config-invalid.",
+      "status": "reserved"
+    },
+    "UV-E-09": {
+      "name": "UI-derived payload schema validation",
+      "section": "\u00a78.2.1",
+      "profile": "all",
+      "assertion": "Every UI-derived event payload validates against UI \u00a78.2.1 schema.",
+      "status": "reserved"
+    },
+    "UV-LOG-01": {
+      "name": "personal field redacted in tool-result logs",
+      "section": "\u00a715.6",
+      "profile": "all",
+      "assertion": "Gateway strips data_class=personal from tool-result log output.",
+      "status": "reserved"
+    },
+    "UV-LOG-02": {
+      "name": "sensitive-personal field redacted in peer-msg logs",
+      "section": "\u00a715.6",
+      "profile": "all",
+      "assertion": "Gateway strips data_class=sensitive-personal from peer-message logs.",
+      "status": "reserved"
+    },
+    "UV-LOG-03": {
+      "name": "confidential field redacted in nested structured logs",
+      "section": "\u00a715.6",
+      "profile": "all",
+      "assertion": "Gateway strips nested data_class=confidential fields from structured log output.",
+      "status": "reserved"
+    },
+    "UV-REPL-01": {
+      "name": "buffer_events overflow eviction",
+      "section": "\u00a717.5",
+      "profile": "all",
+      "assertion": "Replay buffer evicts oldest events when buffer_events exceeded.",
+      "status": "reserved"
+    },
+    "UV-REPL-02": {
+      "name": "buffer_seconds horizon eviction",
+      "section": "\u00a717.5",
+      "profile": "all",
+      "assertion": "Replay buffer evicts events older than buffer_seconds.",
+      "status": "reserved"
+    },
+    "UV-REPL-03": {
+      "name": "ui.replay-gap on pre-retention sequence",
+      "section": "\u00a717.5",
+      "profile": "all",
+      "assertion": "Subscribe to sequence before retention returns ui.replay-gap.",
+      "status": "reserved"
+    },
+    "UV-REPL-04": {
+      "name": "ui.replay-exhausted on max_backfill",
+      "section": "\u00a717.5",
+      "profile": "all",
+      "assertion": "Backfill exceeding max_backfill returns ui.replay-exhausted with partial results.",
+      "status": "reserved"
+    },
+    "UV-X-05": {
+      "name": "WCAG Manual Audit Addendum present",
+      "section": "\u00a716.1",
+      "profile": "all",
+      "assertion": "Manual Audit Addendum signed by named accessibility reviewer exists for any AA-claiming product.",
+      "status": "manual",
+      "manual": true
+    }
   },
-
   "must_coverage": {
-    "§1":    { "tests": ["UV-E-01","UV-E-02","UV-E-03"] },
-    "§4":    { "tests": ["UV-PRIN-01"] },
-    "§5.1":  { "tests": ["UV-A-01","UV-A-02","UV-A-03","UV-A-04","UV-SESS-06a","UV-T-10"] },
-    "§5.2":  { "tests": ["UV-SESS-06"] },
-    "§6.1":  { "tests": ["UV-T-01","UV-T-02"] },
-    "§6.3":  { "tests": ["UV-T-03"] },
-    "§6.4":  { "tests": ["UV-T-04"] },
-    "§6.1.1":{ "tests": ["UV-T-10"] },
-    "§6.5":  { "tests": ["UV-S-01","UV-S-02","UV-S-03","UV-S-04","UV-S-05"] },
-    "§7.2":  { "tests": ["UV-A-05","UV-A-06","UV-A-07","UV-A-07a"] },
-    "§7.3":  { "tests": ["UV-P-11","UV-P-12","UV-P-13","UV-A-15"] },
-    "§7.3.1":{ "tests": ["UV-P-16"] },
-    "§11.4.1":{ "tests": ["UV-P-17","UV-P-18","UV-P-19","UV-P-20","UV-P-21"] },
-    "§7.4":  { "tests": ["UV-A-08","UV-A-08a","UV-A-14","UV-A-16"] },
-    "§7.5":  { "tests": ["UV-A-09"] },
-    "§7.6":  { "tests": ["UV-A-10","UV-A-10a","UV-A-11"] },
-    "§8.1":  { "tests": ["UV-E-04"] },
-    "§8.2":  { "tests": ["UV-E-05"] },
-    "§8.3":  { "tests": ["UV-E-06"] },
-    "§9.1":  { "tests": ["UV-F-01","UV-T-05"] },
-    "§9.2":  { "tests": ["UV-T-06"] },
-    "§9.3":  { "tests": ["UV-T-07","UV-T-08","UV-T-09"] },
-    "§10.1": { "tests": ["UV-CMD-01","UV-CMD-05"] },
-    "§10.3": { "tests": ["UV-CMD-02","UV-CMD-03","UV-CMD-07"] },
-    "§10.4": { "tests": ["UV-CMD-04","UV-CMD-08"] },
-    "§11.1": { "tests": ["UV-P-01","UV-P-02"] },
-    "§11.2": { "tests": ["UV-P-03","UV-SC-21"] },
-    "§11.3": { "tests": ["UV-P-04","UV-P-05"] },
-    "§11.4": { "tests": ["UV-P-06","UV-P-07","UV-P-08","UV-P-15","UV-CMD-06"] },
-    "§11.5": { "tests": ["UV-P-09","UV-P-10"] },
-    "§11.6": { "tests": ["UV-P-14"] },
-    "§11.7": { "tests": ["UV-X-01","UV-X-02","UV-X-03"] },
-    "§12":   { "tests": ["UV-H-01","UV-H-02","UV-H-03","UV-H-04"] },
-    "§13.2": { "tests": ["UV-C-01","UV-C-02","UV-C-03"] },
-    "§13.3": { "tests": ["UV-C-04","UV-C-05","UV-C-06"] },
-    "§13.4": { "tests": ["UV-C-07"] },
-    "§14.1": { "tests": ["UV-SESS-01"] },
-    "§14.2": { "tests": ["UV-SESS-02"] },
-    "§14.3": { "tests": ["UV-SESS-03","UV-SESS-04","UV-SESS-05","UV-SESS-06","UV-SESS-07","UV-SESS-08","UV-SESS-09"] },
-    "§14.4": { "tests": ["UV-SESS-10"] },
-    "§15.1": { "tests": ["UV-SC-01","UV-SC-02","UV-SC-03","UV-SC-04","UV-SC-05","UV-SC-06","UV-SC-07"] },
-    "§15.2": { "tests": ["UV-SC-08"] },
-    "§15.3": { "tests": ["UV-SC-09"] },
-    "§15.4": { "tests": ["UV-SC-10","UV-SC-11","UV-SC-12"] },
-    "§15.5": { "tests": ["UV-SC-13"] },
-    "§15.6": { "tests": ["UV-SC-14","UV-SC-15"] },
-    "§15.7": { "tests": ["UV-SC-16","UV-SC-17","UV-SC-18","UV-SC-19"] },
-    "§15.8": { "tests": ["UV-SC-20"] },
-    "§15.9": { "tests": ["UV-CLI-01","UV-CLI-02","UV-CLI-03","UV-CLI-04","UV-CLI-05","UV-CLI-06"] },
-    "§16.1": { "tests": ["UV-X-04","UV-X-05†"] },
-    "§16.2": { "tests": ["UV-X-06","UV-X-07"] },
-    "§16.3": { "tests": ["UV-I-01","UV-I-02","UV-I-03","UV-I-04","UV-I-05"] },
-    "§16.4": { "tests": ["UV-I-06"] },
-    "§17.1": { "tests": ["UV-PERF-01"] },
-    "§17.2": { "tests": ["UV-PERF-02"] },
-    "§17.3": { "tests": ["UV-PERF-03","UV-PERF-04"] },
-    "§17.4": { "tests": ["UV-PERF-05"] },
-    "§17.5": { "tests": ["UV-PERF-06","UV-PERF-07","UV-PERF-08","UV-PERF-09","UV-PERF-10","UV-PERF-11"] },
-    "§8.2.1":{ "tests": ["UV-E-07"] },
-    "§8.2.2":{ "tests": ["UV-E-08"] },
-    "§7.1":  { "tests": ["UV-A-12","UV-A-13"] },
-    "§18.1": { "tests": ["UV-F-01","UV-F-02"] },
-    "§18.3": { "tests": ["UV-F-03","UV-X-08"] },
-    "§18.4": { "tests": ["UV-F-04"] },
-    "§18.5": { "tests": ["UV-F-05"] },
-    "§19.1": { "tests": ["UV-GOV-01"] },
-    "§19.4": { "tests": ["UV-GOV-02"] },
-    "§20":   { "tests": ["UV-GOV-03","UV-GOV-04","UV-GOV-05"] },
-    "§21":   { "tests": ["UV-ERR-01"] }
+    "\u00a71": {
+      "tests": [
+        "UV-E-01",
+        "UV-E-02",
+        "UV-E-03"
+      ]
+    },
+    "\u00a74": {
+      "tests": [
+        "UV-PRIN-01"
+      ]
+    },
+    "\u00a75.1": {
+      "tests": [
+        "UV-A-01",
+        "UV-A-02",
+        "UV-A-03",
+        "UV-A-04",
+        "UV-SESS-06a",
+        "UV-T-10"
+      ]
+    },
+    "\u00a75.2": {
+      "tests": [
+        "UV-SESS-06"
+      ]
+    },
+    "\u00a76.1": {
+      "tests": [
+        "UV-T-01",
+        "UV-T-02"
+      ]
+    },
+    "\u00a76.3": {
+      "tests": [
+        "UV-T-03"
+      ]
+    },
+    "\u00a76.4": {
+      "tests": [
+        "UV-T-04"
+      ]
+    },
+    "\u00a76.1.1": {
+      "tests": [
+        "UV-T-10"
+      ]
+    },
+    "\u00a76.5": {
+      "tests": [
+        "UV-S-01",
+        "UV-S-02",
+        "UV-S-03",
+        "UV-S-04",
+        "UV-S-05"
+      ]
+    },
+    "\u00a77.2": {
+      "tests": [
+        "UV-A-05",
+        "UV-A-06",
+        "UV-A-07",
+        "UV-A-07a"
+      ]
+    },
+    "\u00a77.3": {
+      "tests": [
+        "UV-P-11",
+        "UV-P-12",
+        "UV-P-13",
+        "UV-A-15"
+      ]
+    },
+    "\u00a77.3.1": {
+      "tests": [
+        "UV-P-16"
+      ]
+    },
+    "\u00a711.4.1": {
+      "tests": [
+        "UV-P-17",
+        "UV-P-18",
+        "UV-P-19",
+        "UV-P-20",
+        "UV-P-21"
+      ]
+    },
+    "\u00a77.4": {
+      "tests": [
+        "UV-A-08",
+        "UV-A-08a",
+        "UV-A-14",
+        "UV-A-16"
+      ]
+    },
+    "\u00a77.5": {
+      "tests": [
+        "UV-A-09"
+      ]
+    },
+    "\u00a77.6": {
+      "tests": [
+        "UV-A-10",
+        "UV-A-10a",
+        "UV-A-11"
+      ]
+    },
+    "\u00a78.1": {
+      "tests": [
+        "UV-E-04"
+      ]
+    },
+    "\u00a78.2": {
+      "tests": [
+        "UV-E-05",
+        "UV-TRUST-01",
+        "UV-TRUST-02",
+        "UV-TRUST-03"
+      ]
+    },
+    "\u00a78.3": {
+      "tests": [
+        "UV-E-06"
+      ]
+    },
+    "\u00a79.1": {
+      "tests": [
+        "UV-F-01",
+        "UV-T-05"
+      ]
+    },
+    "\u00a79.2": {
+      "tests": [
+        "UV-T-06"
+      ]
+    },
+    "\u00a79.3": {
+      "tests": [
+        "UV-T-07",
+        "UV-T-08",
+        "UV-T-09"
+      ]
+    },
+    "\u00a710.1": {
+      "tests": [
+        "UV-CMD-01",
+        "UV-CMD-05"
+      ]
+    },
+    "\u00a710.3": {
+      "tests": [
+        "UV-CMD-02",
+        "UV-CMD-03",
+        "UV-CMD-07"
+      ]
+    },
+    "\u00a710.4": {
+      "tests": [
+        "UV-CMD-04",
+        "UV-CMD-08"
+      ]
+    },
+    "\u00a711.1": {
+      "tests": [
+        "UV-P-01",
+        "UV-P-02"
+      ]
+    },
+    "\u00a711.2": {
+      "tests": [
+        "UV-P-03",
+        "UV-SC-21"
+      ]
+    },
+    "\u00a711.3": {
+      "tests": [
+        "UV-P-04",
+        "UV-P-05"
+      ]
+    },
+    "\u00a711.4": {
+      "tests": [
+        "UV-P-06",
+        "UV-P-07",
+        "UV-P-08",
+        "UV-P-15",
+        "UV-CMD-06",
+        "UV-P-22"
+      ]
+    },
+    "\u00a711.5": {
+      "tests": [
+        "UV-P-09",
+        "UV-P-10"
+      ]
+    },
+    "\u00a711.6": {
+      "tests": [
+        "UV-P-14"
+      ]
+    },
+    "\u00a711.7": {
+      "tests": [
+        "UV-X-01",
+        "UV-X-02",
+        "UV-X-03"
+      ]
+    },
+    "\u00a712": {
+      "tests": [
+        "UV-H-01",
+        "UV-H-02",
+        "UV-H-03",
+        "UV-H-04"
+      ]
+    },
+    "\u00a713.2": {
+      "tests": [
+        "UV-C-01",
+        "UV-C-02",
+        "UV-C-03"
+      ]
+    },
+    "\u00a713.3": {
+      "tests": [
+        "UV-C-04",
+        "UV-C-05",
+        "UV-C-06"
+      ]
+    },
+    "\u00a713.4": {
+      "tests": [
+        "UV-C-07"
+      ]
+    },
+    "\u00a714.1": {
+      "tests": [
+        "UV-SESS-01"
+      ]
+    },
+    "\u00a714.2": {
+      "tests": [
+        "UV-SESS-02"
+      ]
+    },
+    "\u00a714.3": {
+      "tests": [
+        "UV-SESS-03",
+        "UV-SESS-04",
+        "UV-SESS-05",
+        "UV-SESS-06",
+        "UV-SESS-07",
+        "UV-SESS-08",
+        "UV-SESS-09"
+      ]
+    },
+    "\u00a714.4": {
+      "tests": [
+        "UV-SESS-10"
+      ]
+    },
+    "\u00a715.1": {
+      "tests": [
+        "UV-SC-01",
+        "UV-SC-02",
+        "UV-SC-03",
+        "UV-SC-04",
+        "UV-SC-05",
+        "UV-SC-06",
+        "UV-SC-07"
+      ]
+    },
+    "\u00a715.2": {
+      "tests": [
+        "UV-SC-08"
+      ]
+    },
+    "\u00a715.3": {
+      "tests": [
+        "UV-SC-09"
+      ]
+    },
+    "\u00a715.4": {
+      "tests": [
+        "UV-SC-10",
+        "UV-SC-11",
+        "UV-SC-12"
+      ]
+    },
+    "\u00a715.5": {
+      "tests": [
+        "UV-SC-13"
+      ]
+    },
+    "\u00a715.6": {
+      "tests": [
+        "UV-SC-14",
+        "UV-SC-15",
+        "UV-LOG-01",
+        "UV-LOG-02",
+        "UV-LOG-03"
+      ]
+    },
+    "\u00a715.7": {
+      "tests": [
+        "UV-SC-16",
+        "UV-SC-17",
+        "UV-SC-18",
+        "UV-SC-19"
+      ]
+    },
+    "\u00a715.8": {
+      "tests": [
+        "UV-SC-20"
+      ]
+    },
+    "\u00a715.9": {
+      "tests": [
+        "UV-CLI-01",
+        "UV-CLI-02",
+        "UV-CLI-03",
+        "UV-CLI-04",
+        "UV-CLI-05",
+        "UV-CLI-06"
+      ]
+    },
+    "\u00a716.1": {
+      "tests": [
+        "UV-X-04",
+        "UV-X-05\u2020",
+        "UV-X-05"
+      ]
+    },
+    "\u00a716.2": {
+      "tests": [
+        "UV-X-06",
+        "UV-X-07"
+      ]
+    },
+    "\u00a716.3": {
+      "tests": [
+        "UV-I-01",
+        "UV-I-02",
+        "UV-I-03",
+        "UV-I-04",
+        "UV-I-05"
+      ]
+    },
+    "\u00a716.4": {
+      "tests": [
+        "UV-I-06"
+      ]
+    },
+    "\u00a717.1": {
+      "tests": [
+        "UV-PERF-01"
+      ]
+    },
+    "\u00a717.2": {
+      "tests": [
+        "UV-PERF-02"
+      ]
+    },
+    "\u00a717.3": {
+      "tests": [
+        "UV-PERF-03",
+        "UV-PERF-04"
+      ]
+    },
+    "\u00a717.4": {
+      "tests": [
+        "UV-PERF-05"
+      ]
+    },
+    "\u00a717.5": {
+      "tests": [
+        "UV-PERF-06",
+        "UV-PERF-07",
+        "UV-PERF-08",
+        "UV-PERF-09",
+        "UV-PERF-10",
+        "UV-PERF-11",
+        "UV-REPL-01",
+        "UV-REPL-02",
+        "UV-REPL-03",
+        "UV-REPL-04"
+      ]
+    },
+    "\u00a78.2.1": {
+      "tests": [
+        "UV-E-07",
+        "UV-E-09"
+      ]
+    },
+    "\u00a78.2.2": {
+      "tests": [
+        "UV-E-08"
+      ]
+    },
+    "\u00a77.1": {
+      "tests": [
+        "UV-A-12",
+        "UV-A-13"
+      ]
+    },
+    "\u00a718.1": {
+      "tests": [
+        "UV-F-01",
+        "UV-F-02"
+      ]
+    },
+    "\u00a718.3": {
+      "tests": [
+        "UV-F-03",
+        "UV-X-08"
+      ]
+    },
+    "\u00a718.4": {
+      "tests": [
+        "UV-F-04"
+      ]
+    },
+    "\u00a718.5": {
+      "tests": [
+        "UV-F-05"
+      ]
+    },
+    "\u00a719.1": {
+      "tests": [
+        "UV-GOV-01"
+      ]
+    },
+    "\u00a719.4": {
+      "tests": [
+        "UV-GOV-02"
+      ]
+    },
+    "\u00a720": {
+      "tests": [
+        "UV-GOV-03",
+        "UV-GOV-04",
+        "UV-GOV-05"
+      ]
+    },
+    "\u00a721": {
+      "tests": [
+        "UV-ERR-01"
+      ]
+    },
+    "\u00a721.2": {
+      "tests": [
+        "UV-ERR-02",
+        "UV-ERR-03",
+        "UV-ERR-04",
+        "UV-ERR-05",
+        "UV-ERR-06",
+        "UV-ERR-07",
+        "UV-ERR-08",
+        "UV-ERR-09",
+        "UV-ERR-10",
+        "UV-ERR-11",
+        "UV-ERR-12",
+        "UV-ERR-13",
+        "UV-ERR-14",
+        "UV-ERR-15",
+        "UV-ERR-16",
+        "UV-ERR-17"
+      ]
+    }
   },
-
   "uncovered_musts_in_v1_0": [],
-
   "execution_order": {
-    "notes": "ui-validate runs tests in dependency order: transport & CSP before subscribe; auth before prompt; enrollment before attestation; envelope before content-safety. Every ID listed below is literal. Phase 13 is a gate: on web/ide profiles, Phase 14 is not reached if Phase 13 fails. UV-X-05† is enforced as REQUIRED for web/ide via UV-GOV-02.",
+    "notes": "ui-validate runs tests in dependency order: transport & CSP before subscribe; auth before prompt; enrollment before attestation; envelope before content-safety. Every ID listed below is literal. Phase 13 is a gate: on web/ide profiles, Phase 14 is not reached if Phase 13 fails. UV-X-05\u2020 is enforced as REQUIRED for web/ide via UV-GOV-02.",
     "phases": [
-      { "phase": 1, "name": "Transport & Security Headers", "tests": ["UV-T-01","UV-T-02","UV-T-03","UV-T-04","UV-T-10","UV-S-01","UV-S-02","UV-S-03","UV-S-04","UV-S-05","UV-SESS-06a","UV-PRIN-01"] },
-      { "phase": 2, "name": "Auth & Token Hygiene",          "tests": ["UV-A-01","UV-A-02","UV-A-03","UV-A-05","UV-A-06","UV-A-07","UV-A-08","UV-A-10","UV-A-11","UV-A-12","UV-A-13","UV-A-14","UV-A-16"] },
-      { "phase": 3, "name": "Enrollment",                    "tests": ["UV-P-11","UV-P-12","UV-P-13","UV-A-15"] },
-      { "phase": 4, "name": "Envelope & Subscribe",          "tests": ["UV-E-01","UV-E-02","UV-E-03","UV-E-04","UV-E-05","UV-E-06","UV-E-07","UV-E-08","UV-T-05","UV-T-06","UV-T-07","UV-T-08","UV-T-09","UV-F-01","UV-F-02"] },
-      { "phase": 5, "name": "Scope & Stub",                  "tests": ["UV-A-04","UV-A-09","UV-P-03","UV-SC-21"] },
-      { "phase": 6, "name": "Content Safety",                "tests": ["UV-SC-01","UV-SC-02","UV-SC-03","UV-SC-04","UV-SC-05","UV-SC-06","UV-SC-07","UV-SC-08","UV-SC-09","UV-SC-10","UV-SC-11","UV-SC-12","UV-SC-13","UV-SC-14","UV-SC-15","UV-SC-20"] },
-      { "phase": 7, "name": "Prompt Flow & Attestation",     "tests": ["UV-P-01","UV-P-02","UV-P-04","UV-P-05","UV-P-06","UV-P-07","UV-P-08","UV-P-09","UV-P-10","UV-P-14","UV-P-15","UV-P-16","UV-P-17","UV-P-18","UV-P-19","UV-P-20","UV-SC-16","UV-SC-17","UV-SC-18","UV-SC-19"] },
-      { "phase": 8, "name": "Commands & Sessions",           "tests": ["UV-CMD-01","UV-CMD-02","UV-CMD-03","UV-CMD-04","UV-CMD-05","UV-CMD-06","UV-SESS-01","UV-SESS-02","UV-SESS-03","UV-SESS-04","UV-SESS-05","UV-SESS-06","UV-SESS-07","UV-SESS-08","UV-SESS-09","UV-SESS-10"] },
-      { "phase": 9, "name": "Cost & Observability",          "tests": ["UV-C-01","UV-C-02","UV-C-03","UV-C-04","UV-C-05","UV-C-06","UV-C-07","UV-PERF-01","UV-PERF-02","UV-PERF-03","UV-PERF-04","UV-PERF-05","UV-PERF-06","UV-PERF-07","UV-PERF-08","UV-PERF-09","UV-PERF-10","UV-PERF-11"] },
-      { "phase": 10, "name": "Handoff",                      "tests": ["UV-H-01","UV-H-02","UV-H-03","UV-H-04"] },
-      { "phase": 11, "name": "Profile-specific",             "tests": ["UV-F-03","UV-F-04","UV-F-05","UV-CLI-01","UV-CLI-02","UV-CLI-03","UV-CLI-04","UV-CLI-05","UV-CLI-06","UV-X-08"] },
-      { "phase": 12, "name": "A11y / I18n",                  "tests": ["UV-X-01","UV-X-02","UV-X-03","UV-X-04","UV-X-06","UV-X-07","UV-I-01","UV-I-02","UV-I-03","UV-I-04","UV-I-05","UV-I-06"] },
-      { "phase": 13, "name": "Manual Addendum gate (†)",     "tests": ["UV-X-05†"] },
-      { "phase": 14, "name": "Governance & Error Taxonomy",  "tests": ["UV-GOV-01","UV-GOV-02","UV-GOV-03","UV-GOV-04","UV-GOV-05","UV-ERR-01"] }
+      {
+        "phase": 1,
+        "name": "Transport & Security Headers",
+        "tests": [
+          "UV-T-01",
+          "UV-T-02",
+          "UV-T-03",
+          "UV-T-04",
+          "UV-T-10",
+          "UV-S-01",
+          "UV-S-02",
+          "UV-S-03",
+          "UV-S-04",
+          "UV-S-05",
+          "UV-SESS-06a",
+          "UV-PRIN-01"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Auth & Token Hygiene",
+        "tests": [
+          "UV-A-01",
+          "UV-A-02",
+          "UV-A-03",
+          "UV-A-05",
+          "UV-A-06",
+          "UV-A-07",
+          "UV-A-08",
+          "UV-A-10",
+          "UV-A-11",
+          "UV-A-12",
+          "UV-A-13",
+          "UV-A-14",
+          "UV-A-16"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Enrollment",
+        "tests": [
+          "UV-P-11",
+          "UV-P-12",
+          "UV-P-13",
+          "UV-A-15"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Envelope & Subscribe",
+        "tests": [
+          "UV-E-01",
+          "UV-E-02",
+          "UV-E-03",
+          "UV-E-04",
+          "UV-E-05",
+          "UV-E-06",
+          "UV-E-07",
+          "UV-E-08",
+          "UV-T-05",
+          "UV-T-06",
+          "UV-T-07",
+          "UV-T-08",
+          "UV-T-09",
+          "UV-F-01",
+          "UV-F-02"
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "Scope & Stub",
+        "tests": [
+          "UV-A-04",
+          "UV-A-09",
+          "UV-P-03",
+          "UV-SC-21"
+        ]
+      },
+      {
+        "phase": 6,
+        "name": "Content Safety",
+        "tests": [
+          "UV-SC-01",
+          "UV-SC-02",
+          "UV-SC-03",
+          "UV-SC-04",
+          "UV-SC-05",
+          "UV-SC-06",
+          "UV-SC-07",
+          "UV-SC-08",
+          "UV-SC-09",
+          "UV-SC-10",
+          "UV-SC-11",
+          "UV-SC-12",
+          "UV-SC-13",
+          "UV-SC-14",
+          "UV-SC-15",
+          "UV-SC-20"
+        ]
+      },
+      {
+        "phase": 7,
+        "name": "Prompt Flow & Attestation",
+        "tests": [
+          "UV-P-01",
+          "UV-P-02",
+          "UV-P-04",
+          "UV-P-05",
+          "UV-P-06",
+          "UV-P-07",
+          "UV-P-08",
+          "UV-P-09",
+          "UV-P-10",
+          "UV-P-14",
+          "UV-P-15",
+          "UV-P-16",
+          "UV-P-17",
+          "UV-P-18",
+          "UV-P-19",
+          "UV-P-20",
+          "UV-SC-16",
+          "UV-SC-17",
+          "UV-SC-18",
+          "UV-SC-19"
+        ]
+      },
+      {
+        "phase": 8,
+        "name": "Commands & Sessions",
+        "tests": [
+          "UV-CMD-01",
+          "UV-CMD-02",
+          "UV-CMD-03",
+          "UV-CMD-04",
+          "UV-CMD-05",
+          "UV-CMD-06",
+          "UV-SESS-01",
+          "UV-SESS-02",
+          "UV-SESS-03",
+          "UV-SESS-04",
+          "UV-SESS-05",
+          "UV-SESS-06",
+          "UV-SESS-07",
+          "UV-SESS-08",
+          "UV-SESS-09",
+          "UV-SESS-10"
+        ]
+      },
+      {
+        "phase": 9,
+        "name": "Cost & Observability",
+        "tests": [
+          "UV-C-01",
+          "UV-C-02",
+          "UV-C-03",
+          "UV-C-04",
+          "UV-C-05",
+          "UV-C-06",
+          "UV-C-07",
+          "UV-PERF-01",
+          "UV-PERF-02",
+          "UV-PERF-03",
+          "UV-PERF-04",
+          "UV-PERF-05",
+          "UV-PERF-06",
+          "UV-PERF-07",
+          "UV-PERF-08",
+          "UV-PERF-09",
+          "UV-PERF-10",
+          "UV-PERF-11"
+        ]
+      },
+      {
+        "phase": 10,
+        "name": "Handoff",
+        "tests": [
+          "UV-H-01",
+          "UV-H-02",
+          "UV-H-03",
+          "UV-H-04"
+        ]
+      },
+      {
+        "phase": 11,
+        "name": "Profile-specific",
+        "tests": [
+          "UV-F-03",
+          "UV-F-04",
+          "UV-F-05",
+          "UV-CLI-01",
+          "UV-CLI-02",
+          "UV-CLI-03",
+          "UV-CLI-04",
+          "UV-CLI-05",
+          "UV-CLI-06",
+          "UV-X-08"
+        ]
+      },
+      {
+        "phase": 12,
+        "name": "A11y / I18n",
+        "tests": [
+          "UV-X-01",
+          "UV-X-02",
+          "UV-X-03",
+          "UV-X-04",
+          "UV-X-06",
+          "UV-X-07",
+          "UV-I-01",
+          "UV-I-02",
+          "UV-I-03",
+          "UV-I-04",
+          "UV-I-05",
+          "UV-I-06"
+        ]
+      },
+      {
+        "phase": 13,
+        "name": "Manual Addendum gate (\u2020)",
+        "tests": [
+          "UV-X-05\u2020"
+        ]
+      },
+      {
+        "phase": 14,
+        "name": "Governance & Error Taxonomy",
+        "tests": [
+          "UV-GOV-01",
+          "UV-GOV-02",
+          "UV-GOV-03",
+          "UV-GOV-04",
+          "UV-GOV-05",
+          "UV-ERR-01"
+        ]
+      }
     ]
   }
 }
