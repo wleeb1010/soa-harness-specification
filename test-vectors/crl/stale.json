@@ -1,0 +1,12 @@
+{
+  "issuer": "CN=SOA-Harness Test Release CA, O=SOA-Harness Test Fixtures, C=US",
+  "issued_at": "2026-04-20T10:30:00Z",
+  "not_after": "2026-04-21T12:00:00Z",
+  "revoked_kids": [
+    {
+      "kid": "soa-test-compromised-v0.9",
+      "revoked_at": "2026-03-15T09:00:00Z",
+      "reason": "compromise"
+    }
+  ]
+}

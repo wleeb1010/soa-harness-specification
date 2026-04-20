@@ -1,0 +1,9 @@
+{
+  "soaHarnessVersion": "1.0",
+  "publisher_kid": "soa-test-release-v1.0",
+  "spki_sha256": "46b2c22947693066db8b341724ac1009db8c8bfcf0564eee05fded5c0441c3b0",
+  "issuer": "CN=SOA-Harness Test Release CA, O=SOA-Harness Test Fixtures, C=US",
+  "issued_at": "2026-01-01T00:00:00Z",
+  "not_after": "2099-12-31T23:59:59Z",
+  "channel": "stolen-secrets"
+}

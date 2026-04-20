@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "f8da8b8590f19b7f429e6a9f0559640803426300c230afdaa309785751ffab45",
+        "sha256": "3ed06880ab6d23ebd59582fda79e2b28d0f8372c26005d7ddb2fa052c84fb7d1",
         "canonicalization": "raw-utf8"
       },
       {
@@ -152,6 +152,54 @@
         "canonicalization": "raw-utf8"
       },
       {
+        "name": "README.md",
+        "path": "test-vectors/crl/README.md",
+        "sha256": "41017cbaade30208f28a21ec81878f15e14a17d92f68bae4ab8dbd36402bc984",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "expired.json",
+        "path": "test-vectors/crl/expired.json",
+        "sha256": "eae128a9a9050a0ca5f863928c82e65ee52eacf26dfc00f2873cb0b60a5cb568",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "fresh.json",
+        "path": "test-vectors/crl/fresh.json",
+        "sha256": "6b4cbdbdc1e145c94b439efab67b3172e3f36fcd5d9c243a41cbb4e0c945bdd0",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "stale.json",
+        "path": "test-vectors/crl/stale.json",
+        "sha256": "f296f7edbbc1865e1a73e2e5d1bfb7d6e4225cea92992c2106a8a07abbcae0d9",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/initial-trust/README.md",
+        "sha256": "5df9d5bb2e86a96c2e59ce2ace3ede83604082176eee06ef3c2467814691f012",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "channel-mismatch.json",
+        "path": "test-vectors/initial-trust/channel-mismatch.json",
+        "sha256": "4e4d88b43a7fd94397c48f57c0388cc0f839215aa752f71956c441a70b3eab22",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "expired.json",
+        "path": "test-vectors/initial-trust/expired.json",
+        "sha256": "c138af101ef6c1ea81066c54887a22c9712bc45edbd4772fda8d663f070c220c",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "valid.json",
+        "path": "test-vectors/initial-trust/valid.json",
+        "sha256": "5ebd502c2400540d4e29f415874a542871d145fb8ad2de20929ab2abf83e186b",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
         "name": ".gitignore",
         "path": "test-vectors/jcs-parity/.gitignore",
         "sha256": "88b6b09796bc021a6f46b5964be1cbe30ef7a25d613ee43f868e720ee4d15587",
@@ -168,6 +216,30 @@
         "path": "test-vectors/jcs-parity/generate-vectors.mjs",
         "sha256": "5698eef6b2d1a4485a4d78b4ebe6f9e0b9d165b1d3f62585438b612391ccd4d5",
         "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "floats.json",
+        "path": "test-vectors/jcs-parity/generated/floats.json",
+        "sha256": "54c167002a5b3c0ce31d79f9c68f6d2d8d15ce1e31d22a3ca22a327d45b7f28d",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "integers.json",
+        "path": "test-vectors/jcs-parity/generated/integers.json",
+        "sha256": "45aedd14379fae2a5c80bb9386db998532717d57b0483971dfaf6b397fb71700",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "nested.json",
+        "path": "test-vectors/jcs-parity/generated/nested.json",
+        "sha256": "dbeb10293727868951f76cf6f04cd1d79a1cc80cd4b2779d1b0c1da7e5baa194",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "strings.json",
+        "path": "test-vectors/jcs-parity/generated/strings.json",
+        "sha256": "0fc0832100bdbcdfa6c75b6581d3e07d289cd92ecf15d696cb08ed37b8d1af7a",
+        "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": ".gitignore",
@@ -190,7 +262,13 @@
       {
         "name": "go.sum",
         "path": "test-vectors/jcs-parity/go-cli/go.sum",
-        "sha256": "0c96e52ca437222bf21175bdb5ddd1ff4f2735ca0f035df9991428bd99e5d913",
+        "sha256": "2a87b37d244867b425fe8b1a9591c01763c3b740a0d6fac5c60a7246ccb04b53",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "jcs-cli.exe",
+        "path": "test-vectors/jcs-parity/go-cli/jcs-cli.exe",
+        "sha256": "361c07cc78bad0d2cc213d64d58f85fb7eba921c38c7c1ad80460de076c8a7c7",
         "canonicalization": "raw-utf8"
       },
       {
@@ -286,7 +364,7 @@
       {
         "name": "package-lock.json",
         "path": "test-vectors/jcs-parity/package-lock.json",
-        "sha256": "bedf8fa8cb25b39f3a7ad71d265d19571d4ee737f937ea79592a78545f64bc21",
+        "sha256": "63338724d0ffeef5473c02ff71ff15d12637446f1030eb23fd637275c48f22d8",
         "canonicalization": "JCS-RFC-8785"
       },
       {

@@ -1,0 +1,6 @@
+{
+  "issuer": "CN=SOA-Harness Test Release CA, O=SOA-Harness Test Fixtures, C=US",
+  "issued_at": "2020-01-01T00:00:00Z",
+  "not_after": "2020-06-30T23:59:59Z",
+  "revoked_kids": []
+}
