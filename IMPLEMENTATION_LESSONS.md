@@ -182,6 +182,15 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Impl impact:** impl currently returns `error: "missing-scope"`. Trivial one-line change to `error: "insufficient-scope"`. Alternatively, impl could emit both (`error: "insufficient-scope", legacy_alias: "missing-scope"`) during a transition, but since nothing else is pinned to the old name, straight rename is fine.
 - **Why the spec term wins:** the impl picked a reasonable name ("missing-scope") on its own, but the spec is authoritative for closed enumerations. Validators filter on the spec-declared reason strings; impls that don't match fail conformance. Spec typos like this are exactly what the independent-judge architecture catches — validator ran its assertion, impl diverged, error surfaced in <24h.
 
+### L-23 — §10.3.2 `pda-verify-unavailable` 503 branch `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · Week 3 day 3 · validator exercised SV-PERM-22 against a Runner deployment NOT started with `resolvePdaVerifyKey`. Impl returned `400 pda-verify-not-configured`. Problems:
+  1. `400` is a client-error class; this scenario is a server-state / deployment-misconfig issue, not a malformed request.
+  2. The reason code isn't in the L-22 closed enum (`insufficient-scope | session-bearer-mismatch | pda-decision-mismatch | pda-malformed`).
+- **Root-cause fix:** added a normative 503 branch to §10.3.2: `503 pda-verify-unavailable` when the endpoint needs to verify a PDA but no verification config is loaded. Operators correct the deployment (configure `resolvePdaVerifyKey` or load `security.trustAnchors`); conformance Runners MUST boot with verification configured. Returning `400` for this case is explicitly non-conformant.
+- **Impl rename:** `400 pda-verify-not-configured` → `503 pda-verify-unavailable`. Simple code-path swap plus a reason-string rename.
+- **L-24 candidate (not yet logged):** SV-PERM-21 happy path still SKIP because there's no signing fixture — need a pinned test handler keypair + a pre-signed PDA fixture that impl can verify. Separate spec commit scope.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

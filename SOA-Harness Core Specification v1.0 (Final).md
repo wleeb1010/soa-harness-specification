@@ -1069,7 +1069,8 @@ Content-Type: application/json
   Error-code name `ConfigPrecedenceViolation` is RESERVED for §10.3 step 3 (toolRequirements loosens default) and MUST NOT be returned by this endpoint for auth-scope or PDA failures.
 - `404 Not Found` — `tool` unknown or `session_id` unknown
 - `429 Too Many Requests` — rate-limit exceeded
-- `503 Service Unavailable` — `/ready` is 503
+- `503 Service Unavailable` with body `{"error":"not-ready","reason":"<§5.4 enum>"}` — `/ready` is 503 (Runner hasn't completed boot)
+- `503 Service Unavailable` with body `{"error":"pda-verify-unavailable","reason":"pda-verify-unavailable"}` — the endpoint needs to verify a PDA (resolver output for this `(tool, session)` pair is `Prompt`) but the Runner has no PDA verification configuration loaded (no `security.trustAnchors` wired to a verify key resolver, OR the verify key resolver refuses to answer). This is a **deployment-misconfiguration** signal, not a client error. Operators MUST correct the deployment (typically: configure `resolvePdaVerifyKey` or load `security.trustAnchors` content at boot) before the endpoint can serve Prompt-resolving tools. Conformance-mode Runners MUST be started with PDA verification configured; this 503 branch exists so degenerate deployments fail visibly rather than silently accepting unsigned decisions. `pda-verify-unavailable` extends the L-22 authoritative reason enum. Returning `400` for this case is non-conformant — this is a 5xx-class server-state issue, not a malformed request.
 
 **Side-effect property (normative MUST).** A successful `POST /permissions/decisions` call MUST:
 1. Append exactly one record to `/audit/permissions.log` conforming to §10.5's field set and hash-chain rule. `this_hash` equals the response body's `audit_this_hash`.
