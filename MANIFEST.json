@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "bc44d6ab23d0969f239c289bfd7c99b416746fa96990aa41f203f3a442152384",
+        "sha256": "9eb4aa99fbad7eb68af13327abd668192b5c05c03d4b07d404e0582ea0f22dd1",
         "canonicalization": "JCS-RFC-8785"
       },
       {

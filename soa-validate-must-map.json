@@ -2,9 +2,9 @@
   "$id": "https://soa-harness.org/schemas/v1.0/must-map.json",
   "artifact_version": "1.0.0",
   "spec_version": "1.0",
-  "generated": "2026-04-18",
+  "generated": "2026-04-20",
   "completeness_check": {
-    "method": "Out-of-band CI job parses the SOA-Harness Core specification, extracts every MUST by stable anchor (\u00a7X.Y#slug), diffs against must_coverage keys. Missing anchors fail CI. Tool: scripts/verify-must-coverage.ts in the soa-validate repo.",
+    "method": "Out-of-band CI job parses the SOA-Harness Core specification, extracts every MUST by stable anchor (§X.Y#slug), diffs against must_coverage keys. Missing anchors fail CI. Tool: scripts/verify-must-coverage.ts in the soa-validate repo.",
     "invariants": [
       "Every MUST anchor in the spec appears as a key in must_coverage.",
       "Every test_id referenced from must_coverage exists in tests.",
@@ -15,8 +15,8 @@
   },
   "profiles": {
     "core": "Mandatory for every SOA-Harness v1.0 implementation.",
-    "core+si": "Core plus self-improvement (\u00a79, \u00a723).",
-    "core+handoff": "Core plus A2A handoff (\u00a717).",
+    "core+si": "Core plus self-improvement (§9, §23).",
+    "core+handoff": "Core plus A2A handoff (§17).",
     "full": "core+si+handoff."
   },
   "severity_scale": {
@@ -25,12 +25,12 @@
     "minor": "Quality-of-conformance signal; does not block certification."
   },
   "test_categories": {
-    "HR": "Harness Regression (\u00a715.5). Runtime integration tests.",
-    "SV-ENC": "Encoding & format hygiene (\u00a71).",
-    "SV-PRIN": "Core Principles \u2014 lean design, failure paths, primitive testability, FS-grounded, composition (\u00a74).",
-    "SV-STACK": "Required stack completeness and primitive resolution (\u00a75).",
-    "SV-BOOT": "External bootstrap root: SDK-pinned, operator-bundled, or DNSSEC TXT (\u00a75.3).",
-    "SV-SIGN": "Per-artifact JWS signing profile: Agent Card, program.md, MANIFEST (\u00a76.1.1).",
+    "HR": "Harness Regression (§15.5). Runtime integration tests.",
+    "SV-ENC": "Encoding & format hygiene (§1).",
+    "SV-PRIN": "Core Principles — lean design, failure paths, primitive testability, FS-grounded, composition (§4).",
+    "SV-STACK": "Required stack completeness and primitive resolution (§5).",
+    "SV-BOOT": "External bootstrap root: SDK-pinned, operator-bundled, or DNSSEC TXT (§5.3).",
+    "SV-SIGN": "Per-artifact JWS signing profile: Agent Card, program.md, MANIFEST (§6.1.1).",
     "SV-CARD": "Agent Card schema, signature, discovery.",
     "SV-AGENTS": "AGENTS.md grammar, imports, reload.",
     "SV-MEM": "Memory layer contract.",
@@ -44,38 +44,42 @@
     "SV-A2A": "Agent2Agent wire protocol.",
     "SV-GOV": "Governance + versioning + normative-reference pinning.",
     "SV-CLUS": "Cluster coordination + concurrency.",
-    "SV-GOOD": "Goodhart mitigations (\u00a723).",
-    "SV-PRIV": "Privacy and data-governance controls (\u00a710.7).",
-    "SV-OPS": "Operational probes: liveness + readiness (\u00a75.4)."
+    "SV-GOOD": "Goodhart mitigations (§23).",
+    "SV-PRIV": "Privacy and data-governance controls (§10.7).",
+    "SV-OPS": "Operational probes: liveness + readiness (§5.4).",
+    "SV-AUDIT": "Audit chain observability (tail hash + records + chain integrity, §10.5.2/§10.5.3).",
+    "SV-SESS-BOOT": "Session bootstrap endpoint (§12.6)."
   },
   "tests": {
     "HR-01": {
       "name": "Destructive approval",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "Destructive tool without Prompt \u2192 denied."
+      "summary": "Destructive tool without Prompt → denied."
     },
     "HR-02": {
       "name": "Budget exhaustion pre-call",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "Projection over budget \u2192 StopReason::BudgetExhausted before API call."
+      "summary": "Projection over budget → StopReason::BudgetExhausted before API call.",
+      "implementation_milestone": "M3",
+      "milestone_reason": "Token Budget projector (§13) is M3 scope per roadmap; the assertion cannot be tested before §13 is shipped."
     },
     "HR-03": {
       "name": "Budget exhaustion mid-stream",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "Mid-stream overage \u2192 cancel + StopReason::BudgetExhausted."
+      "summary": "Mid-stream overage → cancel + StopReason::BudgetExhausted."
     },
     "HR-04": {
       "name": "Crash recovery (pending tool)",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
@@ -83,7 +87,7 @@
     },
     "HR-05": {
       "name": "Crash recovery (committed)",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
@@ -91,7 +95,7 @@
     },
     "HR-06": {
       "name": "Compaction integrity",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "moderate",
@@ -99,7 +103,7 @@
     },
     "HR-07": {
       "name": "Agent-type enforcement",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "moderate",
@@ -107,15 +111,15 @@
     },
     "HR-08": {
       "name": "SI quality gate",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core+si",
       "severity": "critical",
-      "summary": "Reject when training delta positive but holdout delta < \u22120.02."
+      "summary": "Reject when training delta positive but holdout delta < −0.02."
     },
     "HR-09": {
       "name": "SI marker escape",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core+si",
       "severity": "critical",
@@ -123,7 +127,7 @@
     },
     "HR-10": {
       "name": "SI immutable task",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core+si",
       "severity": "critical",
@@ -131,7 +135,7 @@
     },
     "HR-11": {
       "name": "Permission override tighten-only",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
@@ -139,23 +143,23 @@
     },
     "HR-12": {
       "name": "Card signature failure",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "Tampered Card bytes \u2192 CardInvalid; Runner fails closed."
+      "summary": "Tampered Card bytes → CardInvalid; Runner fails closed."
     },
     "HR-13": {
       "name": "Tool Pool stale on resume",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "moderate",
-      "summary": "Tool removed before resume \u2192 StopReason::ToolPoolStale."
+      "summary": "Tool removed before resume → StopReason::ToolPoolStale."
     },
     "HR-14": {
       "name": "Audit hash chain",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
@@ -163,7 +167,7 @@
     },
     "HR-15": {
       "name": "Handoff auth",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core+handoff",
       "severity": "critical",
@@ -171,23 +175,23 @@
     },
     "HR-16": {
       "name": "Docker profile",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core+si",
       "severity": "critical",
-      "summary": "Task attempting seccomp-blocked syscall fails within container; HR-16 is SI-gated because \u00a79.7 applies only to the self-improvement loop."
+      "summary": "Task attempting seccomp-blocked syscall fails within container; HR-16 is SI-gated because §9.7 applies only to the self-improvement loop."
     },
     "HR-17": {
       "name": "Memory degradation",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "moderate",
-      "summary": "3 consecutive Memory MCP timeouts \u2192 StopReason::MemoryDegraded."
+      "summary": "3 consecutive Memory MCP timeouts → StopReason::MemoryDegraded."
     },
     "HR-18": {
       "name": "Config precedence",
-      "section": "\u00a715.5",
+      "section": "§15.5",
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "moderate",
@@ -195,31 +199,31 @@
     },
     "SV-PRIN-01": {
       "name": "Lean single-agent baseline",
-      "section": "\u00a74",
+      "section": "§4",
       "section_title": "Core Principles",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Runner advertises a single-agent design; any multi-agent deployment carries an explicit \u00a722 Non-Goals waiver in the Agent Card or deployment manifest."
+      "assertion": "Runner advertises a single-agent design; any multi-agent deployment carries an explicit §22 Non-Goals waiver in the Agent Card or deployment manifest."
     },
     "SV-PRIN-02": {
       "name": "Failure paths defined",
-      "section": "\u00a74",
+      "section": "§4",
       "section_title": "Core Principles",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Every failure path (crash, token exhaustion, permission denial, stream interruption, upstream unavailability, rollback failure) maps to a named outcome in \u00a716 Cross-Interaction Matrix; absence of a defined outcome fails the test."
+      "assertion": "Every failure path (crash, token exhaustion, permission denial, stream interruption, upstream unavailability, rollback failure) maps to a named outcome in §16 Cross-Interaction Matrix; absence of a defined outcome fails the test."
     },
     "SV-PRIN-03": {
       "name": "Primitives unit-testable",
-      "section": "\u00a74",
+      "section": "§4",
       "section_title": "Core Principles",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Each primitive P1\u2013P14 is exercised by at least one SV-* test that runs in isolation (no transitive dependency on another primitive's state)."
+      "assertion": "Each primitive P1–P14 is exercised by at least one SV-* test that runs in isolation (no transitive dependency on another primitive's state)."
     },
     "SV-PRIN-04": {
       "name": "File-system grounded",
-      "section": "\u00a74",
+      "section": "§4",
       "section_title": "Core Principles",
       "profile": "core",
       "severity": "critical",
@@ -227,15 +231,15 @@
     },
     "SV-PRIN-05": {
       "name": "Composition specified",
-      "section": "\u00a74, \u00a716",
+      "section": "§4, §16",
       "section_title": "Core Principles",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "For every pair of primitives whose composition is observable (e.g., self-improvement \u00d7 handoff, compaction \u00d7 streaming), \u00a716 defines the composition rule."
+      "assertion": "For every pair of primitives whose composition is observable (e.g., self-improvement × handoff, compaction × streaming), §16 defines the composition rule."
     },
     "SV-STACK-01": {
       "name": "Stack completeness",
-      "section": "\u00a75.1",
+      "section": "§5.1",
       "section_title": "Required Stack",
       "profile": "core",
       "severity": "moderate",
@@ -243,15 +247,15 @@
     },
     "SV-STACK-02": {
       "name": "Primitive endpoints resolve",
-      "section": "\u00a75.2",
+      "section": "§5.2",
       "section_title": "Required Primitives",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "P1\u2013P10 and P12\u2013P14 each resolve to a concrete file, endpoint, or code path advertised in the Card or well-known locations; P11 required only under core+handoff."
+      "assertion": "P1–P10 and P12–P14 each resolve to a concrete file, endpoint, or code path advertised in the Card or well-known locations; P11 required only under core+handoff."
     },
     "SV-BOOT-01": {
       "name": "SDK-pinned bootstrap",
-      "section": "\u00a75.3",
+      "section": "§5.3",
       "section_title": "External Bootstrap Root",
       "profile": "core",
       "severity": "critical",
@@ -259,7 +263,7 @@
     },
     "SV-BOOT-02": {
       "name": "Operator-bundled bootstrap",
-      "section": "\u00a75.3",
+      "section": "§5.3",
       "section_title": "External Bootstrap Root",
       "profile": "core",
       "severity": "critical",
@@ -267,7 +271,7 @@
     },
     "SV-BOOT-03": {
       "name": "DNSSEC TXT bootstrap",
-      "section": "\u00a75.3",
+      "section": "§5.3",
       "section_title": "External Bootstrap Root",
       "profile": "core",
       "severity": "critical",
@@ -275,23 +279,23 @@
     },
     "SV-BOOT-04": {
       "name": "Bootstrap key rotation + compromise",
-      "section": "\u00a75.3.1",
+      "section": "§5.3.1",
       "section_title": "Bootstrap-Key Rotation and Compromise",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Runner polls bootstrap channel at \u2264 24 h interval; on revoked publisher_kid observation it rejects Agent Cards referencing the revoked value with HostHardeningInsufficient(reason=bootstrap-revoked), halts SI, and flags all MANIFEST JWS accepted in the preceding 24 h as SuspectDecision. Rotation overlap \u2265 30 d honored during transition."
+      "assertion": "Runner polls bootstrap channel at ≤ 24 h interval; on revoked publisher_kid observation it rejects Agent Cards referencing the revoked value with HostHardeningInsufficient(reason=bootstrap-revoked), halts SI, and flags all MANIFEST JWS accepted in the preceding 24 h as SuspectDecision. Rotation overlap ≥ 30 d honored during transition."
     },
     "SV-BOOT-05": {
       "name": "Anchor disagreement / split-brain",
-      "section": "\u00a75.3.2",
+      "section": "§5.3.2",
       "section_title": "Anchor Disagreement and Split-Brain",
       "profile": "core",
       "severity": "critical",
-      "assertion": "SOA_BOOTSTRAP_CHANNEL is the sole authoritative source; a disagreeing publisher_kid observed on any non-authoritative channel triggers HostHardeningInsufficient(reason=bootstrap-split-brain), SI halt, and rejection of Agent Cards whose security.trustAnchors[].publisher_kid matches the dissenting value. Multi-channel agreement does not trigger. Recovery requires removing the dissenting artifact or rotating the authoritative channel per \u00a75.3.1."
+      "assertion": "SOA_BOOTSTRAP_CHANNEL is the sole authoritative source; a disagreeing publisher_kid observed on any non-authoritative channel triggers HostHardeningInsufficient(reason=bootstrap-split-brain), SI halt, and rejection of Agent Cards whose security.trustAnchors[].publisher_kid matches the dissenting value. Multi-channel agreement does not trigger. Recovery requires removing the dissenting artifact or rotating the authoritative channel per §5.3.1."
     },
     "SV-BOOT-06": {
       "name": "initial-trust.json schema conformance",
-      "section": "\u00a75.3",
+      "section": "§5.3",
       "section_title": "External Bootstrap Root",
       "profile": "core",
       "severity": "critical",
@@ -299,39 +303,39 @@
     },
     "SV-SIGN-01": {
       "name": "Agent Card JWS profile",
-      "section": "\u00a76.1.1",
+      "section": "§6.1.1",
       "section_title": "Artifact Signing Profile",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Agent Card JWS uses detached serialization over JCS(agent-card.json), alg \u2208 {EdDSA,ES256,RS256\u22653072}, typ=soa-agent-card+jws, header carries kid and x5c; mismatch \u2192 CardSignatureFailed."
+      "assertion": "Agent Card JWS uses detached serialization over JCS(agent-card.json), alg ∈ {EdDSA,ES256,RS256≥3072}, typ=soa-agent-card+jws, header carries kid and x5c; mismatch → CardSignatureFailed."
     },
     "SV-SIGN-02": {
       "name": "program.md JWS profile",
-      "section": "\u00a76.1.1",
+      "section": "§6.1.1",
       "section_title": "Artifact Signing Profile",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "program.md JWS is detached over the raw UTF-8 bytes (NOT JCS), alg \u2208 {EdDSA,ES256}, typ=soa-program+jws."
+      "assertion": "program.md JWS is detached over the raw UTF-8 bytes (NOT JCS), alg ∈ {EdDSA,ES256}, typ=soa-program+jws."
     },
     "SV-SIGN-03": {
       "name": "MANIFEST JWS profile",
-      "section": "\u00a76.1.1, \u00a79.7.1",
+      "section": "§6.1.1, §9.7.1",
       "section_title": "Artifact Signing Profile",
       "profile": "core",
       "severity": "critical",
-      "assertion": "MANIFEST.json.jws is detached over JCS(MANIFEST.json), alg \u2208 {EdDSA,ES256} (RS256 forbidden), typ=soa-manifest+jws, header.kid equals the configured publisher_kid."
+      "assertion": "MANIFEST.json.jws is detached over JCS(MANIFEST.json), alg ∈ {EdDSA,ES256} (RS256 forbidden), typ=soa-manifest+jws, header.kid equals the configured publisher_kid."
     },
     "SV-SIGN-04": {
       "name": "x5c chain depth and ordering",
-      "section": "\u00a76.1.1",
+      "section": "§6.1.1",
       "section_title": "Artifact Signing Profile",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Agent Card JWS x5c header is an RFC 7515 \u00a74.1.6 array ordered leaf-first (index 0 = signing cert) including every intermediate certificate required to chain to an anchor in security.trustAnchors; trust-anchor root MAY be omitted. Verifiers reject leaf-only x5c with CardSignatureFailed(reason=x5c-chain-incomplete) when an intermediate is missing from the anchor store."
+      "assertion": "Agent Card JWS x5c header is an RFC 7515 §4.1.6 array ordered leaf-first (index 0 = signing cert) including every intermediate certificate required to chain to an anchor in security.trustAnchors; trust-anchor root MAY be omitted. Verifiers reject leaf-only x5c with CardSignatureFailed(reason=x5c-chain-incomplete) when an intermediate is missing from the anchor store."
     },
     "SV-SIGN-05": {
       "name": "program.md two-step signer resolution",
-      "section": "\u00a76.1.1",
+      "section": "§6.1.1",
       "section_title": "Artifact Signing Profile",
       "profile": "core+si",
       "severity": "critical",
@@ -339,15 +343,15 @@
     },
     "SV-A2A-10": {
       "name": "A2A JWT algorithm allowlist",
-      "section": "\u00a717.1",
+      "section": "§17.1",
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "A2A JWT alg \u2208 {EdDSA,ES256,RS256}; RS256 requires key size \u2265 3072; any other alg rejected with HandoffRejected(reason=bad-alg)."
+      "assertion": "A2A JWT alg ∈ {EdDSA,ES256,RS256}; RS256 requires key size ≥ 3072; any other alg rejected with HandoffRejected(reason=bad-alg)."
     },
     "SV-A2A-11": {
       "name": "A2A signing-key discovery",
-      "section": "\u00a717.1",
+      "section": "§17.1",
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "critical",
@@ -355,7 +359,7 @@
     },
     "SV-A2A-12": {
       "name": "A2A jti replay cache",
-      "section": "\u00a717.1",
+      "section": "§17.1",
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "critical",
@@ -363,23 +367,23 @@
     },
     "SV-A2A-13": {
       "name": "A2A agent_card_etag drift",
-      "section": "\u00a717.1",
+      "section": "§17.1",
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "Receiver fetches caller's Agent Card and compares its JWS digest to the presented agent_card_etag; mismatch emits CardVersionDrift and responds JSON-RPC error -32051; etag cached \u2264 60 s."
+      "assertion": "Receiver fetches caller's Agent Card and compares its JWS digest to the presented agent_card_etag; mismatch emits CardVersionDrift and responds JSON-RPC error -32051; etag cached ≤ 60 s."
     },
     "SV-A2A-14": {
       "name": "A2A digest canonicalization",
-      "section": "\u00a717.2",
+      "section": "§17.2",
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "messages_digest / workflow_digest / result_digest use form sha256:<64-hex-lowercase> where the hashed bytes are JCS-RFC-8785 canonical of the corresponding JSON object. Receiver recomputes and compares; mismatch \u2192 HandoffRejected(reason=digest-mismatch)."
+      "assertion": "messages_digest / workflow_digest / result_digest use form sha256:<64-hex-lowercase> where the hashed bytes are JCS-RFC-8785 canonical of the corresponding JSON object. Receiver recomputes and compares; mismatch → HandoffRejected(reason=digest-mismatch)."
     },
     "SV-ENC-01": {
       "name": "UTF-8 no BOM",
-      "section": "\u00a71",
+      "section": "§1",
       "section_title": "Conventions",
       "profile": "core",
       "severity": "minor",
@@ -387,15 +391,15 @@
     },
     "SV-ENC-02": {
       "name": "RFC 3339 timestamps",
-      "section": "\u00a71",
+      "section": "§1",
       "section_title": "Conventions",
       "profile": "core",
       "severity": "minor",
-      "assertion": "Every timestamp emitted in StreamEvent, audit trail, session file, and memory-note responses is RFC 3339 with explicit timezone offset and \u2265 ms precision."
+      "assertion": "Every timestamp emitted in StreamEvent, audit trail, session file, and memory-note responses is RFC 3339 with explicit timezone offset and ≥ ms precision."
     },
     "SV-ENC-03": {
       "name": "ISO-8601 durations",
-      "section": "\u00a71",
+      "section": "§1",
       "section_title": "Conventions",
       "profile": "core",
       "severity": "minor",
@@ -403,7 +407,7 @@
     },
     "SV-ENC-04": {
       "name": "LF line separators",
-      "section": "\u00a71",
+      "section": "§1",
       "section_title": "Conventions",
       "profile": "core",
       "severity": "minor",
@@ -411,31 +415,31 @@
     },
     "SV-ENC-05": {
       "name": "JCS canonicalization",
-      "section": "\u00a71",
+      "section": "§1",
       "section_title": "Conventions",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Every JSON signing input (Agent Card JWS, MANIFEST JWS, PDA, audit canonical hash) is JCS-canonicalized per RFC 8785; re-serialization by verifier produces byte-identical output; RFC 8785 Appendix test vectors pass round-trip. program.md JWS is explicitly NOT included \u2014 it signs raw UTF-8 Markdown bytes per Core \u00a71 and \u00a76.1.1."
+      "assertion": "Every JSON signing input (Agent Card JWS, MANIFEST JWS, PDA, audit canonical hash) is JCS-canonicalized per RFC 8785; re-serialization by verifier produces byte-identical output; RFC 8785 Appendix test vectors pass round-trip. program.md JWS is explicitly NOT included — it signs raw UTF-8 Markdown bytes per Core §1 and §6.1.1."
     },
     "SV-ENC-06": {
       "name": "Clock-skew JWT",
-      "section": "\u00a71",
+      "section": "§1",
       "section_title": "Conventions",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "JWT iat/exp validated \u00b130s against verifier clock; outside window \u2192 AuthFailed."
+      "assertion": "JWT iat/exp validated ±30s against verifier clock; outside window → AuthFailed."
     },
     "SV-ENC-07": {
       "name": "Clock-skew PDA window",
-      "section": "\u00a71",
+      "section": "§1",
       "section_title": "Conventions",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "PDA not_before/not_after validated \u00b160s; not_after - not_before \u2264 15 minutes; outside window \u2192 HandlerKeyRevoked or equivalent."
+      "assertion": "PDA not_before/not_after validated ±60s; not_after - not_before ≤ 15 minutes; outside window → HandlerKeyRevoked or equivalent."
     },
     "SV-CARD-01": {
       "name": "HTTPS required",
-      "section": "\u00a76.1",
+      "section": "§6.1",
       "section_title": "Discovery and Transport",
       "profile": "core",
       "severity": "critical",
@@ -443,7 +447,7 @@
     },
     "SV-CARD-02": {
       "name": "Content-Type enforced",
-      "section": "\u00a76.1",
+      "section": "§6.1",
       "section_title": "Discovery and Transport",
       "profile": "core",
       "severity": "moderate",
@@ -451,7 +455,7 @@
     },
     "SV-CARD-03": {
       "name": "JWS signature verify",
-      "section": "\u00a76.1",
+      "section": "§6.1",
       "section_title": "Discovery and Transport",
       "profile": "core",
       "severity": "critical",
@@ -459,7 +463,7 @@
     },
     "SV-CARD-04": {
       "name": "Trust anchor chain",
-      "section": "\u00a76.1",
+      "section": "§6.1",
       "section_title": "Discovery and Transport",
       "profile": "core",
       "severity": "critical",
@@ -467,7 +471,7 @@
     },
     "SV-CARD-05": {
       "name": "Schema validate",
-      "section": "\u00a76.2",
+      "section": "§6.2",
       "section_title": "Normative JSON Schema",
       "profile": "core",
       "severity": "critical",
@@ -475,23 +479,23 @@
     },
     "SV-CARD-06": {
       "name": "soaHarnessVersion const",
-      "section": "\u00a76.2",
+      "section": "§6.2",
       "section_title": "Normative JSON Schema",
       "profile": "core",
       "severity": "critical",
-      "assertion": "soaHarnessVersion != 1.0 \u2192 CardInvalid."
+      "assertion": "soaHarnessVersion != 1.0 → CardInvalid."
     },
     "SV-CARD-07": {
       "name": "additionalProperties false",
-      "section": "\u00a76.2",
+      "section": "§6.2",
       "section_title": "Normative JSON Schema",
       "profile": "core",
       "severity": "moderate",
       "assertion": "Unknown top-level field rejected."
     },
     "SV-CARD-08": {
-      "name": "Cache-Control \u2264 300s",
-      "section": "\u00a76.1",
+      "name": "Cache-Control ≤ 300s",
+      "section": "§6.1",
       "section_title": "Discovery and Transport",
       "profile": "core",
       "severity": "minor",
@@ -499,15 +503,15 @@
     },
     "SV-CARD-09": {
       "name": "Validation failure halt",
-      "section": "\u00a76.4",
+      "section": "§6.4",
       "section_title": "Validation Failure Behavior",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Own Card invalid \u2192 refuse to start."
+      "assertion": "Own Card invalid → refuse to start."
     },
     "SV-CARD-10": {
       "name": "Declared precedence",
-      "section": "\u00a76.5",
+      "section": "§6.5",
       "section_title": "Precedence Among Declaration Sources",
       "profile": "core",
       "severity": "critical",
@@ -515,7 +519,7 @@
     },
     "SV-CARD-11": {
       "name": "ETag + If-None-Match",
-      "section": "\u00a76.1",
+      "section": "§6.1",
       "section_title": "Discovery and Transport",
       "profile": "core",
       "severity": "moderate",
@@ -523,47 +527,47 @@
     },
     "SV-AGENTS-01": {
       "name": "Required H2 present",
-      "section": "\u00a77.2",
+      "section": "§7.2",
       "section_title": "Required Headings and Grammar",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Missing required H2 \u2192 AgentsMdInvalid on startup."
+      "assertion": "Missing required H2 → AgentsMdInvalid on startup."
     },
     "SV-AGENTS-02": {
       "name": "H2 ordering",
-      "section": "\u00a77.2",
+      "section": "§7.2",
       "section_title": "Required Headings and Grammar",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Out-of-order required H2 \u2192 AgentsMdInvalid."
+      "assertion": "Out-of-order required H2 → AgentsMdInvalid."
     },
     "SV-AGENTS-03": {
       "name": "Duplicate H2 rejected",
-      "section": "\u00a77.2",
+      "section": "§7.2",
       "section_title": "Required Headings and Grammar",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Duplicate required H2 \u2192 AgentsMdInvalid."
+      "assertion": "Duplicate required H2 → AgentsMdInvalid."
     },
     "SV-AGENTS-04": {
       "name": "@import depth",
-      "section": "\u00a77.3",
+      "section": "§7.3",
       "section_title": "@import Semantics",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Depth 9 \u2192 AgentsMdImportDepthExceeded."
+      "assertion": "Depth 9 → AgentsMdImportDepthExceeded."
     },
     "SV-AGENTS-05": {
       "name": "@import cycle",
-      "section": "\u00a77.3",
+      "section": "§7.3",
       "section_title": "@import Semantics",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "A \u2192 B \u2192 A \u2192 AgentsMdImportCycle."
+      "assertion": "A → B → A → AgentsMdImportCycle."
     },
     "SV-AGENTS-06": {
       "name": "Reload after SI accept",
-      "section": "\u00a77.4",
+      "section": "§7.4",
       "section_title": "Reload Rules",
       "profile": "core+si",
       "severity": "moderate",
@@ -571,7 +575,7 @@
     },
     "SV-AGENTS-07": {
       "name": "No mid-turn reload",
-      "section": "\u00a77.4",
+      "section": "§7.4",
       "section_title": "Reload Rules",
       "profile": "core",
       "severity": "moderate",
@@ -579,7 +583,7 @@
     },
     "SV-MEM-01": {
       "name": "Tool signatures",
-      "section": "\u00a78.1",
+      "section": "§8.1",
       "section_title": "MCP Tool Contract",
       "profile": "core",
       "severity": "critical",
@@ -587,7 +591,7 @@
     },
     "SV-MEM-02": {
       "name": "Loading algorithm",
-      "section": "\u00a78.2",
+      "section": "§8.2",
       "section_title": "Loading Algorithm",
       "profile": "core",
       "severity": "moderate",
@@ -595,23 +599,23 @@
     },
     "SV-MEM-03": {
       "name": "Startup fail-closed",
-      "section": "\u00a78.3",
+      "section": "§8.3",
       "section_title": "Unavailability and Timeout",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Memory MCP unreachable at startup \u2192 MemoryUnavailableStartup."
+      "assertion": "Memory MCP unreachable at startup → MemoryUnavailableStartup."
     },
     "SV-MEM-04": {
       "name": "Mid-loop degrade",
-      "section": "\u00a78.3",
+      "section": "§8.3",
       "section_title": "Unavailability and Timeout",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Single mid-loop timeout \u2192 MemoryDegraded event, continue with stale slice."
+      "assertion": "Single mid-loop timeout → MemoryDegraded event, continue with stale slice."
     },
     "SV-MEM-05": {
       "name": "Consolidation trigger",
-      "section": "\u00a78.4",
+      "section": "§8.4",
       "section_title": "Consolidation Trigger",
       "profile": "core",
       "severity": "minor",
@@ -619,7 +623,7 @@
     },
     "SV-MEM-06": {
       "name": "Sharing policy enforced",
-      "section": "\u00a78.5",
+      "section": "§8.5",
       "section_title": "Sharing Policy and Isolation",
       "profile": "core",
       "severity": "critical",
@@ -627,7 +631,7 @@
     },
     "SV-MEM-07": {
       "name": "delete_memory_note idempotent",
-      "section": "\u00a78.1",
+      "section": "§8.1",
       "section_title": "MCP Tool Contract",
       "profile": "core",
       "severity": "moderate",
@@ -635,7 +639,7 @@
     },
     "SV-MEM-08": {
       "name": "Tombstone audit",
-      "section": "\u00a78.1",
+      "section": "§8.1",
       "section_title": "MCP Tool Contract",
       "profile": "core",
       "severity": "moderate",
@@ -643,31 +647,31 @@
     },
     "SV-SI-01": {
       "name": "program.md schema",
-      "section": "\u00a79.2",
+      "section": "§9.2",
       "section_title": "program.md Schema",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Missing required H2 in program.md \u2192 rejected."
+      "assertion": "Missing required H2 in program.md → rejected."
     },
     "SV-SI-02": {
       "name": "program.md JWS required",
-      "section": "\u00a79.2",
+      "section": "§9.2",
       "section_title": "program.md Schema",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "program.md.jws missing or invalid \u2192 iteration rejected."
+      "assertion": "program.md.jws missing or invalid → iteration rejected."
     },
     "SV-SI-03": {
       "name": "Markers required",
-      "section": "\u00a79.3",
+      "section": "§9.3",
       "section_title": "agent.py Markers",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Missing EDITABLE/IMMUTABLE markers \u2192 rejected."
+      "assertion": "Missing EDITABLE/IMMUTABLE markers → rejected."
     },
     "SV-SI-04": {
       "name": "Immutable digest check",
-      "section": "\u00a79.3",
+      "section": "§9.3",
       "section_title": "agent.py Markers",
       "profile": "core+si",
       "severity": "critical",
@@ -675,15 +679,15 @@
     },
     "SV-SI-05": {
       "name": "Benchmark mTLS auth",
-      "section": "\u00a79.5",
+      "section": "§9.5",
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "benchmark_mcp_endpoint without mTLS rejected; missing scope \u2192 BenchmarkAuthFailed."
+      "assertion": "benchmark_mcp_endpoint without mTLS rejected; missing scope → BenchmarkAuthFailed."
     },
     "SV-SI-06": {
       "name": "Iteration fingerprint",
-      "section": "\u00a79.5",
+      "section": "§9.5",
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "moderate",
@@ -691,7 +695,7 @@
     },
     "SV-SI-07": {
       "name": "Holdout split stable",
-      "section": "\u00a79.5",
+      "section": "§9.5",
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
@@ -699,23 +703,23 @@
     },
     "SV-SI-08": {
       "name": "Acceptance strict-improve",
-      "section": "\u00a79.5",
+      "section": "§9.5",
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "training_score == baseline \u2192 rejected (strict > required)."
+      "assertion": "training_score == baseline → rejected (strict > required)."
     },
     "SV-SI-09": {
       "name": "Stage-activate ordering",
-      "section": "\u00a79.5",
+      "section": "§9.5",
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "pending.ptr \u2192 add_memory_note \u2192 activation.record \u2192 git fast-forward order enforced."
+      "assertion": "pending.ptr → add_memory_note → activation.record → git fast-forward order enforced."
     },
     "SV-SI-10": {
       "name": "Commit signed",
-      "section": "\u00a79.5",
+      "section": "§9.5",
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
@@ -723,23 +727,23 @@
     },
     "SV-SI-11": {
       "name": "12b failure compensation",
-      "section": "\u00a79.9",
+      "section": "§9.9",
       "section_title": "Abort, Rollback, and Recovery",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "add_memory_note succeeds, activation.record fails \u2192 delete_memory_note compensation."
+      "assertion": "add_memory_note succeeds, activation.record fails → delete_memory_note compensation."
     },
     "SV-SI-12": {
       "name": "Orphan replay",
-      "section": "\u00a79.9",
+      "section": "§9.9",
       "section_title": "Abort, Rollback, and Recovery",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "Crash after 12c \u2192 resume replays 12d; 3 failures \u2192 SelfImprovementOrphaned."
+      "assertion": "Crash after 12c → resume replays 12d; 3 failures → SelfImprovementOrphaned."
     },
     "SV-SI-13": {
       "name": "Docker baseline applied",
-      "section": "\u00a79.7",
+      "section": "§9.7",
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
@@ -747,15 +751,15 @@
     },
     "SV-SI-14": {
       "name": "Docker unavailable closed",
-      "section": "\u00a79.7.2",
+      "section": "§9.7.2",
       "section_title": "Docker Unavailability",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Docker daemon down \u2192 DockerUnavailable, no host execution."
+      "assertion": "Docker daemon down → DockerUnavailable, no host execution."
     },
     "SV-SI-15": {
       "name": "Image digest-pinned",
-      "section": "\u00a79.7",
+      "section": "§9.7",
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
@@ -763,7 +767,7 @@
     },
     "SV-SI-16": {
       "name": "results.tsv format",
-      "section": "\u00a79.6.3",
+      "section": "§9.6.3",
       "section_title": "results.tsv Format",
       "profile": "core+si",
       "severity": "critical",
@@ -771,23 +775,23 @@
     },
     "SV-SI-17": {
       "name": "Max iterations terminal",
-      "section": "\u00a79.9",
+      "section": "§9.9",
       "section_title": "Abort, Rollback, and Recovery",
       "profile": "core+si",
       "severity": "minor",
-      "assertion": "max_iterations reached \u2192 SelfImprovementMaxIterations with best-so-far summary."
+      "assertion": "max_iterations reached → SelfImprovementMaxIterations with best-so-far summary."
     },
     "SV-SI-18": {
       "name": "program.md trust-anchor chain",
-      "section": "\u00a79.2",
+      "section": "§9.2",
       "section_title": "program.md Schema",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "program.md.jws signer chains to security.trustAnchors; foreign issuer \u2192 iteration rejected."
+      "assertion": "program.md.jws signer chains to security.trustAnchors; foreign issuer → iteration rejected."
     },
     "SV-SI-19": {
       "name": "--read-only rootfs",
-      "section": "\u00a79.7",
+      "section": "§9.7",
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
@@ -795,7 +799,7 @@
     },
     "SV-SI-20": {
       "name": "--cap-drop=ALL",
-      "section": "\u00a79.7",
+      "section": "§9.7",
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
@@ -803,7 +807,7 @@
     },
     "SV-SI-21": {
       "name": "User-namespace remap",
-      "section": "\u00a79.7",
+      "section": "§9.7",
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
@@ -811,7 +815,7 @@
     },
     "SV-SI-22": {
       "name": "--pids-limit enforced",
-      "section": "\u00a79.7",
+      "section": "§9.7",
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "moderate",
@@ -819,7 +823,7 @@
     },
     "SV-SI-23": {
       "name": "No swap",
-      "section": "\u00a79.7",
+      "section": "§9.7",
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "moderate",
@@ -827,7 +831,7 @@
     },
     "SV-SI-24": {
       "name": "docker.sock not mounted",
-      "section": "\u00a79.7",
+      "section": "§9.7",
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
@@ -835,7 +839,7 @@
     },
     "SV-SI-25": {
       "name": "Env scrubbed",
-      "section": "\u00a79.7",
+      "section": "§9.7",
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
@@ -843,7 +847,7 @@
     },
     "SV-SI-26": {
       "name": "Mount allowlist + watchdog",
-      "section": "\u00a79.7",
+      "section": "§9.7",
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
@@ -851,7 +855,7 @@
     },
     "SV-SI-27": {
       "name": "Host unprivileged userns disabled",
-      "section": "\u00a79.7",
+      "section": "§9.7",
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
@@ -859,7 +863,7 @@
     },
     "SV-SI-28": {
       "name": "clone3 allowed, flags defended",
-      "section": "\u00a79.7.3",
+      "section": "§9.7.3",
       "section_title": "clone3 Policy",
       "profile": "core+si",
       "severity": "critical",
@@ -867,15 +871,15 @@
     },
     "SV-SI-29": {
       "name": "Manifest JWS verify + digest",
-      "section": "\u00a79.7.1",
+      "section": "§9.7.1",
       "section_title": "Seccomp Profile and Release Manifest",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Runner fetches release manifest, verifies JWS against publisher_kid, recomputes SHA-256 of JCS-canonicalized soa-harness-profile-v1.json bytes, compares to manifest. Mismatch \u2192 ManifestDigestMismatch; container launch refused."
+      "assertion": "Runner fetches release manifest, verifies JWS against publisher_kid, recomputes SHA-256 of JCS-canonicalized soa-harness-profile-v1.json bytes, compares to manifest. Mismatch → ManifestDigestMismatch; container launch refused."
     },
     "SV-SI-30": {
       "name": "Manifest schema validates",
-      "section": "\u00a79.7.1",
+      "section": "§9.7.1",
       "section_title": "Seccomp Profile and Release Manifest",
       "profile": "core+si",
       "severity": "moderate",
@@ -883,7 +887,7 @@
     },
     "SV-SI-31": {
       "name": "self_optimize args defaulted from Card",
-      "section": "\u00a79.4, \u00a76.2",
+      "section": "§9.4, §6.2",
       "section_title": "SelfOptimizer Primitive",
       "profile": "core+si",
       "severity": "critical",
@@ -891,7 +895,7 @@
     },
     "SV-SI-32": {
       "name": "clone arg filter blocks NEWNS",
-      "section": "\u00a79.7.3",
+      "section": "§9.7.3",
       "section_title": "clone3 Policy",
       "profile": "core+si",
       "severity": "critical",
@@ -899,7 +903,7 @@
     },
     "SV-AGENTS-08": {
       "name": "AGENTS.md entrypoint matches Card",
-      "section": "\u00a77.2, \u00a76.2",
+      "section": "§7.2, §6.2",
       "section_title": "Self-Improvement Policy",
       "profile": "core+si",
       "severity": "critical",
@@ -907,31 +911,31 @@
     },
     "SV-PERM-01": {
       "name": "Capability lattice",
-      "section": "\u00a710.3, \u00a710.3.1",
+      "section": "§10.3, §10.3.1",
       "section_title": "Resolution Algorithm + Permission Decision Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "ReadOnly rejects Mutating; WorkspaceWrite rejects Destructive. Vector path: schema validation of test-vectors/permission-prompt/ PDA-JWS and canonical-decision bundle. Live path: validator issues GET /permissions/resolve per \u00a710.3.1 across the pinned Tool Registry and asserts decision=CapabilityDenied for (ReadOnly, Mutating) and (WorkspaceWrite, Destructive) pairs; asserts not-a-side-effect property by reading audit-log tail hash before and after the query batch."
+      "assertion": "ReadOnly rejects Mutating; WorkspaceWrite rejects Destructive. Vector path: schema validation of test-vectors/permission-prompt/ PDA-JWS and canonical-decision bundle. Live path: validator issues GET /permissions/resolve per §10.3.1 across the pinned Tool Registry and asserts decision=CapabilityDenied for (ReadOnly, Mutating) and (WorkspaceWrite, Destructive) pairs; asserts not-a-side-effect property by reading audit-log tail hash before and after the query batch."
     },
     "SV-PERM-02": {
       "name": "Resolution precedence",
-      "section": "\u00a710.3",
+      "section": "§10.3",
       "section_title": "Resolution Algorithm",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Default \u2192 toolRequirements \u2192 policyEndpoint; each may only tighten."
+      "assertion": "Default → toolRequirements → policyEndpoint; each may only tighten."
     },
     "SV-PERM-03": {
       "name": "Autonomous escalation",
-      "section": "\u00a710.4",
+      "section": "§10.4",
       "section_title": "Autonomous Handler and High-Risk Actions",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Autonomous handler facing high-risk MUST escalate; 30s silence \u2192 deny."
+      "assertion": "Autonomous handler facing high-risk MUST escalate; 30s silence → deny."
     },
     "SV-PERM-04": {
       "name": "HITL == Interactive",
-      "section": "\u00a710.4, \u00a719.6",
+      "section": "§10.4, §19.6",
       "section_title": "Autonomous Handler / Human-in-the-Loop",
       "profile": "core",
       "severity": "critical",
@@ -939,7 +943,7 @@
     },
     "SV-PERM-05": {
       "name": "Audit chain prev_hash",
-      "section": "\u00a710.5",
+      "section": "§10.5",
       "section_title": "Audit Trail",
       "profile": "core",
       "severity": "critical",
@@ -947,7 +951,7 @@
     },
     "SV-PERM-06": {
       "name": "WORM sink append-only",
-      "section": "\u00a710.5",
+      "section": "§10.5",
       "section_title": "Audit Trail",
       "profile": "core",
       "severity": "critical",
@@ -955,7 +959,7 @@
     },
     "SV-PERM-07": {
       "name": "WORM external timestamp",
-      "section": "\u00a710.5",
+      "section": "§10.5",
       "section_title": "Audit Trail",
       "profile": "core",
       "severity": "moderate",
@@ -963,39 +967,39 @@
     },
     "SV-PERM-08": {
       "name": "Handler key rotation 90d",
-      "section": "\u00a710.6",
+      "section": "§10.6",
       "section_title": "Handler Key Management",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Handler key > 90d old \u2192 decisions rejected."
+      "assertion": "Handler key > 90d old → decisions rejected."
     },
     "SV-PERM-09": {
       "name": "CRL refresh hourly",
-      "section": "\u00a710.6",
+      "section": "§10.6",
       "section_title": "Handler Key Management",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Revoked kid \u2192 HandlerKeyRevoked within 1 hour of CRL publish."
+      "assertion": "Revoked kid → HandlerKeyRevoked within 1 hour of CRL publish."
     },
     "SV-PERM-10": {
-      "name": "Rotation overlap \u2265 24h",
-      "section": "\u00a710.6",
+      "name": "Rotation overlap ≥ 24h",
+      "section": "§10.6",
       "section_title": "Handler Key Management",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Old and new kid both accepted during \u226524h overlap."
+      "assertion": "Old and new kid both accepted during ≥24h overlap."
     },
     "SV-PERM-11": {
       "name": "Key-type enforcement",
-      "section": "\u00a710.6",
+      "section": "§10.6",
       "section_title": "Handler Key Management",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Only Ed25519, ECDSA P-256, or RSA \u22653072 accepted; other algorithms rejected at enrollment."
+      "assertion": "Only Ed25519, ECDSA P-256, or RSA ≥3072 accepted; other algorithms rejected at enrollment."
     },
     "SV-PERM-12": {
       "name": "kid uniqueness",
-      "section": "\u00a710.6",
+      "section": "§10.6",
       "section_title": "Handler Key Management",
       "profile": "core",
       "severity": "moderate",
@@ -1003,7 +1007,7 @@
     },
     "SV-PERM-13": {
       "name": "HSM / keystore storage",
-      "section": "\u00a710.6",
+      "section": "§10.6",
       "section_title": "Handler Key Management",
       "profile": "core",
       "severity": "critical",
@@ -1011,15 +1015,15 @@
     },
     "SV-PERM-14": {
       "name": "Runner CRL refresh SLA",
-      "section": "\u00a710.6",
+      "section": "§10.6",
       "section_title": "Handler Key Management",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Runner refreshes CRL at least once per 60 minutes; a newly-published CRL with a revoked kid is honored on the next refresh. The issuer-side 60-minute revocation obligation composes to an end-to-end \u2264 120-minute SLA; SV-PERM-14 measures the Runner-side refresh interval only."
+      "assertion": "Runner refreshes CRL at least once per 60 minutes; a newly-published CRL with a revoked kid is honored on the next refresh. The issuer-side 60-minute revocation obligation composes to an end-to-end ≤ 120-minute SLA; SV-PERM-14 measures the Runner-side refresh interval only."
     },
     "SV-PERM-15": {
       "name": "SuspectDecision flagging",
-      "section": "\u00a710.6",
+      "section": "§10.6",
       "section_title": "Handler Key Management",
       "profile": "core",
       "severity": "moderate",
@@ -1027,7 +1031,7 @@
     },
     "SV-PERM-18": {
       "name": "CRL artifact schema",
-      "section": "\u00a710.6.1",
+      "section": "§10.6.1",
       "section_title": "CRL Artifact Format",
       "profile": "core",
       "severity": "critical",
@@ -1035,7 +1039,7 @@
     },
     "SV-PRIV-01": {
       "name": "Data inventory present",
-      "section": "\u00a710.7",
+      "section": "§10.7",
       "section_title": "Privacy and Data-Governance Controls",
       "profile": "core",
       "severity": "moderate",
@@ -1043,15 +1047,15 @@
     },
     "SV-PRIV-02": {
       "name": "data_class tagging + sensitive-class block",
-      "section": "\u00a710.7",
+      "section": "§10.7",
       "section_title": "Privacy and Data-Governance Controls",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Personal-data-carrying fields tagged with data_class \u2208 {public,internal,confidential,personal,sensitive-personal} via x-soa-data-class. Untagged fields default to 'internal'. Memory consolidation of a 'sensitive-personal' entry emits MemoryDeletionForbidden(reason=sensitive-class-forbidden)."
+      "assertion": "Personal-data-carrying fields tagged with data_class ∈ {public,internal,confidential,personal,sensitive-personal} via x-soa-data-class. Untagged fields default to 'internal'. Memory consolidation of a 'sensitive-personal' entry emits MemoryDeletionForbidden(reason=sensitive-class-forbidden)."
     },
     "SV-PRIV-03": {
       "name": "Subject delete + export tools",
-      "section": "\u00a710.7.1",
+      "section": "§10.7.1",
       "section_title": "Deletion and Subject-Access Semantics",
       "profile": "core",
       "severity": "critical",
@@ -1059,7 +1063,7 @@
     },
     "SV-PRIV-04": {
       "name": "Retention sweep",
-      "section": "\u00a710.7.3",
+      "section": "§10.7.3",
       "section_title": "Retention",
       "profile": "core",
       "severity": "moderate",
@@ -1067,7 +1071,7 @@
     },
     "SV-PRIV-05": {
       "name": "Residency layered defence",
-      "section": "\u00a710.7.2",
+      "section": "§10.7.2",
       "section_title": "Cross-Border and Residency",
       "profile": "core",
       "severity": "critical",
@@ -1075,7 +1079,7 @@
     },
     "SV-OPS-01": {
       "name": "Liveness endpoint",
-      "section": "\u00a75.4",
+      "section": "§5.4",
       "section_title": "Operational Probes",
       "profile": "core",
       "severity": "critical",
@@ -1083,15 +1087,15 @@
     },
     "SV-OPS-02": {
       "name": "Readiness endpoint",
-      "section": "\u00a75.4",
+      "section": "§5.4",
       "section_title": "Operational Probes",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /ready returns 200 with {status:'ready'} only when bootstrap resolved, tool pool consistent, persistence directory writable within 100 ms, audit sink reachable within 1 s, CRL fresh. Failure returns 503 with reason \u2208 {bootstrap-pending, tool-pool-initializing, persistence-unwritable, audit-sink-unreachable, crl-stale}."
+      "assertion": "GET /ready returns 200 with {status:'ready'} only when bootstrap resolved, tool pool consistent, persistence directory writable within 100 ms, audit sink reachable within 1 s, CRL fresh. Failure returns 503 with reason ∈ {bootstrap-pending, tool-pool-initializing, persistence-unwritable, audit-sink-unreachable, crl-stale}."
     },
     "SV-PERM-19": {
       "name": "Audit-sink three-state degradation",
-      "section": "\u00a710.5.1",
+      "section": "§10.5.1",
       "section_title": "Runtime Audit-Sink Failure",
       "profile": "core",
       "severity": "critical",
@@ -1099,23 +1103,23 @@
     },
     "SV-SESS-11": {
       "name": "Tool idempotency retention floor",
-      "section": "\u00a712.2",
+      "section": "§12.2",
       "section_title": "Pending/Committed Bracket",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Every tool in the pool declares idempotency_retention_seconds \u2265 max(3600, session resume-grace window, session max lifetime up to 24 h). Tools declaring < 3600 s whose risk_class is not Destructive MUST be rejected at pool assembly with ToolPoolStale(reason=idempotency-retention-insufficient)."
+      "assertion": "Every tool in the pool declares idempotency_retention_seconds ≥ max(3600, session resume-grace window, session max lifetime up to 24 h). Tools declaring < 3600 s whose risk_class is not Destructive MUST be rejected at pool assembly with ToolPoolStale(reason=idempotency-retention-insufficient)."
     },
     "SV-PERM-16": {
       "name": "WORM retention tiers",
-      "section": "\u00a710.5",
+      "section": "§10.5",
       "section_title": "Audit Trail",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "DangerFullAccess sessions retained \u2265 365 days; other sessions \u2265 90 days."
+      "assertion": "DangerFullAccess sessions retained ≥ 365 days; other sessions ≥ 90 days."
     },
     "SV-PERM-17": {
       "name": "Audit-reader access",
-      "section": "\u00a710.5",
+      "section": "§10.5",
       "section_title": "Audit Trail",
       "profile": "core",
       "severity": "moderate",
@@ -1123,7 +1127,7 @@
     },
     "SV-REG-01": {
       "name": "list_tools metadata-only",
-      "section": "\u00a711.1",
+      "section": "§11.1",
       "section_title": "Global Tool Registry",
       "profile": "core",
       "severity": "critical",
@@ -1131,7 +1135,7 @@
     },
     "SV-REG-02": {
       "name": "MCP name pattern",
-      "section": "\u00a711.1",
+      "section": "§11.1",
       "section_title": "Global Tool Registry",
       "profile": "core",
       "severity": "moderate",
@@ -1139,7 +1143,7 @@
     },
     "SV-REG-03": {
       "name": "Pool pinned per session",
-      "section": "\u00a711.3",
+      "section": "§11.3",
       "section_title": "Re-Registration Timing",
       "profile": "core",
       "severity": "critical",
@@ -1147,7 +1151,7 @@
     },
     "SV-REG-04": {
       "name": "Deny list from AGENTS.md",
-      "section": "\u00a711.2",
+      "section": "§11.2",
       "section_title": "Per-Session Tool Pool",
       "profile": "core",
       "severity": "moderate",
@@ -1155,7 +1159,7 @@
     },
     "SV-REG-05": {
       "name": "list_tools field shape",
-      "section": "\u00a711.1",
+      "section": "§11.1",
       "section_title": "Global Tool Registry",
       "profile": "core",
       "severity": "moderate",
@@ -1163,7 +1167,7 @@
     },
     "SV-SESS-01": {
       "name": "Session schema",
-      "section": "\u00a712.1",
+      "section": "§12.1",
       "section_title": "Session File Schema",
       "profile": "core",
       "severity": "critical",
@@ -1171,23 +1175,23 @@
     },
     "SV-SESS-02": {
       "name": "status enum closed",
-      "section": "\u00a712.1",
+      "section": "§12.1",
       "section_title": "Session File Schema",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Non-enum status value \u2192 SessionFormatIncompatible on load."
+      "assertion": "Non-enum status value → SessionFormatIncompatible on load."
     },
     "SV-SESS-03": {
       "name": "Event bracketing",
-      "section": "\u00a712.2",
+      "section": "§12.2",
       "section_title": "Significant Events",
       "profile": "core",
       "severity": "critical",
-      "assertion": "pending\u2192committed bracket observed for every significant event."
+      "assertion": "pending→committed bracket observed for every significant event."
     },
     "SV-SESS-04": {
       "name": "Idempotency key",
-      "section": "\u00a712.2",
+      "section": "§12.2",
       "section_title": "Significant Events",
       "profile": "core",
       "severity": "critical",
@@ -1195,7 +1199,7 @@
     },
     "SV-SESS-05": {
       "name": "Non-idempotent = Destructive",
-      "section": "\u00a712.2",
+      "section": "§12.2",
       "section_title": "Significant Events",
       "profile": "core",
       "severity": "moderate",
@@ -1203,7 +1207,7 @@
     },
     "SV-SESS-06": {
       "name": "POSIX atomic write",
-      "section": "\u00a712.3",
+      "section": "§12.3",
       "section_title": "Atomic Writes",
       "profile": "core",
       "severity": "critical",
@@ -1211,7 +1215,7 @@
     },
     "SV-SESS-07": {
       "name": "Windows atomic write",
-      "section": "\u00a712.3",
+      "section": "§12.3",
       "section_title": "Atomic Writes",
       "profile": "core",
       "severity": "critical",
@@ -1219,7 +1223,7 @@
     },
     "SV-SESS-08": {
       "name": "Resume replays pending",
-      "section": "\u00a712.5",
+      "section": "§12.5",
       "section_title": "Resume Algorithm",
       "profile": "core",
       "severity": "critical",
@@ -1227,23 +1231,23 @@
     },
     "SV-SESS-09": {
       "name": "Card-drift terminates",
-      "section": "\u00a712.5",
+      "section": "§12.5",
       "section_title": "Resume Algorithm",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Card version changed mid-session \u2192 StopReason::CardVersionDrift on resume."
+      "assertion": "Card version changed mid-session → StopReason::CardVersionDrift on resume."
     },
     "SV-SESS-10": {
       "name": "Inflight compensation",
-      "section": "\u00a712.5",
+      "section": "§12.5",
       "section_title": "Resume Algorithm",
       "profile": "core",
       "severity": "critical",
-      "assertion": "phase=inflight on resume \u2192 compensating action if tool supports; else mark compensated with ResumeCompensationGap note."
+      "assertion": "phase=inflight on resume → compensating action if tool supports; else mark compensated with ResumeCompensationGap note."
     },
     "SV-BUD-01": {
       "name": "Projection algorithm",
-      "section": "\u00a713.1",
+      "section": "§13.1",
       "section_title": "Projection Algorithm",
       "profile": "core",
       "severity": "critical",
@@ -1251,23 +1255,23 @@
     },
     "SV-BUD-02": {
       "name": "Pre-call halt",
-      "section": "\u00a713.1",
+      "section": "§13.1",
       "section_title": "Projection Algorithm",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Over-budget projection \u2192 no API call issued."
+      "assertion": "Over-budget projection → no API call issued."
     },
     "SV-BUD-03": {
       "name": "Mid-stream cancel",
-      "section": "\u00a713.2",
+      "section": "§13.2",
       "section_title": "Mid-Stream Enforcement",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Overage observed mid-stream \u2192 cancel on next ContentBlockDelta boundary."
+      "assertion": "Overage observed mid-stream → cancel on next ContentBlockDelta boundary."
     },
     "SV-BUD-04": {
       "name": "Cache accounting",
-      "section": "\u00a713.3",
+      "section": "§13.3",
       "section_title": "Cache Accounting",
       "profile": "core",
       "severity": "moderate",
@@ -1275,7 +1279,7 @@
     },
     "SV-BUD-05": {
       "name": "Billing tag propagated",
-      "section": "\u00a713.3",
+      "section": "§13.3",
       "section_title": "Cache Accounting",
       "profile": "core",
       "severity": "moderate",
@@ -1283,7 +1287,7 @@
     },
     "SV-BUD-06": {
       "name": "StopReason closed enum",
-      "section": "\u00a713.4",
+      "section": "§13.4",
       "section_title": "StopReason Enum",
       "profile": "core",
       "severity": "critical",
@@ -1291,7 +1295,7 @@
     },
     "SV-BUD-07": {
       "name": "BillingTagMismatch detected",
-      "section": "\u00a713.3",
+      "section": "§13.3",
       "section_title": "Cache Accounting",
       "profile": "core",
       "severity": "moderate",
@@ -1299,15 +1303,15 @@
     },
     "SV-STR-01": {
       "name": "StreamEvent schema",
-      "section": "\u00a714.1",
+      "section": "§14.1",
       "section_title": "StreamEvent",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Every emitted event validates; type \u2208 closed enum of 25."
+      "assertion": "Every emitted event validates; type ∈ closed enum of 25."
     },
     "SV-STR-02": {
       "name": "Sequence monotonic",
-      "section": "\u00a714.1",
+      "section": "§14.1",
       "section_title": "StreamEvent",
       "profile": "core",
       "severity": "critical",
@@ -1315,7 +1319,7 @@
     },
     "SV-STR-03": {
       "name": "event_id unique",
-      "section": "\u00a714.1",
+      "section": "§14.1",
       "section_title": "StreamEvent",
       "profile": "core",
       "severity": "moderate",
@@ -1323,7 +1327,7 @@
     },
     "SV-STR-04": {
       "name": "CrashEvent final position",
-      "section": "\u00a714.1",
+      "section": "§14.1",
       "section_title": "StreamEvent",
       "profile": "core",
       "severity": "critical",
@@ -1331,7 +1335,7 @@
     },
     "SV-STR-05": {
       "name": "System Event Log categories",
-      "section": "\u00a714.2",
+      "section": "§14.2",
       "section_title": "System Event Log",
       "profile": "core",
       "severity": "minor",
@@ -1339,7 +1343,7 @@
     },
     "SV-STR-06": {
       "name": "OTel span names",
-      "section": "\u00a714.4",
+      "section": "§14.4",
       "section_title": "OpenTelemetry Mapping",
       "profile": "core",
       "severity": "moderate",
@@ -1347,15 +1351,15 @@
     },
     "SV-STR-07": {
       "name": "OTel required resource",
-      "section": "\u00a714.4",
+      "section": "§14.4",
       "section_title": "OpenTelemetry Mapping",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Missing required resource attr \u2192 refuse start."
+      "assertion": "Missing required resource attr → refuse start."
     },
     "SV-STR-08": {
       "name": "Exporter backpressure",
-      "section": "\u00a714.4",
+      "section": "§14.4",
       "section_title": "OpenTelemetry Mapping",
       "profile": "core",
       "severity": "moderate",
@@ -1363,7 +1367,7 @@
     },
     "SV-STR-09": {
       "name": "Per-type payload schema",
-      "section": "\u00a714.1",
+      "section": "§14.1",
       "section_title": "StreamEvent",
       "profile": "core",
       "severity": "critical",
@@ -1371,7 +1375,7 @@
     },
     "SV-STR-10": {
       "name": "CrashEvent payload shape",
-      "section": "\u00a714.1",
+      "section": "§14.1",
       "section_title": "StreamEvent",
       "profile": "core",
       "severity": "critical",
@@ -1379,15 +1383,15 @@
     },
     "SV-STR-11": {
       "name": "CompactionDeferred",
-      "section": "\u00a716.2",
+      "section": "§16.2",
       "section_title": "Cross-Interaction Matrix",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Compaction trigger while ContentBlockDelta open \u2192 CompactionDeferred emitted, no mid-block compaction."
+      "assertion": "Compaction trigger while ContentBlockDelta open → CompactionDeferred emitted, no mid-block compaction."
     },
     "SV-STR-12": {
       "name": "Runner stream endpoint + mTLS",
-      "section": "\u00a714.3",
+      "section": "§14.3",
       "section_title": "Runner Stream Subscription Contract",
       "profile": "core",
       "severity": "critical",
@@ -1395,7 +1399,7 @@
     },
     "SV-STR-13": {
       "name": "Last-Event-ID resume",
-      "section": "\u00a714.3",
+      "section": "§14.3",
       "section_title": "Runner Stream Subscription Contract",
       "profile": "core",
       "severity": "critical",
@@ -1403,15 +1407,15 @@
     },
     "SV-STR-14": {
       "name": "Stream backpressure",
-      "section": "\u00a714.3",
+      "section": "§14.3",
       "section_title": "Runner Stream Subscription Contract",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Client > 10000 events behind head \u2192 Runner emits terminal SSE event `event: soa-terminate` with `data: {\"error\":\"ConsumerLagging\"}` and then closes the underlying HTTP response (SSE has no WebSocket-style close frame); buffer floor 50k/1h enforced; ceiling 500k/24h enforced."
+      "assertion": "Client > 10000 events behind head → Runner emits terminal SSE event `event: soa-terminate` with `data: {\"error\":\"ConsumerLagging\"}` and then closes the underlying HTTP response (SSE has no WebSocket-style close frame); buffer floor 50k/1h enforced; ceiling 500k/24h enforced."
     },
     "SV-STR-15": {
       "name": "Stream event mapping",
-      "section": "\u00a714.1.1",
+      "section": "§14.1.1",
       "section_title": "Per-Type Payload Schemas",
       "profile": "core",
       "severity": "critical",
@@ -1419,15 +1423,15 @@
     },
     "SV-STR-16": {
       "name": "Trust-class determinism",
-      "section": "\u00a714.1.2",
-      "section_title": "Event Type \u2192 Trust Class Mapping",
+      "section": "§14.1.2",
+      "section_title": "Event Type → Trust Class Mapping",
       "profile": "core",
       "severity": "critical",
       "assertion": "Gateway chooses trust_class deterministically from workflow.status (and signer_kid for PermissionDecision); no payload inspection for trust selection."
     },
     "SV-HOOK-01": {
       "name": "stdin schema",
-      "section": "\u00a715.2",
+      "section": "§15.2",
       "section_title": "Stdin JSON Schema",
       "profile": "core",
       "severity": "critical",
@@ -1435,31 +1439,31 @@
     },
     "SV-HOOK-02": {
       "name": "Timeout PreToolUse",
-      "section": "\u00a715.1",
+      "section": "§15.1",
       "section_title": "Hook Invocation Contract",
       "profile": "core",
       "severity": "critical",
-      "assertion": "5s default; PreToolUse hang \u2192 SIGKILL + Deny."
+      "assertion": "5s default; PreToolUse hang → SIGKILL + Deny."
     },
     "SV-HOOK-03": {
       "name": "Timeout PostToolUse",
-      "section": "\u00a715.1",
+      "section": "§15.1",
       "section_title": "Hook Invocation Contract",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "10s default; PostToolUse hang \u2192 SIGKILL + log."
+      "assertion": "10s default; PostToolUse hang → SIGKILL + log."
     },
     "SV-HOOK-04": {
       "name": "Exit-code table",
-      "section": "\u00a715.3",
+      "section": "§15.3",
       "section_title": "Stdout and Exit Codes",
       "profile": "core",
       "severity": "critical",
-      "assertion": "0,1,2,3 behave per spec; other codes \u2192 HookAbnormalExit."
+      "assertion": "0,1,2,3 behave per spec; other codes → HookAbnormalExit."
     },
     "SV-HOOK-05": {
       "name": "replace_args honored",
-      "section": "\u00a715.3",
+      "section": "§15.3",
       "section_title": "Stdout and Exit Codes",
       "profile": "core",
       "severity": "moderate",
@@ -1467,7 +1471,7 @@
     },
     "SV-HOOK-06": {
       "name": "replace_result honored",
-      "section": "\u00a715.3",
+      "section": "§15.3",
       "section_title": "Stdout and Exit Codes",
       "profile": "core",
       "severity": "moderate",
@@ -1475,39 +1479,39 @@
     },
     "SV-HOOK-07": {
       "name": "Step-5 ordering",
-      "section": "\u00a715.4",
-      "section_title": "Ordering Within \u00a716 Step 5",
+      "section": "§15.4",
+      "section_title": "Ordering Within §16 Step 5",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Perm \u2192 Pre \u2192 Tool \u2192 Post \u2192 Audit/Stream/Persist."
+      "assertion": "Perm → Pre → Tool → Post → Audit/Stream/Persist."
     },
     "SV-HOOK-08": {
       "name": "No hook reentrancy",
-      "section": "\u00a716.2",
+      "section": "§16.2",
       "section_title": "Cross-Interaction Matrix",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Hook invoking a Runner tool \u2192 HookReentrancy + session terminate."
+      "assertion": "Hook invoking a Runner tool → HookReentrancy + session terminate."
     },
     "SV-A2A-01": {
       "name": "mTLS required",
-      "section": "\u00a717.1",
+      "section": "§17.1",
       "section_title": "Endpoint and Transport",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "TLS 1.3 with mTLS; peer cert not in trust anchors \u2192 TrustAnchorMismatch."
+      "assertion": "TLS 1.3 with mTLS; peer cert not in trust anchors → TrustAnchorMismatch."
     },
     "SV-A2A-02": {
       "name": "JWT validation",
-      "section": "\u00a717.1",
+      "section": "§17.1",
       "section_title": "Endpoint and Transport",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "Missing/expired/mis-aud JWT \u2192 AuthFailed (-32002)."
+      "assertion": "Missing/expired/mis-aud JWT → AuthFailed (-32002)."
     },
     "SV-A2A-03": {
       "name": "agent.describe",
-      "section": "\u00a717.2",
+      "section": "§17.2",
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "critical",
@@ -1515,7 +1519,7 @@
     },
     "SV-A2A-04": {
       "name": "handoff.offer accept",
-      "section": "\u00a717.2",
+      "section": "§17.2",
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "moderate",
@@ -1523,7 +1527,7 @@
     },
     "SV-A2A-05": {
       "name": "handoff.offer reject",
-      "section": "\u00a717.2",
+      "section": "§17.2",
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "moderate",
@@ -1531,7 +1535,7 @@
     },
     "SV-A2A-06": {
       "name": "handoff.transfer success",
-      "section": "\u00a717.2",
+      "section": "§17.2",
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "critical",
@@ -1539,7 +1543,7 @@
     },
     "SV-A2A-07": {
       "name": "State-transfer scope",
-      "section": "\u00a717.4",
+      "section": "§17.4",
       "section_title": "State Transfer Scope",
       "profile": "core+handoff",
       "severity": "critical",
@@ -1547,15 +1551,15 @@
     },
     "SV-A2A-08": {
       "name": "HandoffBusy while Optim",
-      "section": "\u00a716.2",
+      "section": "§16.2",
       "section_title": "Cross-Interaction Matrix",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "Incoming handoff during Optimizing \u2192 -32050."
+      "assertion": "Incoming handoff during Optimizing → -32050."
     },
     "SV-A2A-09": {
       "name": "Error code set",
-      "section": "\u00a717.3",
+      "section": "§17.3",
       "section_title": "Errors",
       "profile": "core+handoff",
       "severity": "moderate",
@@ -1563,7 +1567,7 @@
     },
     "SV-GOV-01": {
       "name": "Version advertised",
-      "section": "\u00a76.2",
+      "section": "§6.2",
       "section_title": "Normative JSON Schema",
       "profile": "core",
       "severity": "moderate",
@@ -1571,7 +1575,7 @@
     },
     "SV-GOV-02": {
       "name": "Stability tiers",
-      "section": "\u00a719.3",
+      "section": "§19.3",
       "section_title": "Stability Tiers",
       "profile": "core",
       "severity": "minor",
@@ -1579,7 +1583,7 @@
     },
     "SV-GOV-03": {
       "name": "Migration guide on bump",
-      "section": "\u00a719.4",
+      "section": "§19.4",
       "section_title": "Versioning",
       "profile": "core",
       "severity": "minor",
@@ -1587,15 +1591,15 @@
     },
     "SV-GOV-04": {
       "name": "Deprecation lifetime",
-      "section": "\u00a719.5",
+      "section": "§19.5",
       "section_title": "Deprecation",
       "profile": "core",
       "severity": "minor",
-      "assertion": "Deprecated fields work for \u2265 2 minor releases."
+      "assertion": "Deprecated fields work for ≥ 2 minor releases."
     },
     "SV-GOV-05": {
       "name": "Errata URL reachable",
-      "section": "\u00a719.2",
+      "section": "§19.2",
       "section_title": "Errata",
       "profile": "core",
       "severity": "minor",
@@ -1603,7 +1607,7 @@
     },
     "SV-GOV-06": {
       "name": "soa-validate pinned",
-      "section": "\u00a718.1",
+      "section": "§18.1",
       "section_title": "Distribution",
       "profile": "core",
       "severity": "moderate",
@@ -1611,15 +1615,15 @@
     },
     "SV-GOV-07": {
       "name": "Normative references pinned",
-      "section": "\u00a72",
+      "section": "§2",
       "section_title": "Normative References",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Every entry in \u00a72 resolves to a URL/tag with an immutable digest or version. Wall-clock citations rejected."
+      "assertion": "Every entry in §2 resolves to a URL/tag with an immutable digest or version. Wall-clock citations rejected."
     },
     "SV-GOV-08": {
       "name": "Version negotiation: empty intersection",
-      "section": "\u00a719.4.1",
+      "section": "§19.4.1",
       "section_title": "Wire-Level Version Negotiation",
       "profile": "core",
       "severity": "critical",
@@ -1627,23 +1631,23 @@
     },
     "SV-GOV-09": {
       "name": "Version negotiation: highest-common selection",
-      "section": "\u00a719.4.1",
+      "section": "§19.4.1",
       "section_title": "Wire-Level Version Negotiation",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Given an intersection {1.0, 1.1, 1.2}, the negotiated version is the highest value by (major,minor) numeric tuple \u2014 here 1.2. Lower values are not selected when higher values are present in the intersection."
+      "assertion": "Given an intersection {1.0, 1.1, 1.2}, the negotiated version is the highest value by (major,minor) numeric tuple — here 1.2. Lower values are not selected when higher values are present in the intersection."
     },
     "SV-GOV-10": {
       "name": "Version negotiation: binding on A2A",
-      "section": "\u00a719.4.1",
+      "section": "§19.4.1",
       "section_title": "Wire-Level Version Negotiation",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "A2A JWT carries soa_core_version claim matching the negotiated version; absent or mismatched claim \u2192 HandoffRejected(reason=version-not-negotiated)."
+      "assertion": "A2A JWT carries soa_core_version claim matching the negotiated version; absent or mismatched claim → HandoffRejected(reason=version-not-negotiated)."
     },
     "SV-GOV-11": {
       "name": "Release-build verification gate",
-      "section": "\u00a719.1.1",
+      "section": "§19.1.1",
       "section_title": "Release-Build Verification Gate",
       "profile": "core",
       "severity": "critical",
@@ -1651,15 +1655,15 @@
     },
     "SV-CLUS-01": {
       "name": "Local lock (default)",
-      "section": "\u00a712.4",
+      "section": "§12.4",
       "section_title": "Concurrency",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Single-host contention \u2192 SelfImproveLockBusy after 30s."
+      "assertion": "Single-host contention → SelfImproveLockBusy after 30s."
     },
     "SV-CLUS-02": {
       "name": "Distributed fencing",
-      "section": "\u00a712.4",
+      "section": "§12.4",
       "section_title": "Concurrency",
       "profile": "core",
       "severity": "moderate",
@@ -1667,15 +1671,15 @@
     },
     "SV-CLUS-03": {
       "name": "Token gap detection",
-      "section": "\u00a712.4",
+      "section": "§12.4",
       "section_title": "Concurrency",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Non-monotonic adjacent fencing tokens \u2192 SelfImproveFencingViolation; loop pauses."
+      "assertion": "Non-monotonic adjacent fencing tokens → SelfImproveFencingViolation; loop pauses."
     },
     "SV-CLUS-04": {
       "name": "Lease expiry rejection",
-      "section": "\u00a712.4",
+      "section": "§12.4",
       "section_title": "Concurrency",
       "profile": "core",
       "severity": "moderate",
@@ -1683,39 +1687,39 @@
     },
     "SV-GOOD-01": {
       "name": "Holdout gate",
-      "section": "\u00a723",
+      "section": "§23",
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Holdout delta < \u22120.02 \u2192 iteration rejected."
+      "assertion": "Holdout delta < −0.02 → iteration rejected."
     },
     "SV-GOOD-02": {
       "name": "Immutable /tasks/",
-      "section": "\u00a723",
+      "section": "§23",
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Meta-agent diff touching /tasks/ \u2192 ImmutableTargetEdit."
+      "assertion": "Meta-agent diff touching /tasks/ → ImmutableTargetEdit."
     },
     "SV-GOOD-03": {
       "name": "Score ceiling saturation",
-      "section": "\u00a723",
+      "section": "§23",
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "training_score \u2265 0.98 \u00d7 3 \u2192 SelfImprovementSaturation."
+      "assertion": "training_score ≥ 0.98 × 3 → SelfImprovementSaturation."
     },
     "SV-GOOD-04": {
       "name": "Novelty quota enforced",
-      "section": "\u00a723",
+      "section": "§23",
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "10 accepted iterations with unchanged tasks_fingerprint \u2192 SelfImprovementSaturation(NoveltyQuotaUnmet)."
+      "assertion": "10 accepted iterations with unchanged tasks_fingerprint → SelfImprovementSaturation(NoveltyQuotaUnmet)."
     },
     "SV-GOOD-05": {
       "name": "Human-sign resumes",
-      "section": "\u00a723",
+      "section": "§23",
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "moderate",
@@ -1723,7 +1727,7 @@
     },
     "SV-GOOD-06": {
       "name": "Fingerprint audited",
-      "section": "\u00a723",
+      "section": "§23",
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "moderate",
@@ -1731,7 +1735,7 @@
     },
     "SV-GOOD-07": {
       "name": "tasks_fingerprint reproducible",
-      "section": "\u00a723",
+      "section": "§23",
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "critical",
@@ -1739,17 +1743,57 @@
     },
     "SV-SESS-12": {
       "name": "Replay-cache / tool-idempotency disjointness",
-      "section": "\u00a712.2",
+      "section": "§12.2",
       "profile": "core",
-      "assertion": "UI \u00a711.4.1 replay cache and \u00a712.2 tool idempotency are implemented as disjoint subsystems with independent metrics.",
+      "assertion": "UI §11.4.1 replay cache and §12.2 tool idempotency are implemented as disjoint subsystems with independent metrics.",
       "status": "reserved"
     },
     "SV-GOV-12": {
       "name": "Upstream A2A major-version wire-compatibility detection",
-      "section": "\u00a719.4.3",
+      "section": "§19.4.3",
       "profile": "core",
-      "assertion": "Runner detects an upstream-A2A major-version bump that breaks any \u00a717 wire property and refuses the peer with HandoffRejected(reason=wire-incompatibility).",
+      "assertion": "Runner detects an upstream-A2A major-version bump that breaks any §17 wire property and refuses the peer with HandoffRejected(reason=wire-incompatibility).",
       "status": "reserved"
+    },
+    "SV-AUDIT-TAIL-01": {
+      "name": "Audit tail observability response",
+      "section": "§10.5.2",
+      "section_title": "Audit Tail Observability",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "GET /audit/tail returns 200 with body conforming to schemas/audit-tail-response.schema.json. On empty log, this_hash equals the literal \"GENESIS\" and last_record_timestamp is omitted. On non-empty log, this_hash is 64-char lowercase hex and matches the most recent record's this_hash. Reading MUST NOT append a meta-record — the endpoint is pure query."
+    },
+    "SV-AUDIT-RECORDS-01": {
+      "name": "Audit records observability response + pagination",
+      "section": "§10.5.3",
+      "section_title": "Audit Records Observability",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "GET /audit/records?after=<id>&limit=<n> returns 200 with body conforming to schemas/audit-records-response.schema.json. Records are in chain order earliest-to-latest. has_more transitions correctly as the caller paginates with next_after. Reading MUST NOT append a meta-record."
+    },
+    "SV-AUDIT-RECORDS-02": {
+      "name": "Audit chain integrity",
+      "section": "§10.5.3, §10.5",
+      "section_title": "Audit Records Observability + Audit Trail",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "Validator reads all records via /audit/records pagination, verifies records[0].prev_hash == \"GENESIS\" and for all i > 0, records[i].prev_hash == records[i-1].this_hash. Any mismatch fails the assertion."
+    },
+    "SV-SESS-BOOT-01": {
+      "name": "Session bootstrap response + tighten-only",
+      "section": "§12.6",
+      "section_title": "Session Bootstrap",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "POST /sessions with requested_activeMode ≤ Agent Card's permissions.activeMode returns 201 with body conforming to schemas/session-bootstrap-response.schema.json. granted_activeMode equals requested_activeMode. session_id matches the §12.1 session-file pattern. session_bearer is opaque and authorizes /stream, /permissions/resolve, /audit/tail for exactly this session."
+    },
+    "SV-SESS-BOOT-02": {
+      "name": "Session bootstrap rejects looser-than-card request",
+      "section": "§12.6",
+      "section_title": "Session Bootstrap",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "POST /sessions with requested_activeMode > Agent Card's permissions.activeMode returns 403 with reason=ConfigPrecedenceViolation. Agent Card activeMode is the per-deployment upper bound; session activeMode is tighten-only from that bound."
     }
   },
   "tests_by_category": {
@@ -2007,40 +2051,49 @@
     "SV-OPS": [
       "SV-OPS-01",
       "SV-OPS-02"
+    ],
+    "SV-AUDIT": [
+      "SV-AUDIT-TAIL-01",
+      "SV-AUDIT-RECORDS-01",
+      "SV-AUDIT-RECORDS-02"
+    ],
+    "SV-SESS-BOOT": [
+      "SV-SESS-BOOT-01",
+      "SV-SESS-BOOT-02"
     ]
   },
   "must_coverage": {
-    "\u00a71#utf8": {
+    "§1#utf8": {
       "title": "UTF-8 without BOM",
       "tests": [
         "SV-ENC-01"
       ]
     },
-    "\u00a71#rfc3339": {
+    "§1#rfc3339": {
       "title": "RFC 3339 timestamps",
       "tests": [
         "SV-ENC-02"
       ]
     },
-    "\u00a71#iso8601": {
+    "§1#iso8601": {
       "title": "ISO 8601 durations",
       "tests": [
         "SV-ENC-03"
       ]
     },
-    "\u00a71#lf": {
+    "§1#lf": {
       "title": "LF line separators",
       "tests": [
         "SV-ENC-04"
       ]
     },
-    "\u00a71#jcs": {
+    "§1#jcs": {
       "title": "JCS canonicalization of signed JSON",
       "tests": [
         "SV-ENC-05"
       ]
     },
-    "\u00a71#skew": {
+    "§1#skew": {
       "title": "Clock-skew tolerances",
       "tests": [
         "SV-ENC-06",
@@ -2048,64 +2101,64 @@
         "SV-PERM-07"
       ]
     },
-    "\u00a72#pinned-refs": {
+    "§2#pinned-refs": {
       "title": "Normative references pinned",
       "tests": [
         "SV-GOV-07"
       ]
     },
-    "\u00a75.2#primitives": {
-      "title": "Primitives P1\u2013P14 enumerated and mapped",
+    "§5.2#primitives": {
+      "title": "Primitives P1–P14 enumerated and mapped",
       "tests": [
         "SV-GOV-06",
         "SV-CARD-05"
       ]
     },
-    "\u00a76.1#https": {
+    "§6.1#https": {
       "title": "HTTPS required",
       "tests": [
         "SV-CARD-01"
       ]
     },
-    "\u00a76.1#content-type": {
+    "§6.1#content-type": {
       "title": "Content-Type application/json",
       "tests": [
         "SV-CARD-02"
       ]
     },
-    "\u00a76.1#etag": {
+    "§6.1#etag": {
       "title": "ETag + If-None-Match",
       "tests": [
         "SV-CARD-11"
       ]
     },
-    "\u00a76.1#jws": {
+    "§6.1#jws": {
       "title": "JWS detached",
       "tests": [
         "SV-CARD-03",
         "HR-12"
       ]
     },
-    "\u00a76.1#trust-anchors": {
+    "§6.1#trust-anchors": {
       "title": "Trust-anchor chain",
       "tests": [
         "SV-CARD-04"
       ]
     },
-    "\u00a76.1#cache": {
-      "title": "Cache-Control \u2264 300s",
+    "§6.1#cache": {
+      "title": "Cache-Control ≤ 300s",
       "tests": [
         "SV-CARD-08"
       ]
     },
-    "\u00a76.1#fail-closed": {
+    "§6.1#fail-closed": {
       "title": "Fail closed on invalid",
       "tests": [
         "SV-CARD-09",
         "HR-12"
       ]
     },
-    "\u00a74#principles": {
+    "§4#principles": {
       "title": "Core Principles",
       "tests": [
         "SV-PRIN-01",
@@ -2115,14 +2168,14 @@
         "SV-PRIN-05"
       ]
     },
-    "\u00a75#stack": {
+    "§5#stack": {
       "title": "Required stack + primitives",
       "tests": [
         "SV-STACK-01",
         "SV-STACK-02"
       ]
     },
-    "\u00a75.3#bootstrap": {
+    "§5.3#bootstrap": {
       "title": "External bootstrap root",
       "tests": [
         "SV-BOOT-01",
@@ -2131,19 +2184,19 @@
         "SV-BOOT-06"
       ]
     },
-    "\u00a75.3.1#rotation": {
+    "§5.3.1#rotation": {
       "title": "Bootstrap-key rotation + compromise",
       "tests": [
         "SV-BOOT-04"
       ]
     },
-    "\u00a75.3.2#split-brain": {
+    "§5.3.2#split-brain": {
       "title": "Anchor disagreement / split-brain",
       "tests": [
         "SV-BOOT-05"
       ]
     },
-    "\u00a76.1.1#signing": {
+    "§6.1.1#signing": {
       "title": "Per-artifact JWS signing profile",
       "tests": [
         "SV-SIGN-01",
@@ -2153,20 +2206,20 @@
         "SV-SIGN-05"
       ]
     },
-    "\u00a75.4#probes": {
+    "§5.4#probes": {
       "title": "Operational liveness + readiness probes",
       "tests": [
         "SV-OPS-01",
         "SV-OPS-02"
       ]
     },
-    "\u00a719.1.1#release-gate": {
+    "§19.1.1#release-gate": {
       "title": "Release-build verification gate",
       "tests": [
         "SV-GOV-11"
       ]
     },
-    "\u00a717.1#jwt": {
+    "§17.1#jwt": {
       "title": "A2A JWT algorithm, key discovery, replay, etag",
       "tests": [
         "SV-A2A-10",
@@ -2175,7 +2228,7 @@
         "SV-A2A-13"
       ]
     },
-    "\u00a719.4.1#negotiation": {
+    "§19.4.1#negotiation": {
       "title": "Wire-level version negotiation",
       "tests": [
         "SV-GOV-08",
@@ -2183,7 +2236,7 @@
         "SV-GOV-10"
       ]
     },
-    "\u00a710.7#privacy": {
+    "§10.7#privacy": {
       "title": "Privacy and data-governance controls",
       "tests": [
         "SV-PRIV-01",
@@ -2192,44 +2245,44 @@
         "SV-PRIV-04"
       ]
     },
-    "\u00a710.7.2#residency": {
+    "§10.7.2#residency": {
       "title": "Residency layered defence",
       "tests": [
         "SV-PRIV-05"
       ]
     },
-    "\u00a710.5.1#audit-sink": {
+    "§10.5.1#audit-sink": {
       "title": "Audit-sink runtime failure",
       "tests": [
         "SV-PERM-19"
       ]
     },
-    "\u00a712.2#idempotency-retention": {
+    "§12.2#idempotency-retention": {
       "title": "Tool idempotency retention floor",
       "tests": [
         "SV-SESS-11"
       ]
     },
-    "\u00a76.2#schema": {
+    "§6.2#schema": {
       "title": "Card schema validation",
       "tests": [
         "SV-CARD-05"
       ]
     },
-    "\u00a76.2#const-version": {
+    "§6.2#const-version": {
       "title": "soaHarnessVersion const",
       "tests": [
         "SV-CARD-06",
         "SV-GOV-01"
       ]
     },
-    "\u00a76.2#addl-false": {
+    "§6.2#addl-false": {
       "title": "additionalProperties false",
       "tests": [
         "SV-CARD-07"
       ]
     },
-    "\u00a76.5#precedence": {
+    "§6.5#precedence": {
       "title": "Declaration-source precedence",
       "tests": [
         "SV-CARD-10",
@@ -2237,7 +2290,7 @@
         "HR-18"
       ]
     },
-    "\u00a77.2#h2": {
+    "§7.2#h2": {
       "title": "Required H2 present + ordered",
       "tests": [
         "SV-AGENTS-01",
@@ -2245,21 +2298,21 @@
         "SV-AGENTS-03"
       ]
     },
-    "\u00a77.3#import": {
+    "§7.3#import": {
       "title": "@import depth + cycle",
       "tests": [
         "SV-AGENTS-04",
         "SV-AGENTS-05"
       ]
     },
-    "\u00a77.4#reload": {
+    "§7.4#reload": {
       "title": "Reload timing",
       "tests": [
         "SV-AGENTS-06",
         "SV-AGENTS-07"
       ]
     },
-    "\u00a78.1#tools": {
+    "§8.1#tools": {
       "title": "Memory MCP tool signatures",
       "tests": [
         "SV-MEM-01",
@@ -2267,13 +2320,13 @@
         "SV-MEM-08"
       ]
     },
-    "\u00a78.2#load-algo": {
+    "§8.2#load-algo": {
       "title": "Memory load algorithm",
       "tests": [
         "SV-MEM-02"
       ]
     },
-    "\u00a78.3#avail": {
+    "§8.3#avail": {
       "title": "Startup fail-closed / mid-loop degrade / 3-strike",
       "tests": [
         "SV-MEM-03",
@@ -2281,19 +2334,19 @@
         "HR-17"
       ]
     },
-    "\u00a78.4#consolidation": {
+    "§8.4#consolidation": {
       "title": "Consolidation cadence",
       "tests": [
         "SV-MEM-05"
       ]
     },
-    "\u00a78.5#sharing": {
+    "§8.5#sharing": {
       "title": "Server-side sharing enforcement",
       "tests": [
         "SV-MEM-06"
       ]
     },
-    "\u00a79.2#program-md": {
+    "§9.2#program-md": {
       "title": "program.md schema + JWS + trust-anchor chain",
       "tests": [
         "SV-SI-01",
@@ -2301,39 +2354,39 @@
         "SV-SI-18"
       ]
     },
-    "\u00a79.3#markers": {
+    "§9.3#markers": {
       "title": "Editable/Immutable markers",
       "tests": [
         "SV-SI-03",
         "SV-SI-04"
       ]
     },
-    "\u00a76.2#auditsink": {
+    "§6.2#auditsink": {
       "title": "security.auditSink discoverability",
       "tests": [
         "SV-PERM-06",
         "SV-PERM-16"
       ]
     },
-    "\u00a76.2#trust-anchor-uri": {
+    "§6.2#trust-anchor-uri": {
       "title": "trustAnchor.uri for CRL discovery",
       "tests": [
         "SV-PERM-09"
       ]
     },
-    "\u00a79.4#optimizer-args": {
+    "§9.4#optimizer-args": {
       "title": "self_optimize args have Card defaults",
       "tests": [
         "SV-SI-31"
       ]
     },
-    "\u00a77.2#entrypoint": {
+    "§7.2#entrypoint": {
       "title": "AGENTS.md Self-Improvement Policy declares entrypoint",
       "tests": [
         "SV-AGENTS-08"
       ]
     },
-    "\u00a79.5#exec": {
+    "§9.5#exec": {
       "title": "Execution sequence",
       "tests": [
         "SV-SI-05",
@@ -2344,13 +2397,13 @@
         "SV-SI-10"
       ]
     },
-    "\u00a79.6#harbor": {
+    "§9.6#harbor": {
       "title": "Harbor format + results.tsv",
       "tests": [
         "SV-SI-16"
       ]
     },
-    "\u00a79.7#docker": {
+    "§9.7#docker": {
       "title": "Docker isolation baseline (disaggregated)",
       "tests": [
         "SV-SI-13",
@@ -2368,20 +2421,20 @@
         "HR-16"
       ]
     },
-    "\u00a79.7.1#manifest": {
+    "§9.7.1#manifest": {
       "title": "Seccomp profile digest + release manifest",
       "tests": [
         "SV-SI-29",
         "SV-SI-30"
       ]
     },
-    "\u00a79.7.2#closed": {
+    "§9.7.2#closed": {
       "title": "Docker unavailable fail-closed",
       "tests": [
         "SV-SI-14"
       ]
     },
-    "\u00a79.7.3#clone3": {
+    "§9.7.3#clone3": {
       "title": "clone3 policy (allowed, layered defense)",
       "tests": [
         "SV-SI-27",
@@ -2389,7 +2442,7 @@
         "SV-SI-32"
       ]
     },
-    "\u00a79.9#recovery": {
+    "§9.9#recovery": {
       "title": "Abort, rollback, compensations",
       "tests": [
         "SV-SI-11",
@@ -2400,7 +2453,7 @@
         "HR-10"
       ]
     },
-    "\u00a710.3#resolution": {
+    "§10.3#resolution": {
       "title": "Permission resolution",
       "tests": [
         "SV-PERM-01",
@@ -2409,21 +2462,21 @@
         "HR-11"
       ]
     },
-    "\u00a710.4#escalation": {
+    "§10.4#escalation": {
       "title": "Autonomous escalation + HITL",
       "tests": [
         "SV-PERM-03",
         "SV-PERM-04"
       ]
     },
-    "\u00a710.5#audit-chain": {
+    "§10.5#audit-chain": {
       "title": "Audit chain prev_hash",
       "tests": [
         "SV-PERM-05",
         "HR-14"
       ]
     },
-    "\u00a710.5#worm": {
+    "§10.5#worm": {
       "title": "WORM append-only + timestamp + retention + reader",
       "tests": [
         "SV-PERM-06",
@@ -2432,7 +2485,7 @@
         "SV-PERM-17"
       ]
     },
-    "\u00a710.6#keys": {
+    "§10.6#keys": {
       "title": "Handler key management",
       "tests": [
         "SV-PERM-08",
@@ -2445,13 +2498,13 @@
         "SV-PERM-15"
       ]
     },
-    "\u00a710.6.1#crl": {
+    "§10.6.1#crl": {
       "title": "CRL artifact format",
       "tests": [
         "SV-PERM-18"
       ]
     },
-    "\u00a711.1#registry": {
+    "§11.1#registry": {
       "title": "Global Tool Registry",
       "tests": [
         "SV-REG-01",
@@ -2459,28 +2512,28 @@
         "SV-REG-05"
       ]
     },
-    "\u00a711.2#pool": {
+    "§11.2#pool": {
       "title": "Per-session pool + deny list",
       "tests": [
         "SV-REG-04"
       ]
     },
-    "\u00a711.3#rereg": {
+    "§11.3#rereg": {
       "title": "Re-registration timing",
       "tests": [
         "SV-REG-03",
         "HR-13"
       ]
     },
-    "\u00a712.1#schema": {
+    "§12.1#schema": {
       "title": "Session schema + status enum",
       "tests": [
         "SV-SESS-01",
         "SV-SESS-02"
       ]
     },
-    "\u00a712.2#bracketing": {
-      "title": "pending\u2192committed bracket + idempotency",
+    "§12.2#bracketing": {
+      "title": "pending→committed bracket + idempotency",
       "tests": [
         "SV-SESS-03",
         "SV-SESS-04",
@@ -2489,14 +2542,14 @@
         "HR-05"
       ]
     },
-    "\u00a712.3#atomic": {
+    "§12.3#atomic": {
       "title": "Atomic writes POSIX + Windows",
       "tests": [
         "SV-SESS-06",
         "SV-SESS-07"
       ]
     },
-    "\u00a712.4#cluster": {
+    "§12.4#cluster": {
       "title": "Local lock + distributed fencing",
       "tests": [
         "SV-CLUS-01",
@@ -2505,7 +2558,7 @@
         "SV-CLUS-04"
       ]
     },
-    "\u00a712.5#resume": {
+    "§12.5#resume": {
       "title": "Resume replay semantics",
       "tests": [
         "SV-SESS-08",
@@ -2513,7 +2566,7 @@
         "SV-SESS-10"
       ]
     },
-    "\u00a713.1#projection": {
+    "§13.1#projection": {
       "title": "Projection algorithm",
       "tests": [
         "SV-BUD-01",
@@ -2521,14 +2574,14 @@
         "HR-02"
       ]
     },
-    "\u00a713.2#mid-stream": {
+    "§13.2#mid-stream": {
       "title": "Mid-stream enforcement",
       "tests": [
         "SV-BUD-03",
         "HR-03"
       ]
     },
-    "\u00a713.3#cache-bill": {
+    "§13.3#cache-bill": {
       "title": "Cache accounting + billing tag + mismatch",
       "tests": [
         "SV-BUD-04",
@@ -2536,13 +2589,13 @@
         "SV-BUD-07"
       ]
     },
-    "\u00a713.4#stop-reason": {
+    "§13.4#stop-reason": {
       "title": "StopReason closed enum",
       "tests": [
         "SV-BUD-06"
       ]
     },
-    "\u00a714.1#stream": {
+    "§14.1#stream": {
       "title": "StreamEvent schema + sequencing + CrashEvent + per-type payload",
       "tests": [
         "SV-STR-01",
@@ -2554,19 +2607,19 @@
         "SV-STR-15"
       ]
     },
-    "\u00a714.1.2#trust": {
-      "title": "Event-type \u2192 trust-class mapping",
+    "§14.1.2#trust": {
+      "title": "Event-type → trust-class mapping",
       "tests": [
         "SV-STR-16"
       ]
     },
-    "\u00a714.2#syslog": {
+    "§14.2#syslog": {
       "title": "System Event Log categories",
       "tests": [
         "SV-STR-05"
       ]
     },
-    "\u00a714.3#subscription": {
+    "§14.3#subscription": {
       "title": "Runner stream subscription contract (SSE, mTLS, resume, backpressure)",
       "tests": [
         "SV-STR-12",
@@ -2574,7 +2627,7 @@
         "SV-STR-14"
       ]
     },
-    "\u00a714.4#otel": {
+    "§14.4#otel": {
       "title": "OpenTelemetry mapping",
       "tests": [
         "SV-STR-06",
@@ -2582,7 +2635,7 @@
         "SV-STR-08"
       ]
     },
-    "\u00a715#hooks": {
+    "§15#hooks": {
       "title": "Hook contract",
       "tests": [
         "SV-HOOK-01",
@@ -2595,7 +2648,7 @@
         "SV-HOOK-08"
       ]
     },
-    "\u00a715.5#regression": {
+    "§15.5#regression": {
       "title": "Harness Regression Suite",
       "tests": [
         "HR-01",
@@ -2618,7 +2671,7 @@
         "HR-18"
       ]
     },
-    "\u00a716.2#cross": {
+    "§16.2#cross": {
       "title": "Cross-interaction matrix",
       "tests": [
         "SV-STR-11",
@@ -2626,7 +2679,7 @@
         "SV-A2A-08"
       ]
     },
-    "\u00a717#a2a": {
+    "§17#a2a": {
       "title": "A2A wire protocol",
       "tests": [
         "SV-A2A-01",
@@ -2640,19 +2693,19 @@
         "HR-15"
       ]
     },
-    "\u00a717.2#digests": {
+    "§17.2#digests": {
       "title": "A2A digest canonicalization",
       "tests": [
         "SV-A2A-14"
       ]
     },
-    "\u00a718#validator": {
+    "§18#validator": {
       "title": "soa-validate binary + profiles",
       "tests": [
         "SV-GOV-06"
       ]
     },
-    "\u00a719#governance": {
+    "§19#governance": {
       "title": "Governance, stability, versioning, deprecation, errata, HITL",
       "tests": [
         "SV-GOV-01",
@@ -2663,7 +2716,7 @@
         "SV-PERM-04"
       ]
     },
-    "\u00a723#goodhart": {
+    "§23#goodhart": {
       "title": "Goodhart mitigations",
       "tests": [
         "SV-GOOD-01",
@@ -2677,7 +2730,7 @@
         "HR-10"
       ]
     },
-    "\u00a724#errors": {
+    "§24#errors": {
       "title": "Stable error code emission",
       "tests": [
         "SV-BUD-06",
@@ -2686,12 +2739,12 @@
         "SV-CLUS-03"
       ]
     },
-    "\u00a712.2": {
+    "§12.2": {
       "tests": [
         "SV-SESS-12"
       ]
     },
-    "\u00a719.4.3": {
+    "§19.4.3": {
       "tests": [
         "SV-GOV-12"
       ]
@@ -2699,7 +2752,7 @@
   },
   "uncovered_musts_in_v1_0": [],
   "execution_order": {
-    "notes": "Tests ordered by dependency: encoding/static configuration first, then security headers, auth, enrollment; envelope and subscribe require auth; content safety and prompts require envelope; handoff and SI are terminal phases. Every ID listed below is literal \u2014 no glob or range expansion.",
+    "notes": "Tests ordered by dependency: encoding/static configuration first, then security headers, auth, enrollment; envelope and subscribe require auth; content safety and prompts require envelope; handoff and SI are terminal phases. Every ID listed below is literal — no glob or range expansion.",
     "phases": [
       {
         "phase": 1,
@@ -2756,7 +2809,7 @@
       },
       {
         "phase": 3,
-        "name": "Static Configuration (AGENTS.md, Registry, Governance \u2014 includes SI-gated static checks)",
+        "name": "Static Configuration (AGENTS.md, Registry, Governance — includes SI-gated static checks)",
         "tests": [
           "SV-AGENTS-01",
           "SV-AGENTS-02",
@@ -2870,7 +2923,12 @@
           "HR-13",
           "HR-14",
           "HR-17",
-          "HR-18"
+          "HR-18",
+          "SV-AUDIT-TAIL-01",
+          "SV-AUDIT-RECORDS-01",
+          "SV-AUDIT-RECORDS-02",
+          "SV-SESS-BOOT-01",
+          "SV-SESS-BOOT-02"
         ]
       },
       {

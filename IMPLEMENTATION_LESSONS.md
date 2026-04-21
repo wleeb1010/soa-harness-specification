@@ -111,13 +111,17 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Root-cause fix:** added `test-vectors/tool-registry/tools.json` — 8 hand-authored tools spanning the full §10.2 × §10.3 matrix (each risk_class, each default_control, including the tighten-only edge case where `default_control = Deny` overrides even `DangerFullAccess`). The 24 expected decisions (8 tools × 3 activeModes) are documented in the accompanying README.md. Impls load this fixture for conformance runs via an impl-defined mechanism (e.g., `RUNNER_TOOLS_FIXTURE=<path>`). The fixture is pinned by digest in `MANIFEST.json.supplementary_artifacts`.
 - **Commit landing this edit:** the same patch that added this L-12 entry.
 
-### L-13 — Must-map catalog integration for new test IDs `[open, docs, follow-up commit target: this week]`
+### L-13 — Must-map catalog integration for new test IDs `[normative, in-spec @ <this-commit>]`
 
-- **Surfaced:** 2026-04-20 · during L-09 / L-10 / L-11 normative edits
-- **What:** §10.3.1, §10.5.2, and §12.6 reference test IDs `SV-PERM-01` (updated), `SV-AUDIT-TAIL-01` (new), `SV-SESS-BOOT-01` (new), `SV-SESS-BOOT-02` (new). SV-PERM-01 is already in `soa-validate-must-map.json` with updated assertion text (landed in the L-09 commit). The three new IDs are not yet in the catalog — spec sections reference them but the 213-test map has no entries.
-- **Why it matters:** `soa-validate` loads the must-map as the authoritative test catalog. Sections that reference IDs absent from the catalog produce dangling references; the catalog's invariant check ("No test in tests is orphaned") requires coordinated updates across three nested structures (`tests`, `must_coverage`, `execution_order.phases`).
-- **Destination:** single follow-up commit to `soa-validate-must-map.json` adding entries to all three structures. Catalog total moves 213 → 216 (three new test IDs).
-- **Not blocking:** validator can run the new tests without the catalog entries (vector-path via schema validation of responses; live-path via direct endpoint calls). Catalog integration is needed before v1.0 release gate passes the invariant check.
+- **Surfaced:** 2026-04-20 · during L-09/L-10/L-11/L-15 normative edits
+- **What:** §10.3.1, §10.5.2, §10.5.3, §12.6 reference test IDs `SV-AUDIT-TAIL-01`, `SV-AUDIT-RECORDS-01`, `SV-AUDIT-RECORDS-02`, `SV-SESS-BOOT-01`, `SV-SESS-BOOT-02`. All five landed in the catalog this commit.
+- **Resolution:** added five new `tests` entries, two new `tests_by_category` groups (`SV-AUDIT`, `SV-SESS-BOOT`), two new `test_categories` descriptions, all five tests pushed into `execution_order.phases[3]` (Runtime Core). Catalog total: 213 → 218. No must_coverage anchor mapping added yet — the anchors for the new §10.5.2/§10.5.3/§12.6 sections are normative but the must_coverage dict only maps pre-existing anchors. Anchor coverage is non-blocking follow-up.
+
+### L-14 — HR-02 M1 deferral to M3 `[docs + must-map metadata, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · plan-evaluator review Week 3 day 2. Must-map HR-02 assertion is "Projection over budget → StopReason::BudgetExhausted before API call" — this exercises §13 Token Budget. §13 is M3 scope per the roadmap; M1 cannot test HR-02 because the projector doesn't exist until M3.
+- **Resolution:** added informative fields to HR-02's test entry: `implementation_milestone: "M3"` and `milestone_reason` documenting the §13 dependency. Validators that filter by milestone can skip HR-02 during M1 runs; the must-map invariant check still passes (HR-02 is still in `tests` and `execution_order.phases[3]`).
+- **Plan impact:** HR-02 removed from M1 test set in both impl and validator plans. M1 exit gate now 7 tests: HR-01, HR-12, HR-14, SV-CARD-01, SV-SIGN-01, SV-BOOT-01, SV-PERM-01.
 
 ### L-15 — Audit records observability endpoint `[normative, in-spec @ <this-commit>]`
 
