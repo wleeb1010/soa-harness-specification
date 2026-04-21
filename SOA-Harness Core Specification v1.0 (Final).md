@@ -1071,6 +1071,76 @@ GET /audit/tail
 
 **Conformance linkage.** `SV-AUDIT-TAIL-01` (new) asserts schema conformance of the response and the GENESIS fallback when the log is empty. `SV-PERM-01` consumes this endpoint for its not-a-side-effect assertion per §10.3.1.
 
+#### 10.5.3 Audit Records Observability (Normative)
+
+**Rationale.** §10.5 defines the audit log as a hash-chained JSONL stream; §10.5.2 exposes the terminal state via `/audit/tail`. The terminal hash alone is insufficient for **independent chain verification**: a validator that wants to prove the chain is self-consistent — every record's `prev_hash` equals the prior record's `this_hash` — needs to read the records themselves, in order, from GENESIS to the tail. `HR-14` per §15.5 asserts "any `prev_hash` tamper fails chain verification", which cannot be tested without access to the records. Without this endpoint, `HR-14` is untestable by an external validator; the tamper-evidence property becomes Runner-self-attested and therefore worthless as conformance evidence.
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+GET /audit/records?after=<record_id>&limit=<n>
+```
+
+- **Transport:** HTTPS / TLS 1.3 on the public listener; loopback plain-HTTP permitted on Unix socket / named pipe.
+- **Authentication:** the request MUST present a bearer token scoped for `audit:read` (same scope class as `/audit/tail`). `401` unauthenticated, `403` without scope.
+- **Rate limiting:** at most 60 requests/minute per bearer. `429 Too Many Requests` with `Retry-After` when exceeded. Note the rate limit is lower than `/audit/tail`'s 120 rpm because this endpoint returns larger payloads.
+
+**Query parameters.**
+- `after` (optional) — the `id` of a record after which to start reading. When omitted, the response starts at the GENESIS record. When provided, the response begins with the record whose `prev_hash` equals the `this_hash` of the record with id `after`. If no record with id `after` exists, returns `404`.
+- `limit` (optional, default 100, max 1000) — the maximum number of records to return in this response. Responses larger than this MUST be paginated.
+
+**Response (200 OK).** JSON body conforming to `schemas/audit-records-response.schema.json`:
+
+```json
+{
+  "records": [
+    {
+      "id": "aud_...",
+      "timestamp": "2026-04-20T12:00:00Z",
+      "session_id": "ses_...",
+      "subject_id": "user_abc123",
+      "tool": "fs__write_file",
+      "args_digest": "sha256:...",
+      "capability": "WorkspaceWrite",
+      "control": "Prompt",
+      "handler": "Interactive",
+      "decision": "AutoAllow",
+      "reason": "prompt-signed-approval",
+      "signer_key_id": "kid-...",
+      "prev_hash": "sha256:...",
+      "this_hash": "sha256:..."
+    }
+  ],
+  "next_after": "aud_last_in_page",
+  "has_more": true,
+  "runner_version": "1.0",
+  "generated_at": "2026-04-20T12:00:00Z"
+}
+```
+
+- `records[]` — array of zero or more audit records in **chain order** (earliest to latest). Each record's fields are exactly as §10.5 defines them (no redaction, no transformation — raw chain bytes). Validators reconstruct the chain by paginating through `next_after` until `has_more` is false.
+- `next_after` — the `id` of the last record in this page. When `has_more` is true, the next query is `?after=<next_after>&limit=<n>`.
+- `has_more` — false when the response's last record's `id` is the current audit-log tail.
+
+**Other responses:**
+- `400 Bad Request` — malformed query parameters
+- `401 / 403 / 429` — per the auth + rate-limit rules
+- `404 Not Found` — `after` references an id that doesn't exist
+- `503 Service Unavailable` — `/ready` is 503
+
+**Not-a-side-effect property (MUST).** Reading `/audit/records` MUST NOT:
+1. Append a meta-record to the chain (the chain is forward-only; reads are outside it).
+2. Emit a StreamEvent.
+3. Advance any Runner-internal counter visible to other endpoints.
+4. Trigger the §10.5.1 three-state degradation state machine even if a remote WORM sink is slow to respond (the endpoint reads from the local hash-chained log; WORM-sink replication is orthogonal).
+
+**Privacy note.** Audit records MAY contain `subject_id` values that are GDPR/CCPA-covered personal data. Operators MUST ensure that only authorized principals are granted `audit:read` scope. The spec does not dictate HOW bearers obtain `audit:read` scope — deployment-specific IdP logic. The `audit:read` scope is the ONLY gate; no additional field-level redaction is required from the Runner.
+
+**Conformance linkage.**
+- `SV-AUDIT-RECORDS-01` (new) — schema conformance of the response; pagination semantics (after → next_after → has_more transitions correctly).
+- `SV-AUDIT-RECORDS-02` (new) — chain integrity: validator reads all records, verifies `records[0].prev_hash == "GENESIS"` and `∀ i > 0, records[i].prev_hash == records[i-1].this_hash`.
+- `HR-14` (existing, §15.5) — tamper detection: validator reconstructs the full chain via this endpoint, **mutates** one `prev_hash` in its local copy, re-runs chain verification, asserts **failure**. Because mutation happens validator-side, this doesn't require a "tampered" endpoint on the Runner — the Runner only needs to serve the real chain faithfully.
+
 ### 10.6 Handler Key Management
 
 Every prompt decision of type `Prompt` MUST be signed by the handler that produced it.

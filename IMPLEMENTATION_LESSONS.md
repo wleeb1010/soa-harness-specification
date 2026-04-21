@@ -119,6 +119,13 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Destination:** single follow-up commit to `soa-validate-must-map.json` adding entries to all three structures. Catalog total moves 213 → 216 (three new test IDs).
 - **Not blocking:** validator can run the new tests without the catalog entries (vector-path via schema validation of responses; live-path via direct endpoint calls). Catalog integration is needed before v1.0 release gate passes the invariant check.
 
+### L-15 — Audit records observability endpoint `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · plan-evaluator review Week 3 day 2. `HR-14` per must-map requires "any `prev_hash` tamper fails chain verification". `/audit/tail` (L-10) returns only the terminal hash — the validator couldn't reconstruct the chain to test tamper detection. Chain-integrity verification requires access to the records themselves.
+- **Root-cause fix:** added §10.5.3 **Audit Records Observability (Normative)** — `GET /audit/records?after=<id>&limit=<n>` returning paginated records in chain order. Response schema: `schemas/audit-records-response.schema.json`. Bearer-scoped `audit:read`, 60 rpm rate limit (lower than /audit/tail since payloads are larger). Explicit not-a-side-effect property. Tamper test is validator-side: validator reads chain, mutates a `prev_hash` in its local copy, re-verifies, asserts failure — Runner never serves a tampered chain, so no "tamper" endpoint is needed.
+- **New test IDs:** SV-AUDIT-RECORDS-01 (schema + pagination), SV-AUDIT-RECORDS-02 (chain integrity). HR-14 now references this endpoint for its tamper test.
+- **Commit landing this edit:** same patch that added this entry.
+
 ### L-16 — Tampered Agent Card fixture for HR-12 `[normative fixture, in-spec @ <this-commit>]`
 
 - **Surfaced:** 2026-04-20 · plan-evaluator review Week 3 day 2. `HR-12` per must-map requires "Tampered Card bytes → CardInvalid; Runner fails closed". No tampered-card fixture existed — both impl and validator had to author their own, producing no cross-impl comparability.

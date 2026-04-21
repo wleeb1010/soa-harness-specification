@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "740e35150dd6c0605edd17e227d8b20e21c9fffaa87a39acc87edfe7c59a65ed",
+        "sha256": "ff96da0f8d467f9b20088f897acce2916bcfe474387c670360713d83b868502b",
         "canonicalization": "raw-utf8"
       },
       {
@@ -53,6 +53,12 @@
         "name": "agent-card.schema.json",
         "path": "schemas/agent-card.schema.json",
         "sha256": "bc5a09b1fd707adefe9dcdbfd3be580f5472fdcc375672341261bc842e8b6ebd",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "audit-records-response.schema.json",
+        "path": "schemas/audit-records-response.schema.json",
+        "sha256": "3c4a1b68127cf202ff8cfdd0e3bbd0af5345404287a347e3e68264cf68bc176d",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -172,7 +178,7 @@
       {
         "name": "README.md",
         "path": "test-vectors/conformance-card/README.md",
-        "sha256": "3b4e8384a1a7152871843c251d5dc8eee29b89d5539497acae6df34fa7b94331",
+        "sha256": "6d36bb1eac7772b38ce0a1fd4e42f058e03aaaff0b7162617d189128e6ac0190",
         "canonicalization": "raw-utf8"
       },
       {
@@ -436,13 +442,13 @@
       {
         "name": "README.md",
         "path": "test-vectors/tampered-card/README.md",
-        "sha256": "f25e7144011dbba641d3a5320e4dcf406928a95eb3efcaeac6912476d47d1d70",
+        "sha256": "10df618ea197cfe52a7e35805c636b2d69e5f49a0fb330ad7c89a377ecabcfcd",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "agent-card.json.tampered.jws",
         "path": "test-vectors/tampered-card/agent-card.json.tampered.jws",
-        "sha256": "712f84533fcc86139fe46e3aaf560ca044eb5e30045de55fa8b93d85c54bd11d",
+        "sha256": "f6ceeb6e3db6400ee7a00c68024e9c2d6dce6cc9f934cdf9a9f0ff5b064b8efb",
         "canonicalization": "raw-utf8"
       },
       {
