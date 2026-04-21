@@ -214,6 +214,17 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Impl impact:** zero code change. Impl was already returning 400 for wire-malformed JWS; spec catches up. SV-PERM-22 regression that surfaced this reverts to PASS after validator adjusts expectation.
 - **Why this is a normative fix (not a spec-convention preference):** status-code choice affects error-handling code in callers. A caller retrying on 4xx-vs-5xx or logging auth-failures differently from malformed-body failures needs the spec to match real semantics. Conflating 400 and 403 in spec wording would silently break caller instrumentation.
 
+### L-27 — M2 kickoff: session state observability + audit-sink failure hook + non-idempotent tool fixture `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · M2 pre-kickoff plan-evaluator pass. Applying the M1 lesson: identify structural gaps BEFORE starting code, not after siblings hit them mid-sprint.
+- **Gap diagnosis:** M2's test set (HR-04, HR-05, SV-SESS-01..05, SV-PERM-19) all depend on observing session-state transitions (pending→committed, replay, idempotency-key continuity) OR simulating audit-sink failure states. Without dedicated surfaces these tests would repeat the M1 "spec defines verb, no observable window" pattern that produced L-09/L-10/L-15/L-19.
+- **Three additions landed this commit:**
+  1. **§12.5.1 Session State Observability (Normative)** — `GET /sessions/<session_id>/state` endpoint. Returns the full persisted session-file state as it would appear if `resume_session` ran right now. Bearer-scoped `sessions:read:<session_id>`, 120 rpm, not-a-side-effect (no state advance, no audit write, no StreamEvent). Response schema: `schemas/session-state-response.schema.json`. Unblocks HR-04, HR-05, SV-SESS-03, SV-SESS-04 end-to-end.
+  2. **§12.5.2 Audit Sink Failure Simulation Hook (Normative — Testability)** — `SOA_RUNNER_AUDIT_SINK_FAILURE_MODE=<healthy|degraded-buffering|unreachable-halt>` env var. Conformance Runners accept this knob to drive the §10.5.1 three-state machine deterministically. Same production-guard pattern as L-01's clock injection: MUST NOT be reachable by untrusted principals, MUST refuse to start on non-loopback interface with the env set. Unblocks SV-PERM-19.
+  3. **`test-vectors/tool-registry-m2/`** — M2 Tool Registry fixture adding two entries: `compliant_ephemeral_tool` (Destructive/Prompt, positive-path accepted at load) and `non_compliant_ephemeral_tool` (Mutating/AutoAllow, negative-path REJECTED at load with `ToolPoolStale`). Unblocks SV-SESS-05.
+- **Must-map catalog:** 8 M2 test IDs tagged with `implementation_milestone: "M2"`. New SV-SESS-STATE-01 added for the state endpoint schema + not-a-side-effect assertions. Catalog total 221 → 222.
+- **Why ship upfront:** M1 taught us that speccing "define the verb but not the window" produces mid-sprint churn. M2 has the same structural risk with session state + audit-sink observations. Landing the surfaces now means both siblings can plan against a stable spec from day 1 rather than discovering gaps at day 5.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

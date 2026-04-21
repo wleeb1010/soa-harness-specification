@@ -2,7 +2,7 @@
   "$id": "https://soa-harness.org/schemas/v1.0/must-map.json",
   "artifact_version": "1.0.0",
   "spec_version": "1.0",
-  "generated": "2026-04-20",
+  "generated": "2026-04-21",
   "completeness_check": {
     "method": "Out-of-band CI job parses the SOA-Harness Core specification, extracts every MUST by stable anchor (§X.Y#slug), diffs against must_coverage keys. Missing anchors fail CI. Tool: scripts/verify-must-coverage.ts in the soa-validate repo.",
     "invariants": [
@@ -48,7 +48,8 @@
     "SV-PRIV": "Privacy and data-governance controls (§10.7).",
     "SV-OPS": "Operational probes: liveness + readiness (§5.4).",
     "SV-AUDIT": "Audit chain observability (tail hash + records + chain integrity, §10.5.2/§10.5.3).",
-    "SV-SESS-BOOT": "Session bootstrap endpoint (§12.6)."
+    "SV-SESS-BOOT": "Session bootstrap endpoint (§12.6).",
+    "SV-SESS-STATE": "Session state observability (§12.5.1)."
   },
   "tests": {
     "HR-01": {
@@ -83,7 +84,9 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "phase=pending tool replays idempotently on resume."
+      "summary": "phase=pending tool replays idempotently on resume.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
     },
     "HR-05": {
       "name": "Crash recovery (committed)",
@@ -91,7 +94,9 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "phase=committed tool does NOT replay on resume."
+      "summary": "phase=committed tool does NOT replay on resume.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
     },
     "HR-06": {
       "name": "Compaction integrity",
@@ -1099,7 +1104,9 @@
       "section_title": "Runtime Audit-Sink Failure",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Runner operates healthy/degraded-buffering/unreachable-halt states. degraded: local fsync-backed buffer; AuditSinkDegraded emitted once per transition; /ready still 200. unreachable-halt: Mutating/Destructive tools rejected with PermissionDenied(reason=audit-sink-unreachable); ReadOnly permitted; /ready flips 503; AuditSinkUnreachable emitted. Recovery flushes buffer in order, resumes this_hash chain, emits AuditSinkRecovered."
+      "assertion": "Runner operates healthy/degraded-buffering/unreachable-halt states. degraded: local fsync-backed buffer; AuditSinkDegraded emitted once per transition; /ready still 200. unreachable-halt: Mutating/Destructive tools rejected with PermissionDenied(reason=audit-sink-unreachable); ReadOnly permitted; /ready flips 503; AuditSinkUnreachable emitted. Recovery flushes buffer in order, resumes this_hash chain, emits AuditSinkRecovered.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
     },
     "SV-SESS-11": {
       "name": "Tool idempotency retention floor",
@@ -1171,7 +1178,9 @@
       "section_title": "Session File Schema",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Session file validates against session.schema.json."
+      "assertion": "Session file validates against session.schema.json.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
     },
     "SV-SESS-02": {
       "name": "status enum closed",
@@ -1179,7 +1188,9 @@
       "section_title": "Session File Schema",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Non-enum status value → SessionFormatIncompatible on load."
+      "assertion": "Non-enum status value → SessionFormatIncompatible on load.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
     },
     "SV-SESS-03": {
       "name": "Event bracketing",
@@ -1187,7 +1198,9 @@
       "section_title": "Significant Events",
       "profile": "core",
       "severity": "critical",
-      "assertion": "pending→committed bracket observed for every significant event."
+      "assertion": "pending→committed bracket observed for every significant event.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
     },
     "SV-SESS-04": {
       "name": "Idempotency key",
@@ -1195,7 +1208,9 @@
       "section_title": "Significant Events",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Replayed tool receives identical idempotency key; dedupes."
+      "assertion": "Replayed tool receives identical idempotency key; dedupes.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
     },
     "SV-SESS-05": {
       "name": "Non-idempotent = Destructive",
@@ -1203,7 +1218,9 @@
       "section_title": "Significant Events",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Tool lacking idempotency MUST be classified Destructive with control=Prompt."
+      "assertion": "Tool lacking idempotency MUST be classified Destructive with control=Prompt.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
     },
     "SV-SESS-06": {
       "name": "POSIX atomic write",
@@ -1818,6 +1835,15 @@
       "profile": "core",
       "severity": "critical",
       "assertion": "POST /permissions/decisions with a cryptographically-invalid PDA returns 201 with decision=Deny, handler_accepted=false, reason=pda-verify-failed AND audits the attempt. POST with a PDA whose canonical-decision.decision disagrees with the resolver computation returns 403 reason=pda-decision-mismatch with no audit record written."
+    },
+    "SV-SESS-STATE-01": {
+      "name": "Session state observability response",
+      "section": "§12.5.1",
+      "section_title": "Session State Observability",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "GET /sessions/<session_id>/state returns 200 with body conforming to schemas/session-state-response.schema.json. Response reflects persisted state (not stale pre-flush in-memory state). Reading MUST NOT advance workflow state, emit StreamEvents, or append audit rows. Rate limit 120 rpm per bearer; 401/403/404/429/503 per spec.",
+      "implementation_milestone": "M2"
     }
   },
   "tests_by_category": {
@@ -2087,6 +2113,9 @@
     "SV-SESS-BOOT": [
       "SV-SESS-BOOT-01",
       "SV-SESS-BOOT-02"
+    ],
+    "SV-SESS-STATE": [
+      "SV-SESS-STATE-01"
     ]
   },
   "must_coverage": {
@@ -2958,7 +2987,8 @@
           "SV-SESS-BOOT-02",
           "SV-PERM-20",
           "SV-PERM-21",
-          "SV-PERM-22"
+          "SV-PERM-22",
+          "SV-SESS-STATE-01"
         ]
       },
       {

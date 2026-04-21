@@ -1,0 +1,22 @@
+{
+  "schema": "https://soa-harness.org/schemas/v1.0/tool-registry.schema.json",
+  "description": "M2-extension Tool Registry fixture — adds SV-SESS-05 coverage (non-idempotent tool MUST be classified Destructive with default_control=Prompt per §12.2). Inherits all 8 tools from test-vectors/tool-registry/tools.json plus 2 new entries that specifically exercise the idempotency-classification rule.",
+  "version": "1.0",
+  "inherits_from": "test-vectors/tool-registry/tools.json",
+  "tools": [
+    {
+      "name": "compliant_ephemeral_tool",
+      "risk_class": "Destructive",
+      "default_control": "Prompt",
+      "description": "A tool that lacks dedupe support (idempotency_retention_seconds absent or < 3600). Per §12.2 MUST be classified Destructive + Prompt. Validators assert that impl's Tool Registry load-time check accepts this classification combination. Opposite test case: non_compliant_ephemeral_tool below, which the Runner MUST reject at load.",
+      "idempotency_retention_seconds": 0
+    },
+    {
+      "name": "non_compliant_ephemeral_tool",
+      "risk_class": "Mutating",
+      "default_control": "AutoAllow",
+      "description": "A tool that lacks dedupe support but is INCORRECTLY classified as Mutating/AutoAllow. The Runner's Tool Registry load-time validator MUST REJECT this tool with ToolPoolStale reason=idempotency-retention-insufficient per §12.2. Validators assert rejection via startup-failure subprocess harness.",
+      "idempotency_retention_seconds": 0
+    }
+  ]
+}

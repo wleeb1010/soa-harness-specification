@@ -1444,6 +1444,86 @@ The two caches MUST NOT share storage or key space. A tool idempotency hit does 
 3. Verify `tool_pool_hash` still resolves; see §11.3.
 4. For each `side_effects[i].phase`: replay `pending` with the recorded idempotency key; skip `committed`; run compensating actions for `inflight` whose tool supports it, else mark `compensated` with a `ResumeCompensationGap` note.
 
+#### 12.5.1 Session State Observability (Normative)
+
+**Rationale.** §12.1 defines the session-file schema, §12.2 defines bracket-persist semantics, §12.3 defines atomic writes, §12.5 defines resume. Every element is on-disk state, which means without an external observation surface the bracket-persist + atomic-write + resume-algorithm behaviors are Runner-self-attested. A conformance validator cannot verify `HR-04` (pending replays idempotently), `HR-05` (committed does NOT replay), `SV-SESS-03` (bracket observed for every event), or `SV-SESS-04` (replay same idempotency key) without a way to read the session's current state while the Runner is live. Filesystem access is not universally available (validator may be remote; containerized deployments mount `/sessions/` privately). This section defines the on-wire observation path.
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+GET /sessions/<session_id>/state
+```
+
+- **Transport:** HTTPS / TLS 1.3 on the public listener; loopback plain-HTTP permitted on Unix socket / named pipe (same rule as §10.3.1, §10.5.2, §10.5.3).
+- **Authentication:** session-scoped bearer with `sessions:read:<session_id>` scope (granted by §12.6 bootstrap by default alongside `permissions:resolve` + `audit:read`). `401`/`403` per the standard patterns.
+- **Rate limiting:** 120 requests/minute per bearer (higher than /permissions/decisions because state polls are idempotent and expected-common during crash-recovery debugging).
+
+**Response (200 OK).** JSON body conforming to `schemas/session-state-response.schema.json`:
+
+```json
+{
+  "session_id": "ses_...",
+  "format_version": "1.0",
+  "activeMode": "ReadOnly | WorkspaceWrite | DangerFullAccess",
+  "created_at": "<RFC 3339>",
+  "last_significant_event_at": "<RFC 3339>",
+  "workflow": {
+    "task_id": "...",
+    "status": "Planning | Executing | Optimizing | Handoff | Blocked | Succeeded | Failed | Cancelled",
+    "side_effects": [
+      { "tool": "...",
+        "idempotency_key": "...",
+        "phase": "pending | inflight | committed | compensated",
+        "args_digest": "sha256:...",
+        "result_digest": "sha256:..." | null,
+        "first_attempted_at": "<RFC 3339>",
+        "last_phase_transition_at": "<RFC 3339>"
+      }
+    ]
+  },
+  "counters": {},
+  "tool_pool_hash": "...",
+  "card_version": "...",
+  "runner_version": "1.0",
+  "generated_at": "<RFC 3339>"
+}
+```
+
+The body MUST reflect the current state of the session as it would appear if `resume_session` ran right now — i.e., the response is derived from the same persisted state that a crash-and-restart would read. Implementations SHOULD return the response from the in-memory representation synchronized with the last atomic-write flush; a Runner that returns a STALE snapshot (pre-flush in-memory state that hasn't hit disk yet) violates the not-a-side-effect contract because the validator's crash test could then observe different state than what a real crash would expose.
+
+**Other responses:**
+- `400 Bad Request` — session_id does not match the `^ses_[A-Za-z0-9]{16,}$` pattern
+- `401 / 403 / 429` — per standard auth + rate-limit rules
+- `404 Not Found` — `session_id` does not map to an active OR previously-persisted session
+- `503 Service Unavailable` — `/ready` is 503
+
+**Not-a-side-effect property (normative MUST).** A `GET /sessions/.../state` call MUST NOT:
+1. Advance any workflow state or transition any side-effect phase
+2. Append to `/audit/permissions.log` or any other audit sink
+3. Emit a StreamEvent
+4. Touch the session file on disk (read-only in-memory observation; implementations that need to sync from disk do so AT MOST once per request and treat it as a cache refresh, not a file mutation)
+
+**Conformance linkage.**
+- `SV-SESS-STATE-01` (new) — schema conformance of the response; correct fields populated for a session with known bracket-persist state
+- `HR-04` — validator drives a tool invocation, reads /state before the Runner commits the side-effect, asserts `phase=pending` with a populated `idempotency_key`; kills the Runner subprocess at that point; restarts; reads /state again; asserts `phase=committed` after replay (assuming tool's dedupe accepted the replay) or stays `pending` + `first_attempted_at` preserved if the tool refused
+- `HR-05` — same pattern but observation point is AFTER commit; kill; restart; assert `phase=committed` AND tool was not called a second time (observable via tool-side counter or an audit row only appearing once)
+- `SV-SESS-03` — observe every significant event hits `pending` first, then `committed` (never directly `committed` without a `pending` predecessor)
+- `SV-SESS-04` — replay observes the same `idempotency_key` value across the pre-kill and post-restart /state reads
+
+#### 12.5.2 Audit Sink Failure Simulation Hook (Normative — Testability)
+
+**Rationale.** §10.5.1's three-state degradation model (`healthy` → `degraded-buffering` → `unreachable-halt`) is triggered by external audit-sink reachability failures. In production those failures arise from network partitions, sink-side outages, or rate-limit rejections. A conformance validator running locally against an impl cannot reliably cause network partitions — `SV-PERM-19` would be untestable without a test-only knob.
+
+**Test hook (MUST accept in conformance mode).** Conformance-tested Runners MUST accept the environment variable:
+
+```
+SOA_RUNNER_AUDIT_SINK_FAILURE_MODE=<enum>
+```
+
+with values `healthy | degraded-buffering | unreachable-halt`. When set, the Runner behaves AS IF the sink were in the named state for state-machine-observation purposes, bypassing actual sink reachability checks. `SV-PERM-19` validator flips the env var across the three states (via subprocess restart, since env vars are read at boot) and asserts the corresponding Runner behaviors (buffering, 503-flip, StreamEvent emission) per §10.5.1.
+
+**Production guard:** same rule as §10.6.1's clock-injection test hook — the sink-failure env var MUST NOT be reachable by untrusted principals in production, and conformance-tested Runners SHOULD refuse to start with this env var set when bound to a non-loopback interface.
+
 ### 12.6 Session Bootstrap (Normative)
 
 **Rationale.** §12.1 defines the session file format and §12.5 defines resume, but the spec prior to v1.0 defined no surface for *creating* a new session. Session creation was implicit — "sessions exist" — which left two gaps: (a) operators and validators had no defined mechanism to obtain a session bearer for the observability endpoints (§10.3.1, §10.5.2), and (b) the session's bound `activeMode` (§10.3) had no mechanism for tightening from the Agent Card's declared maximum on a per-session basis. Both are closed here with a single first-class endpoint.

@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "94a9e350819333659f166255b71d6ae86ff7bc0dd5ec717e0ca2ba6e2e2f65e4",
+        "sha256": "ea9fdee4fa20ed4170da4b16d82d4620559075ab5535f3b352699badef970900",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "fdcd288c21458595a2ddb9c1e5bbb21c3a35f6bbd3b920f677088641ef1ced09",
+        "sha256": "b143ac2b3b083c39613641bd97573ef2f5b48e3a34efa288043fa165da8c8b3d",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -131,6 +131,12 @@
         "name": "session-bootstrap-response.schema.json",
         "path": "schemas/session-bootstrap-response.schema.json",
         "sha256": "bd9c335cba0edf7cf851fa431e6c06186ec814b9c7cc56efc80ae2abd9da56e3",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "session-state-response.schema.json",
+        "path": "schemas/session-state-response.schema.json",
+        "sha256": "4f216b01550f494e3a794606aa59ef17e05ddd59f664493359d0d4923660f2ba",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -563,6 +569,18 @@
         "name": "tools.json",
         "path": "test-vectors/tool-registry/tools.json",
         "sha256": "2f122dbf3e1a5deb0fb3c19e114d3590aa71d8f5cf035298b34da5c5a0f66c39",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/tool-registry-m2/README.md",
+        "sha256": "5dbc43ef34967ec44e97aed321420258940c1e595187b16419b9b37981a5990c",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "tools.json",
+        "path": "test-vectors/tool-registry-m2/tools.json",
+        "sha256": "83785cdec471baea1838bf6a0f38952a3d5e6cf10314e13ba4a9e90efe1243f6",
         "canonicalization": "JCS-RFC-8785"
       },
       {
