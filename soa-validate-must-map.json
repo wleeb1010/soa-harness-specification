@@ -53,7 +53,8 @@
     "SV-AUDIT-SINK": "Audit-sink event channel observability (§12.5.4).",
     "SV-MEM-STATE": "Memory state observability (§8.6).",
     "SV-BUD-PROJ": "Budget projection observability (§13.5).",
-    "SV-REG-OBS": "Tool Registry observability (§11.4)."
+    "SV-REG-OBS": "Tool Registry observability (§11.4).",
+    "SV-STR-OBS": "Minimum StreamEvent observability channel (§14.5)."
   },
   "tests": {
     "HR-01": {
@@ -62,7 +63,9 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "Destructive tool without Prompt → denied."
+      "summary": "Destructive tool without Prompt → denied.",
+      "implementation_milestone": "M3",
+      "milestone_reason": "M3 — destructive-tool-without-Prompt denial is a core §10.3 capability-lattice + §15 verification regression. Testable via existing /permissions/resolve + pinned Tool Registry fixtures shipped in M1."
     },
     "HR-02": {
       "name": "Budget exhaustion pre-call",
@@ -131,8 +134,8 @@
       "profile": "core+si",
       "severity": "critical",
       "summary": "Reject when training delta positive but holdout delta < −0.02.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — harness regression suite for M3-shipped subsystems (Memory/Budget/Stream/Hooks/Gateway)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
     },
     "HR-09": {
       "name": "SI marker escape",
@@ -170,7 +173,9 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "Tampered Card bytes → CardInvalid; Runner fails closed."
+      "summary": "Tampered Card bytes → CardInvalid; Runner fails closed.",
+      "implementation_milestone": "M1",
+      "milestone_reason": "M1 — Tampered Card JWS → CardInvalid; shipped via L-16 tampered-card fixture + validator V2-09 subprocess harness. Retroactive tag per L-33 rev 2."
     },
     "HR-13": {
       "name": "Tool Pool stale on resume",
@@ -188,7 +193,9 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "Any prev_hash tamper fails chain verification."
+      "summary": "Any prev_hash tamper fails chain verification.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 — Chain-tamper verification via /audit/records (L-15) + validator-side mutation check (V2-10). Retroactive tag per L-33 rev 2."
     },
     "HR-15": {
       "name": "Handoff auth",
@@ -197,8 +204,8 @@
       "profile": "core+handoff",
       "severity": "critical",
       "summary": "A2A handoff with invalid/expired JWT is rejected (-32002).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — harness regression suite for M3-shipped subsystems (Memory/Budget/Stream/Hooks/Gateway)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
     },
     "HR-16": {
       "name": "Docker profile",
@@ -207,8 +214,8 @@
       "profile": "core+si",
       "severity": "critical",
       "summary": "Task attempting seccomp-blocked syscall fails within container; HR-16 is SI-gated because §9.7 applies only to the self-improvement loop.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — harness regression suite for M3-shipped subsystems (Memory/Budget/Stream/Hooks/Gateway)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
     },
     "HR-17": {
       "name": "Memory degradation",
@@ -227,8 +234,8 @@
       "profile": "core",
       "severity": "moderate",
       "summary": "self_optimize() arg loosening Card is rejected with ConfigPrecedenceViolation.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — harness regression suite for M3-shipped subsystems (Memory/Budget/Stream/Hooks/Gateway)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
     },
     "SV-PRIN-01": {
       "name": "Lean single-agent baseline",
@@ -416,7 +423,9 @@
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "A2A JWT alg ∈ {EdDSA,ES256,RS256}; RS256 requires key size ≥ 3072; any other alg rejected with HandoffRejected(reason=bad-alg)."
+      "assertion": "A2A JWT alg ∈ {EdDSA,ES256,RS256}; RS256 requires key size ≥ 3072; any other alg rejected with HandoffRejected(reason=bad-alg).",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-A2A-11": {
       "name": "A2A signing-key discovery",
@@ -424,7 +433,9 @@
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "A2A JWT signing key matches either (a) the caller's Agent Card JWS signer kid (same trust anchor, same SPKI) or (b) the SPKI of the caller's mTLS client certificate with the x5t#S256 header present."
+      "assertion": "A2A JWT signing key matches either (a) the caller's Agent Card JWS signer kid (same trust anchor, same SPKI) or (b) the SPKI of the caller's mTLS client certificate with the x5t#S256 header present.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-A2A-12": {
       "name": "A2A jti replay cache",
@@ -432,7 +443,9 @@
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "Receiver rejects a repeated jti within exp+30s (= 330s) from first observation with HandoffRejected(reason=jti-replay); cache MAY be per-connection (mTLS) or per-(iss,aud) keyed."
+      "assertion": "Receiver rejects a repeated jti within exp+30s (= 330s) from first observation with HandoffRejected(reason=jti-replay); cache MAY be per-connection (mTLS) or per-(iss,aud) keyed.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-A2A-13": {
       "name": "A2A agent_card_etag drift",
@@ -440,7 +453,9 @@
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "Receiver fetches caller's Agent Card and compares its JWS digest to the presented agent_card_etag; mismatch emits CardVersionDrift and responds JSON-RPC error -32051; etag cached ≤ 60 s."
+      "assertion": "Receiver fetches caller's Agent Card and compares its JWS digest to the presented agent_card_etag; mismatch emits CardVersionDrift and responds JSON-RPC error -32051; etag cached ≤ 60 s.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-A2A-14": {
       "name": "A2A digest canonicalization",
@@ -448,7 +463,9 @@
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "messages_digest / workflow_digest / result_digest use form sha256:<64-hex-lowercase> where the hashed bytes are JCS-RFC-8785 canonical of the corresponding JSON object. Receiver recomputes and compares; mismatch → HandoffRejected(reason=digest-mismatch)."
+      "assertion": "messages_digest / workflow_digest / result_digest use form sha256:<64-hex-lowercase> where the hashed bytes are JCS-RFC-8785 canonical of the corresponding JSON object. Receiver recomputes and compares; mismatch → HandoffRejected(reason=digest-mismatch).",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-ENC-01": {
       "name": "UTF-8 no BOM",
@@ -687,8 +704,8 @@
       "profile": "core+si",
       "severity": "moderate",
       "assertion": "AGENTS.md re-read after accepted SI iteration.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-AGENTS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
     },
     "SV-AGENTS-07": {
       "name": "No mid-turn reload",
@@ -786,7 +803,9 @@
       "section_title": "program.md Schema",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Missing required H2 in program.md → rejected."
+      "assertion": "Missing required H2 in program.md → rejected.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-02": {
       "name": "program.md JWS required",
@@ -794,7 +813,9 @@
       "section_title": "program.md Schema",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "program.md.jws missing or invalid → iteration rejected."
+      "assertion": "program.md.jws missing or invalid → iteration rejected.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-03": {
       "name": "Markers required",
@@ -802,7 +823,9 @@
       "section_title": "agent.py Markers",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Missing EDITABLE/IMMUTABLE markers → rejected."
+      "assertion": "Missing EDITABLE/IMMUTABLE markers → rejected.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-04": {
       "name": "Immutable digest check",
@@ -810,7 +833,9 @@
       "section_title": "agent.py Markers",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "IMMUTABLE ADAPTER digest drift aborts iteration."
+      "assertion": "IMMUTABLE ADAPTER digest drift aborts iteration.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-05": {
       "name": "Benchmark mTLS auth",
@@ -818,7 +843,9 @@
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "benchmark_mcp_endpoint without mTLS rejected; missing scope → BenchmarkAuthFailed."
+      "assertion": "benchmark_mcp_endpoint without mTLS rejected; missing scope → BenchmarkAuthFailed.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-06": {
       "name": "Iteration fingerprint",
@@ -826,7 +853,9 @@
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "Fingerprint recorded and referenced in improvement.log."
+      "assertion": "Fingerprint recorded and referenced in improvement.log.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-07": {
       "name": "Holdout split stable",
@@ -834,7 +863,9 @@
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Training/holdout partition reproducible from iteration-id."
+      "assertion": "Training/holdout partition reproducible from iteration-id.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-08": {
       "name": "Acceptance strict-improve",
@@ -842,7 +873,9 @@
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "training_score == baseline → rejected (strict > required)."
+      "assertion": "training_score == baseline → rejected (strict > required).",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-09": {
       "name": "Stage-activate ordering",
@@ -850,7 +883,9 @@
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "pending.ptr → add_memory_note → activation.record → git fast-forward order enforced."
+      "assertion": "pending.ptr → add_memory_note → activation.record → git fast-forward order enforced.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-10": {
       "name": "Commit signed",
@@ -858,7 +893,9 @@
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "commit.gpgsign=true verified; unsigned commit rejected."
+      "assertion": "commit.gpgsign=true verified; unsigned commit rejected.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-11": {
       "name": "12b failure compensation",
@@ -866,7 +903,9 @@
       "section_title": "Abort, Rollback, and Recovery",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "add_memory_note succeeds, activation.record fails → delete_memory_note compensation."
+      "assertion": "add_memory_note succeeds, activation.record fails → delete_memory_note compensation.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-12": {
       "name": "Orphan replay",
@@ -874,7 +913,9 @@
       "section_title": "Abort, Rollback, and Recovery",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "Crash after 12c → resume replays 12d; 3 failures → SelfImprovementOrphaned."
+      "assertion": "Crash after 12c → resume replays 12d; 3 failures → SelfImprovementOrphaned.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-13": {
       "name": "Docker baseline applied",
@@ -882,7 +923,9 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Container launch includes seccomp=<profile>, no-new-privileges, user-namespace remapping. Disaggregated sub-tests SV-SI-19..SV-SI-26 assert each individual flag."
+      "assertion": "Container launch includes seccomp=<profile>, no-new-privileges, user-namespace remapping. Disaggregated sub-tests SV-SI-19..SV-SI-26 assert each individual flag.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-14": {
       "name": "Docker unavailable closed",
@@ -890,7 +933,9 @@
       "section_title": "Docker Unavailability",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Docker daemon down → DockerUnavailable, no host execution."
+      "assertion": "Docker daemon down → DockerUnavailable, no host execution.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-15": {
       "name": "Image digest-pinned",
@@ -898,7 +943,9 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Task with tag-only image reference rejected."
+      "assertion": "Task with tag-only image reference rejected.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-16": {
       "name": "results.tsv format",
@@ -906,7 +953,9 @@
       "section_title": "results.tsv Format",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Header verbatim; aggregation mean; fail/error count as 0.0."
+      "assertion": "Header verbatim; aggregation mean; fail/error count as 0.0.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-17": {
       "name": "Max iterations terminal",
@@ -914,7 +963,9 @@
       "section_title": "Abort, Rollback, and Recovery",
       "profile": "core+si",
       "severity": "minor",
-      "assertion": "max_iterations reached → SelfImprovementMaxIterations with best-so-far summary."
+      "assertion": "max_iterations reached → SelfImprovementMaxIterations with best-so-far summary.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-18": {
       "name": "program.md trust-anchor chain",
@@ -922,7 +973,9 @@
       "section_title": "program.md Schema",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "program.md.jws signer chains to security.trustAnchors; foreign issuer → iteration rejected."
+      "assertion": "program.md.jws signer chains to security.trustAnchors; foreign issuer → iteration rejected.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-19": {
       "name": "--read-only rootfs",
@@ -930,7 +983,9 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Container launched with --read-only; write to rootfs returns EROFS."
+      "assertion": "Container launched with --read-only; write to rootfs returns EROFS.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-20": {
       "name": "--cap-drop=ALL",
@@ -938,7 +993,9 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "All capabilities dropped; CAP_SYS_ADMIN operations fail."
+      "assertion": "All capabilities dropped; CAP_SYS_ADMIN operations fail.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-21": {
       "name": "User-namespace remap",
@@ -946,7 +1003,9 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "--user=65534:65534 with user-namespace remap; host UID/GID 0 never appears inside container."
+      "assertion": "--user=65534:65534 with user-namespace remap; host UID/GID 0 never appears inside container.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-22": {
       "name": "--pids-limit enforced",
@@ -954,7 +1013,9 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "Container fork bomb hits task.resources.pids limit; fails to exhaust host."
+      "assertion": "Container fork bomb hits task.resources.pids limit; fails to exhaust host.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-23": {
       "name": "No swap",
@@ -962,7 +1023,9 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "--memory-swap equals --memory; no swap usage observable."
+      "assertion": "--memory-swap equals --memory; no swap usage observable.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-24": {
       "name": "docker.sock not mounted",
@@ -970,7 +1033,9 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "/var/run/docker.sock does not appear in container mount table."
+      "assertion": "/var/run/docker.sock does not appear in container mount table.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-25": {
       "name": "Env scrubbed",
@@ -978,7 +1043,9 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Host env not visible in container; only task.json.env entries pass through."
+      "assertion": "Host env not visible in container; only task.json.env entries pass through.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-26": {
       "name": "Mount allowlist + watchdog",
@@ -986,7 +1053,9 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Only /inputs (ro) and /output (rw) mounted; wall-clock timeout SIGKILLs container at task.resources.wall_clock_seconds."
+      "assertion": "Only /inputs (ro) and /output (rw) mounted; wall-clock timeout SIGKILLs container at task.resources.wall_clock_seconds.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-27": {
       "name": "Host unprivileged userns disabled",
@@ -994,7 +1063,9 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Before launching any benchmark container, Runner verifies one of: sysctl user.max_user_namespaces=0, sysctl kernel.unprivileged_userns_clone=0, or an AppArmor/SELinux policy that denies userns_create. Absence raises HostHardeningInsufficient and aborts."
+      "assertion": "Before launching any benchmark container, Runner verifies one of: sysctl user.max_user_namespaces=0, sysctl kernel.unprivileged_userns_clone=0, or an AppArmor/SELinux policy that denies userns_create. Absence raises HostHardeningInsufficient and aborts.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-28": {
       "name": "clone3 allowed, flags defended",
@@ -1002,7 +1073,9 @@
       "section_title": "clone3 Policy",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "clone3 is permitted by the seccomp profile; a process attempting clone3(CLONE_NEWUSER) inside the container fails with EPERM because the host sysctl denies unprivileged user-namespace creation."
+      "assertion": "clone3 is permitted by the seccomp profile; a process attempting clone3(CLONE_NEWUSER) inside the container fails with EPERM because the host sysctl denies unprivileged user-namespace creation.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-29": {
       "name": "Manifest JWS verify + digest",
@@ -1010,7 +1083,9 @@
       "section_title": "Seccomp Profile and Release Manifest",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Runner fetches release manifest, verifies JWS against publisher_kid, recomputes SHA-256 of JCS-canonicalized soa-harness-profile-v1.json bytes, compares to manifest. Mismatch → ManifestDigestMismatch; container launch refused."
+      "assertion": "Runner fetches release manifest, verifies JWS against publisher_kid, recomputes SHA-256 of JCS-canonicalized soa-harness-profile-v1.json bytes, compares to manifest. Mismatch → ManifestDigestMismatch; container launch refused.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-30": {
       "name": "Manifest schema validates",
@@ -1018,7 +1093,9 @@
       "section_title": "Seccomp Profile and Release Manifest",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "Retrieved manifest validates against release-manifest.schema.json; additionalProperties=false."
+      "assertion": "Retrieved manifest validates against release-manifest.schema.json; additionalProperties=false.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-31": {
       "name": "self_optimize args defaulted from Card",
@@ -1026,7 +1103,9 @@
       "section_title": "SelfOptimizer Primitive",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Every runner.self_optimize() argument (safety_gates, docker_isolation, stage_activate, git_commit_policy, etc.) has a corresponding field in Agent Card self_improvement object; invocation without Card default sources fails precedence."
+      "assertion": "Every runner.self_optimize() argument (safety_gates, docker_isolation, stage_activate, git_commit_policy, etc.) has a corresponding field in Agent Card self_improvement object; invocation without Card default sources fails precedence.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-SI-32": {
       "name": "clone arg filter blocks NEWNS",
@@ -1034,7 +1113,9 @@
       "section_title": "clone3 Policy",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "clone(CLONE_NEWNS) from inside a Harbor benchmark container fails with EPERM (seccomp clone-arg filter blocks namespace-creation flags on x86_64/aarch64/riscv64)."
+      "assertion": "clone(CLONE_NEWNS) from inside a Harbor benchmark container fails with EPERM (seccomp clone-arg filter blocks namespace-creation flags on x86_64/aarch64/riscv64).",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
     },
     "SV-AGENTS-08": {
       "name": "AGENTS.md entrypoint matches Card",
@@ -1653,8 +1734,8 @@
       "profile": "core",
       "severity": "critical",
       "assertion": "Runner serves /stream/v1/{session_id} over TLS 1.3 with mTLS; bearer scope stream:read:<session_id> required; unauthenticated or unsigned requests rejected.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — requires §14.3 full SSE transport with mTLS + bearer + Last-Event-ID resume semantics. M3 ships §14.5 polling-friendly minimum; full SSE transport is M4."
     },
     "SV-STR-13": {
       "name": "Last-Event-ID resume",
@@ -1663,8 +1744,8 @@
       "profile": "core",
       "severity": "critical",
       "assertion": "Reconnecting client sends Last-Event-ID; Runner resumes from next sequence or returns 409 {error:\"ResumeGap\"} when past buffer horizon.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — requires §14.3 full SSE transport with mTLS + bearer + Last-Event-ID resume semantics. M3 ships §14.5 polling-friendly minimum; full SSE transport is M4."
     },
     "SV-STR-14": {
       "name": "Stream backpressure",
@@ -1673,8 +1754,8 @@
       "profile": "core",
       "severity": "critical",
       "assertion": "Client > 10000 events behind head → Runner emits terminal SSE event `event: soa-terminate` with `data: {\"error\":\"ConsumerLagging\"}` and then closes the underlying HTTP response (SSE has no WebSocket-style close frame); buffer floor 50k/1h enforced; ceiling 500k/24h enforced.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — requires §14.3 full SSE transport with mTLS + bearer + Last-Event-ID resume semantics. M3 ships §14.5 polling-friendly minimum; full SSE transport is M4."
     },
     "SV-STR-15": {
       "name": "Stream event mapping",
@@ -1782,7 +1863,9 @@
       "section_title": "Endpoint and Transport",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "TLS 1.3 with mTLS; peer cert not in trust anchors → TrustAnchorMismatch."
+      "assertion": "TLS 1.3 with mTLS; peer cert not in trust anchors → TrustAnchorMismatch.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-A2A-02": {
       "name": "JWT validation",
@@ -1790,7 +1873,9 @@
       "section_title": "Endpoint and Transport",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "Missing/expired/mis-aud JWT → AuthFailed (-32002)."
+      "assertion": "Missing/expired/mis-aud JWT → AuthFailed (-32002).",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-A2A-03": {
       "name": "agent.describe",
@@ -1798,7 +1883,9 @@
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "Returns signed Card bytes + JWS."
+      "assertion": "Returns signed Card bytes + JWS.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-A2A-04": {
       "name": "handoff.offer accept",
@@ -1806,7 +1893,9 @@
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "Well-formed offer accepted with {accept:true}."
+      "assertion": "Well-formed offer accepted with {accept:true}.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-A2A-05": {
       "name": "handoff.offer reject",
@@ -1814,7 +1903,9 @@
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "CapabilityMismatch returns -32003."
+      "assertion": "CapabilityMismatch returns -32003.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-A2A-06": {
       "name": "handoff.transfer success",
@@ -1822,7 +1913,9 @@
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "Destination starts new session with workflow.status=Handoff."
+      "assertion": "Destination starts new session with workflow.status=Handoff.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-A2A-07": {
       "name": "State-transfer scope",
@@ -1830,7 +1923,9 @@
       "section_title": "State Transfer Scope",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "Memory/audit/session-path NOT transferred; billing_tag + messages ARE."
+      "assertion": "Memory/audit/session-path NOT transferred; billing_tag + messages ARE.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-A2A-08": {
       "name": "HandoffBusy while Optim",
@@ -1838,7 +1933,9 @@
       "section_title": "Cross-Interaction Matrix",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "Incoming handoff during Optimizing → -32050."
+      "assertion": "Incoming handoff during Optimizing → -32050.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-A2A-09": {
       "name": "Error code set",
@@ -1846,7 +1943,9 @@
       "section_title": "Errors",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "Error codes in {-32000..-32003,-32050..-32052,-32060}."
+      "assertion": "Error codes in {-32000..-32003,-32050..-32052,-32060}.",
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
     },
     "SV-GOV-01": {
       "name": "Version advertised",
@@ -2005,8 +2104,8 @@
       "profile": "core+si",
       "severity": "critical",
       "assertion": "Holdout delta < −0.02 → iteration rejected.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOOD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
     },
     "SV-GOOD-02": {
       "name": "Immutable /tasks/",
@@ -2015,8 +2114,8 @@
       "profile": "core+si",
       "severity": "critical",
       "assertion": "Meta-agent diff touching /tasks/ → ImmutableTargetEdit.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOOD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
     },
     "SV-GOOD-03": {
       "name": "Score ceiling saturation",
@@ -2025,8 +2124,8 @@
       "profile": "core+si",
       "severity": "moderate",
       "assertion": "training_score ≥ 0.98 × 3 → SelfImprovementSaturation.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOOD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
     },
     "SV-GOOD-04": {
       "name": "Novelty quota enforced",
@@ -2035,8 +2134,8 @@
       "profile": "core+si",
       "severity": "moderate",
       "assertion": "10 accepted iterations with unchanged tasks_fingerprint → SelfImprovementSaturation(NoveltyQuotaUnmet).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOOD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
     },
     "SV-GOOD-05": {
       "name": "Human-sign resumes",
@@ -2045,8 +2144,8 @@
       "profile": "core+si",
       "severity": "moderate",
       "assertion": "Only non-meta-agent signed commit to /tasks/ resumes the loop.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOOD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
     },
     "SV-GOOD-06": {
       "name": "Fingerprint audited",
@@ -2055,8 +2154,8 @@
       "profile": "core+si",
       "severity": "moderate",
       "assertion": "Iteration fingerprint recorded in audit chain and improvement log.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOOD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
     },
     "SV-GOOD-07": {
       "name": "tasks_fingerprint reproducible",
@@ -2065,15 +2164,17 @@
       "profile": "core+si",
       "severity": "critical",
       "assertion": "Given the reference test-vectors/tasks-fingerprint/ tree, a conformant Runner produces the published tasks_fingerprint string byte-for-byte: JCS of sorted-by-task_id array of {task_id, task_json_sha256 (JCS of task.json), dockerfile_sha256 (raw bytes), entrypoint_sha256 (raw bytes or 'absent')}, then SHA-256.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOOD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
     },
     "SV-SESS-12": {
       "name": "Replay-cache / tool-idempotency disjointness",
       "section": "§12.2",
       "profile": "core",
       "assertion": "UI §11.4.1 replay cache and §12.2 tool idempotency are implemented as disjoint subsystems with independent metrics.",
-      "status": "reserved"
+      "status": "reserved",
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — asserts §12.2 tool idempotency + UI §11.4.1 prompt-nonce replay cache are disjoint mechanisms. §12.2 ships M1 but UI §11.4.1 infrastructure requires Gateway (M4)."
     },
     "SV-GOV-12": {
       "name": "Upstream A2A major-version wire-compatibility detection",
@@ -2090,7 +2191,9 @@
       "section_title": "Audit Tail Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /audit/tail returns 200 with body conforming to schemas/audit-tail-response.schema.json. On empty log, this_hash equals the literal \"GENESIS\" and last_record_timestamp is omitted. On non-empty log, this_hash is 64-char lowercase hex and matches the most recent record's this_hash. Reading MUST NOT append a meta-record — the endpoint is pure query."
+      "assertion": "GET /audit/tail returns 200 with body conforming to schemas/audit-tail-response.schema.json. On empty log, this_hash equals the literal \"GENESIS\" and last_record_timestamp is omitted. On non-empty log, this_hash is 64-char lowercase hex and matches the most recent record's this_hash. Reading MUST NOT append a meta-record — the endpoint is pure query.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 — shipped and verified green during M2 execution. Retroactive tagging per L-33 rev 2 (plan-evaluator finding F-07)."
     },
     "SV-AUDIT-RECORDS-01": {
       "name": "Audit records observability response + pagination",
@@ -2098,7 +2201,9 @@
       "section_title": "Audit Records Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /audit/records?after=<id>&limit=<n> returns 200 with body conforming to schemas/audit-records-response.schema.json. Records are in chain order earliest-to-latest. has_more transitions correctly as the caller paginates with next_after. Reading MUST NOT append a meta-record."
+      "assertion": "GET /audit/records?after=<id>&limit=<n> returns 200 with body conforming to schemas/audit-records-response.schema.json. Records are in chain order earliest-to-latest. has_more transitions correctly as the caller paginates with next_after. Reading MUST NOT append a meta-record.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 — shipped and verified green during M2 execution. Retroactive tagging per L-33 rev 2 (plan-evaluator finding F-07)."
     },
     "SV-AUDIT-RECORDS-02": {
       "name": "Audit chain integrity",
@@ -2106,7 +2211,9 @@
       "section_title": "Audit Records Observability + Audit Trail",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Validator reads all records via /audit/records pagination, verifies records[0].prev_hash == \"GENESIS\" and for all i > 0, records[i].prev_hash == records[i-1].this_hash. Any mismatch fails the assertion."
+      "assertion": "Validator reads all records via /audit/records pagination, verifies records[0].prev_hash == \"GENESIS\" and for all i > 0, records[i].prev_hash == records[i-1].this_hash. Any mismatch fails the assertion.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 — shipped and verified green during M2 execution. Retroactive tagging per L-33 rev 2 (plan-evaluator finding F-07)."
     },
     "SV-SESS-BOOT-01": {
       "name": "Session bootstrap response + tighten-only",
@@ -2114,7 +2221,9 @@
       "section_title": "Session Bootstrap",
       "profile": "core",
       "severity": "critical",
-      "assertion": "POST /sessions with requested_activeMode ≤ Agent Card's permissions.activeMode returns 201 with body conforming to schemas/session-bootstrap-response.schema.json. granted_activeMode equals requested_activeMode. session_id matches the §12.1 session-file pattern. session_bearer is opaque and authorizes /stream, /permissions/resolve, /audit/tail for exactly this session."
+      "assertion": "POST /sessions with requested_activeMode ≤ Agent Card's permissions.activeMode returns 201 with body conforming to schemas/session-bootstrap-response.schema.json. granted_activeMode equals requested_activeMode. session_id matches the §12.1 session-file pattern. session_bearer is opaque and authorizes /stream, /permissions/resolve, /audit/tail for exactly this session.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 — shipped and verified green during M2 execution. Retroactive tagging per L-33 rev 2 (plan-evaluator finding F-07)."
     },
     "SV-SESS-BOOT-02": {
       "name": "Session bootstrap rejects looser-than-card request",
@@ -2122,7 +2231,9 @@
       "section_title": "Session Bootstrap",
       "profile": "core",
       "severity": "critical",
-      "assertion": "POST /sessions with requested_activeMode > Agent Card's permissions.activeMode returns 403 with reason=ConfigPrecedenceViolation. Agent Card activeMode is the per-deployment upper bound; session activeMode is tighten-only from that bound."
+      "assertion": "POST /sessions with requested_activeMode > Agent Card's permissions.activeMode returns 403 with reason=ConfigPrecedenceViolation. Agent Card activeMode is the per-deployment upper bound; session activeMode is tighten-only from that bound.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 — shipped and verified green during M2 execution. Retroactive tagging per L-33 rev 2 (plan-evaluator finding F-07)."
     },
     "SV-PERM-20": {
       "name": "Permission decision recording",
@@ -2197,6 +2308,42 @@
       "profile": "core",
       "severity": "critical",
       "assertion": "GET /tools/registered returns 200 with body conforming to schemas/tools-registered-response.schema.json. Each entry carries registration_source ∈ {static-fixture, mcp-dynamic}. registry_version is sha256 of JCS(tools[]). Byte-identity excludes generated_at.",
+      "implementation_milestone": "M3"
+    },
+    "SV-MEM-STATE-02": {
+      "name": "Memory state not-a-side-effect invariant",
+      "section": "§8.6",
+      "section_title": "Memory State Observability",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "Two successive GET /memory/state?session_id=<sid> calls against a quiescent session return byte-identical bodies when generated_at is excluded from the comparison. Consolidation not triggered, aging clocks unchanged, no audit rows, no StreamEvents.",
+      "implementation_milestone": "M3"
+    },
+    "SV-BUD-PROJ-02": {
+      "name": "Budget projection not-a-side-effect invariant",
+      "section": "§13.5",
+      "section_title": "Budget Projection Observability",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "Two successive GET /budget/projection?session_id=<sid> calls against a quiescent session return byte-identical bodies when generated_at is excluded. Token counters unchanged, no cancellation fired, no audit rows.",
+      "implementation_milestone": "M3"
+    },
+    "SV-REG-OBS-02": {
+      "name": "Tool Registry not-a-side-effect invariant",
+      "section": "§11.4",
+      "section_title": "Dynamic Registration Observability",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "Two successive GET /tools/registered calls in a quiescent registry return byte-identical bodies when generated_at is excluded. registry_version unchanged between reads.",
+      "implementation_milestone": "M3"
+    },
+    "SV-STR-OBS-01": {
+      "name": "Minimum StreamEvent observability channel",
+      "section": "§14.5",
+      "section_title": "Minimum StreamEvent Observability Channel",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "GET /events/recent?session_id=<sid>&after=<id>&limit=<n> returns 200 with body conforming to schemas/events-recent-response.schema.json. Events carry event_id + sequence + type (∈ 25-value enum) + session_id + emitted_at. Pagination via next_after/has_more. Byte-identity excludes generated_at. Not-a-side-effect on reads.",
       "implementation_milestone": "M3"
     }
   },
@@ -2475,13 +2622,19 @@
       "SV-AUDIT-SINK-EVENTS-01"
     ],
     "SV-MEM-STATE": [
-      "SV-MEM-STATE-01"
+      "SV-MEM-STATE-01",
+      "SV-MEM-STATE-02"
     ],
     "SV-BUD-PROJ": [
-      "SV-BUD-PROJ-01"
+      "SV-BUD-PROJ-01",
+      "SV-BUD-PROJ-02"
     ],
     "SV-REG-OBS": [
-      "SV-REG-OBS-01"
+      "SV-REG-OBS-01",
+      "SV-REG-OBS-02"
+    ],
+    "SV-STR-OBS": [
+      "SV-STR-OBS-01"
     ]
   },
   "must_coverage": {
@@ -3358,7 +3511,11 @@
           "SV-AUDIT-SINK-EVENTS-01",
           "SV-MEM-STATE-01",
           "SV-BUD-PROJ-01",
-          "SV-REG-OBS-01"
+          "SV-REG-OBS-01",
+          "SV-MEM-STATE-02",
+          "SV-BUD-PROJ-02",
+          "SV-REG-OBS-02",
+          "SV-STR-OBS-01"
         ]
       },
       {

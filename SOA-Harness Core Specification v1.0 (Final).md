@@ -2012,6 +2012,49 @@ This endpoint is the primary consumer surface for UI Gateways (see UI Integratio
 - `observability.requiredResourceAttrs` are REQUIRED; missing → refuse to start.
 - OTel exporter unavailable: the Runner MUST buffer up to 10,000 spans then drop with `ObservabilityBackpressure`. The Runner MUST NOT halt.
 
+### 14.5 Minimum StreamEvent Observability Channel (Normative — M3 addition)
+
+**Rationale.** §14.1–§14.4 define the StreamEvent closed enum, per-type payload schemas, SSE transport at `/stream/v1/{session_id}`, and OTel mapping. Full SSE transport (§14.3) is M4 scope. Many conformance tests (`SV-STR-01..04`, `SV-STR-09/10/11/15`) need an observation surface for StreamEvents that DON'T require the full SSE pipeline — they just need to READ emitted events. This section defines a polling-friendly minimum observability channel that parallels §12.5.4 (audit-sink events) but scoped to the full StreamEvent enum.
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+GET /events/recent?session_id=<session_id>&after=<event_id>&limit=<n>
+```
+
+- **Transport, auth, rate-limit:** `sessions:read:<session_id>` scope; 120 rpm per bearer; TLS 1.3 / loopback plain.
+- **Response schema:** `schemas/events-recent-response.schema.json`.
+- **Response body (200):**
+
+```json
+{
+  "events": [
+    { "event_id": "evt_...",
+      "sequence": 42,
+      "type": "<one of 25 §14.1 closed enum>",
+      "session_id": "ses_...",
+      "emitted_at": "<RFC 3339>",
+      "workflow_state_id": "...",
+      "payload": { /* per §14.1.1 payload schema for the type */ }
+    }
+  ],
+  "next_after": "evt_...",
+  "has_more": false,
+  "runner_version": "1.0",
+  "generated_at": "<RFC 3339>"
+}
+```
+
+Pagination same pattern as `/audit/records` (§10.5.3). Byte-identity excludes `generated_at` and the `generated_at`-analog timestamps inside event payloads where the timestamp is Runner-wall-clock rather than deterministic (e.g., `emitted_at` MAY vary across re-reads if the Runner re-synthesizes from a buffer, but stored `sequence` + `event_id` MUST NOT change).
+
+**Relationship to §14.3 SSE transport.** When §14.3 SSE ships (M4), both channels coexist. Clients preferring push use `/stream/v1/{session_id}`; polling-friendly clients (including `soa-validate`) use `/events/recent`. Events emitted to either channel carry identical `event_id` + `sequence`; cross-channel ordering MUST be deterministic (a sequence value appears at most once in either channel for a session).
+
+**Relationship to §12.5.4 audit-sink-events channel.** §12.5.4 is narrower — returns only the three `AuditSink*` state-transition events, not the full 25-type enum. §14.5 subsumes §12.5.4 for conformance purposes (a validator polling `/events/recent?type=AuditSinkDegraded,...` gets the same data as `/audit/sink-events`). §12.5.4 is retained for compatibility with M2-era validators that bound to it before §14.5 shipped.
+
+**Not-a-side-effect (MUST).** Reading `/events/recent` MUST NOT advance state, emit new events, or write audit rows.
+
+**Conformance linkage.** `SV-STR-OBS-01` (new) — schema + pagination + not-a-side-effect + full-enum coverage. SV-STR-01/02/03/04/09/10/11/15 consume this endpoint for their assertions. SV-STR-12/13/14 remain M4 (require §14.3 full SSE transport with Last-Event-ID / terminal SSE semantics).
+
 ---
 
 ## 15. Verification & Hooks

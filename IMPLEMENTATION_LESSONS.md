@@ -285,6 +285,59 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Impl impact:** zero. Impl's current emission is schema-valid after the update. SV-PERM-20 + SV-PERM-21 flip fail → pass on validator's next run against a pin-bumped impl.
 - **Pattern observation:** impl shipping a semantically-correct addition ahead of a matching schema update is the same pattern as L-26 (400 vs 403 error-code disagreement). Both times impl was right; spec caught up. This is the three-repo architecture's legitimate friction — impl iterates faster than the pinned spec, validator catches the drift, spec ratifies. The friction itself is a feature.
 
+### L-33 rev 2 — M3 kickoff post-evaluator resolution `[normative, in-spec @ <this-commit>]`
+
+Plan-evaluator subagent (run against the original L-33 kickoff at commit `00c23c9`) flagged 15 findings + 10 structural challenges. All 25 resolved in this rev 2 commit.
+
+**Spec additions this rev:**
+- **§14.5 Minimum StreamEvent Observability Channel (NEW).** `GET /events/recent?session_id=<sid>&after=<event_id>&limit=<n>` — polling-friendly observability for the full §14.1 25-type StreamEvent enum. Schema: `schemas/events-recent-response.schema.json`. Coexists with §14.3 SSE transport (M4); subsumes §12.5.4 `/audit/sink-events` for conformance. Resolves F-01 (kickoff prose falsely claimed §12.5.4 covered SV-STR; §14.5 is the real answer).
+
+**Must-map retags (net: M3 drops 155 → 145; M4 gains 4; M5 gains 12):**
+
+| Test(s) | From | To | Reason |
+|---|---|---|---|
+| HR-08, HR-18, SV-AGENTS-06, SV-GOOD-01..07 | M3 | **M5** | Depend on §9 Self-Improvement runtime (M5-deferred). Evaluator F-03/F-04. |
+| HR-16 | M3 | **M5** | Depends on §9.7 seccomp runtime. F-05. |
+| HR-15 | M3 | **M5** | Depends on §17 A2A Handoff (M5-deferred). F-02. |
+| SV-STR-12, SV-STR-13, SV-STR-14 | M3 | **M4** | Require §14.3 full SSE transport with Last-Event-ID / terminal-SSE semantics. §14.5 polling channel is not sufficient. F-01. |
+| SV-SESS-12 | UNTAGGED | **M4** | Tests §12.2 ↔ UI §11.4.1 relationship; UI §11.4.1 requires Gateway (M4). F-07. |
+| HR-01 | UNTAGGED | **M3** | Core §10.3 destructive-without-Prompt regression. F-06 / F-14 (was silently UNTAGGED; risk-class mismatch with §9/§17 deferrals). |
+| SV-AUDIT-TAIL-01, SV-AUDIT-RECORDS-01, SV-AUDIT-RECORDS-02, SV-SESS-BOOT-01, SV-SESS-BOOT-02 | UNTAGGED | **M2 (retroactive)** | Already shipped + passing during M2. F-07 catalog-tidying. |
+| HR-12 | UNTAGGED | **M1 (retroactive)** | Tampered Card test; shipped via L-16 + validator V2-09. |
+| HR-14 | UNTAGGED | **M2 (retroactive)** | Chain-tamper; shipped via L-15 /audit/records + validator V2-10. |
+| SV-SI-01..32 | UNTAGGED | **M5** (explicit) | §9 Self-Improvement. Was "UNTAGGED = M5 by convention"; now explicit. |
+| SV-A2A-10..23 | UNTAGGED | **M5** (explicit) | §17 A2A Handoff. Was "UNTAGGED = M5 by convention"; now explicit. |
+
+**Four new test IDs:**
+- `SV-MEM-STATE-02` — memory-state byte-identity not-a-side-effect invariant (F-12)
+- `SV-BUD-PROJ-02` — budget projection byte-identity invariant (F-12)
+- `SV-REG-OBS-02` — tool registry byte-identity invariant (F-12)
+- `SV-STR-OBS-01` — §14.5 channel schema + pagination + not-a-side-effect (F-01)
+
+**Final milestone tally (230 total):** M1: 1 retroactive · M2: 22 · M3: 145 · M4: 4 · M5: 58. Zero UNTAGGED.
+
+**M3 skip budget (resolves F-09):** target 120 green, M3-tagged 145 → 25-test skip budget. Expected skip classes at M3 close:
+- SV-STR transport-adjacent tests that turn out to need real §14.3 SSE after all (e.g., SV-STR-04 CrashEvent-last semantics): up to 5
+- HR-09/HR-10/HR-11 precedence-rejection tests if they prove vector-only (can't be exercised live): up to 3
+- UI-straddler tests: up to 10 (any SV-* test whose assertion turns out to depend on Gateway primitives M3 doesn't ship)
+- Platform-specific guards (POSIX-only, Windows-only): up to 3
+- Explicit defer-during-execution: up to 4
+
+If actual skip count exceeds 25, raise to user before sibling plans proceed to Week 3.
+
+**HR-unblock mapping (resolves F-11, F-09):**
+
+| Endpoint | Unblocks |
+|---|---|
+| §8.6 `GET /memory/state` | SV-MEM-01..08, SV-MEM-STATE-01/02, HR-17 |
+| §11.4 `GET /tools/registered` | SV-REG-01..05, SV-REG-OBS-01/02, HR-13 |
+| §13.5 `GET /budget/projection` | SV-BUD-01..07, SV-BUD-PROJ-01/02, HR-02, HR-03, HR-06 |
+| §14.5 `GET /events/recent` | SV-STR-01..11/15/16, SV-STR-OBS-01, HR-03 mid-stream cancel observation |
+
+**Version-policy note (resolves F-15):** these §8.6/§11.4/§13.5/§14.5 additions are normative feature extensions to v1.0. Per §19.4 interpretation in this project's pre-Final-consumers phase: v1.0 is treated as still-mutating until the first external conformance claim ships (§18 "SOA-Harness v1.0 Reference Implementation" label). Additions that are strictly additive (new endpoints with no breaking changes to existing endpoints, new test IDs, new schemas) roll into v1.0 errata. Once the reference-impl label attaches, subsequent normative additions become v1.1 scope and v1.0 receives only breakage-fix amendments. Adopters should read the MANIFEST for the list of shipped observability endpoints — all §X.Y Observability subsections added post-L-27 are discoverable via the MANIFEST supplementary_artifacts list for their schemas.
+
+**Sibling plan authoring (resolves F-13):** M3 sibling plans at `soa-harness-impl/docs/plans/m3.md` + `soa-validate/docs/plans/m3.md` follow in the next commit wave (this session or next). Spec-kickoff is necessary but not sufficient — plans sequence the 145 tests across weeks and identify which impl surfaces each requires.
+
 ### L-33 — M3 kickoff: Memory/Budget/Registry observability + bulk milestone tagging `[normative, in-spec @ <this-commit>]`
 
 - **Surfaced:** 2026-04-21 · M2 close · user approval to scope M3 at full 120/150 Core target, single bundled commit.
