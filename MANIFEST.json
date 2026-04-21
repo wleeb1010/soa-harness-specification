@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "ff96da0f8d467f9b20088f897acce2916bcfe474387c670360713d83b868502b",
+        "sha256": "70c74e617f8adb734e0517ef236ada062a225a18578514425e68536c5478f4a8",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "9eb4aa99fbad7eb68af13327abd668192b5c05c03d4b07d404e0582ea0f22dd1",
+        "sha256": "d35d1de7284ea4edae003c5f93afa977bc2b84a31ec577716221ec2b18529d45",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -104,6 +104,18 @@
         "canonicalization": "JCS-RFC-8785"
       },
       {
+        "name": "permission-decision-request.schema.json",
+        "path": "schemas/permission-decision-request.schema.json",
+        "sha256": "8274dbda666f565dcbe2d0a6006016bee08752c9455079056ea09d5a0d27da06",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "permission-decision-response.schema.json",
+        "path": "schemas/permission-decision-response.schema.json",
+        "sha256": "a8dee8a02d16c1df46532e1b9febf9310c46853d34a2a084c43f76e15ba79191",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
         "name": "permissions-resolve-response.schema.json",
         "path": "schemas/permissions-resolve-response.schema.json",
         "sha256": "0d6e1a7ee350358997f31173947d84f61d490817b3a5fbc7e717450e463f1553",
@@ -124,7 +136,7 @@
       {
         "name": "session.schema.json",
         "path": "schemas/session.schema.json",
-        "sha256": "7a20ac18b90ef2b60df4ba319e934325f10773539b77f6a48131bdb78ecba1ce",
+        "sha256": "c4eaebd4acef41f724392479fcdb0b97ce98688528a85ea037ff56119170722a",
         "canonicalization": "JCS-RFC-8785"
       },
       {

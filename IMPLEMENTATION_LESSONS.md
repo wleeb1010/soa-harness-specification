@@ -145,6 +145,20 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Surfaced:** 2026-04-20 · Week 3 day 2 — validator reported the card fixture in use declares `activeMode: ReadOnly`. §12.6 session bootstrap tightens-only from the card's declared maximum, so validator could only exercise `ReadOnly`, not the full `SV-PERM-01` sweep across all three capability levels.
 - **Root-cause fix:** added `test-vectors/conformance-card/agent-card.json` — a pinned Agent Card TEMPLATE declaring `activeMode: DangerFullAccess`. Impl consumes via `RUNNER_CARD_FIXTURE=<path>`; substitutes only the `security.trustAnchors[0].spki_sha256` placeholder with the Runner's actual key's SPKI at load; signs with runtime key; serves at the spec-defined endpoints. Validator now creates three sessions (ReadOnly, WorkspaceWrite, DangerFullAccess) via §12.6 against this card and exercises the 24-cell Tool Registry × activeMode matrix end-to-end. Fixture deliberately disables optional feature surfaces (self_improvement, memory, policyEndpoint) to keep the matrix deterministic.
 
+### L-19 — Permission decision recording endpoint `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · second plan-evaluator pass on the impl plan (finding F-03/F-04/F-07). §10.3.1 `/permissions/resolve` is explicitly not-a-side-effect, meaning queries never produce audit records. In M1 scope the impl has no agent loop, no MCP-driven tool invocations, and therefore no other mechanism that drives permission decisions. Audit chain would stay at GENESIS forever — `SV-AUDIT-RECORDS-01/02` and `HR-14` (chain integrity + tamper detection) could not be exercised.
+- **Root-cause fix:** new subsection §10.3.2 **Permission Decision Recording (Normative)** — `POST /permissions/decisions` takes `{tool, session_id, args_digest, pda?}`, drives §10.3 steps 1–5 (resolver + dispatch), writes the audit record per §10.5, and returns `{decision, audit_record_id, audit_this_hash, handler_accepted, ...}`. Distinct scope class (`permissions:decide:<session_id>`) from the resolve endpoint; session bootstrap MUST explicitly opt-in via `request_decide_scope: true`. Forgery-resistant: endpoint computes decision internally from §10.3 steps, ignores any client-supplied override; PDA mismatches with resolver output return 403 `pda-decision-mismatch`.
+- **Why not a test hook:** operators legitimately need this endpoint for decision replay + incident investigation ("run this decision again and show me the full trace + audit record"). Making it a first-class public API with a privileged scope fits the same pattern as L-09 (resolve) and L-15 (records).
+- **New schemas:** `schemas/permission-decision-request.schema.json`, `schemas/permission-decision-response.schema.json`.
+- **New test IDs in must-map:** `SV-PERM-20` (endpoint + scope + audit write), `SV-PERM-21` (PDA verify happy path), `SV-PERM-22` (PDA verify negative paths incl. decision-mismatch). Catalog total now 221.
+
+### L-20 — Standalone session schema sync `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · plan-evaluator finding F-10. §12.1 was updated in commit `e7580b9` to add required `activeMode` field to the session schema, but the standalone `schemas/session.schema.json` file was NOT updated at that time — schema drifted from the inline spec body.
+- **Root-cause fix:** `schemas/session.schema.json` now mirrors §12.1 verbatim — `activeMode` added to `required` list, enum property defined, description copied from spec body. Future spec edits touching §12.1 should touch both the inline schema in the Markdown AND the standalone JSON file in the same commit.
+- **Plan note:** added to plan-refresh triggers — schema-folder drift is a detectable condition; CI should verify inline-schema ↔ standalone-schema identity.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

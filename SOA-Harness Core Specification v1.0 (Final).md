@@ -1006,6 +1006,84 @@ The Runner MAY invoke `policyEndpoint` (step 4) when computing the response beca
   1. **Vector path** — schema validation of `test-vectors/permission-prompt/` PDA-JWS and canonical-decision bundle (§18).
   2. **Live path** — validator establishes a session (out-of-band, via whatever bearer-provisioning surface the deployment provides), then for each entry in the pinned Tool Registry fixture issues `GET /permissions/resolve?tool=<name>&session_id=<validator session>` under each of the three `activeMode` values exercised in the fixture, and asserts that every response's `decision` matches the deterministic output of §10.3 steps 1–4 applied to the same inputs. The validator separately asserts the not-a-side-effect property by reading the audit log's tail hash before and after the query batch.
 
+#### 10.3.2 Permission Decision Recording (Normative)
+
+**Rationale.** §10.3.1 `/permissions/resolve` is a pure **query** — it reports what the resolver *would* decide without running step 5 (dispatch) and without writing an audit record. §10.5 requires that real permission decisions produce audit records. An externally-observable Runner therefore needs a surface on which the decision pipeline is *actually driven* — the resolver queried, step 5 dispatched, the audit row written. In production this happens when an agent invokes a tool through the MCP client; but for operator testing (replay a suspicious decision to see the full trace) and for conformance tests that depend on the audit chain accumulating (`HR-14`, `SV-AUDIT-RECORDS-01`, `SV-AUDIT-RECORDS-02`), the Runner MUST expose the decision pipeline as a first-class endpoint that **does** produce the side effects §10.5 mandates.
+
+This is distinct from a full tool-invocation endpoint: no tool is actually executed. The Runner runs steps 1–5 of §10.3, stopping after the handler dispatches the outcome (and before any tool-side I/O). It is the pure permission-decision pipeline with its natural side effects (audit write, StreamEvent emission when §14 is shipped).
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+POST /permissions/decisions
+Content-Type: application/json
+```
+
+- **Transport:** HTTPS / TLS 1.3 on the public listener; loopback plain-HTTP permitted on Unix socket / named pipe (same rule as §10.3.1).
+- **Authentication:** the request MUST present a session-scoped bearer token with scope `permissions:decide:<session_id>` (NEW scope class distinct from `permissions:resolve:<session_id>`). Deciding is a privileged operation — it mutates the audit chain. The session bootstrap in §12.6 grants `permissions:resolve:<session_id>` by default; operators MUST explicitly opt-in to `permissions:decide:<session_id>` at session creation (via an optional request-body field `request_decide_scope: true`) and the bootstrap issuer MAY refuse the scope for untrusted callers.
+- **Rate limiting:** at most 30 requests/minute per bearer. `429 Too Many Requests` with `Retry-After` when exceeded.
+
+**Request body.** JSON object:
+
+```json
+{
+  "tool": "<tool_name>",
+  "session_id": "<session_id>",
+  "args_digest": "sha256:<hex>",
+  "pda": "<compact-JWS-or-null>"
+}
+```
+
+- `tool` — tool name from the Tool Registry (§11). Required.
+- `session_id` — session whose `activeMode` determines the capability. Required; must match the session scope of the bearer.
+- `args_digest` — SHA-256 of the invocation arguments as the request context would carry them. Required. This gets recorded in the audit row's `args_digest` field. For conformance tests where no real args exist, the validator MAY use a pinned placeholder value of `"sha256:0000…0000"` (64 zeros); the audit row faithfully records whatever value is submitted.
+- `pda` — compact JWS of the signed `canonical-decision.json` per §6.1.1 row 4. Required when the §10.3 resolver reaches `decision = Prompt`; omitted (or null) otherwise. The Runner verifies the PDA against `security.trustAnchors` before accepting the decision.
+
+**Response (201 Created).** JSON body conforming to `schemas/permission-decision-response.schema.json`:
+
+```json
+{
+  "decision": "AutoAllow | Prompt | Deny | CapabilityDenied | ConfigPrecedenceViolation",
+  "resolved_capability": "ReadOnly | WorkspaceWrite | DangerFullAccess",
+  "resolved_control": "AutoAllow | Prompt | Deny",
+  "reason": "<closed enum per §10.3.1>",
+  "audit_record_id": "aud_<id>",
+  "audit_this_hash": "<64-char hex>",
+  "handler_accepted": true,
+  "runner_version": "1.0",
+  "recorded_at": "<RFC 3339>"
+}
+```
+
+- `audit_record_id` / `audit_this_hash` — the identifier and chain hash of the audit row written for this decision. Callers reconcile by fetching `/audit/records` and matching.
+- `handler_accepted` — true when the PDA (if required) verified successfully against `security.trustAnchors`, or when the decision was AutoAllow/Deny/CapabilityDenied (handler not required). False only when a required PDA failed verification; in that case `decision` is coerced to `Deny` with `reason="pda-verify-failed"` AND an audit row is still written (the attempted decision is itself an auditable event).
+
+**Other responses:**
+- `400 Bad Request` — malformed JSON, missing required fields, unknown tool
+- `401 Unauthorized` — missing or invalid bearer
+- `403 Forbidden` — bearer lacks `permissions:decide:<session_id>` scope; or session lookup does not match bearer; or PDA signature invalid when the configuration rejects the decision outright (body reports `reason="pda-verify-failed"` and no audit record is written — different semantics from `handler_accepted=false` above; this path is for malformed/unparseable PDAs vs. cryptographically-invalid ones)
+- `404 Not Found` — `tool` unknown or `session_id` unknown
+- `429 Too Many Requests` — rate-limit exceeded
+- `503 Service Unavailable` — `/ready` is 503
+
+**Side-effect property (normative MUST).** A successful `POST /permissions/decisions` call MUST:
+1. Append exactly one record to `/audit/permissions.log` conforming to §10.5's field set and hash-chain rule. `this_hash` equals the response body's `audit_this_hash`.
+2. Ship that record to the external WORM sink per §10.5 rules 1–5 (or, in M1 scope where external sink is deferred, write to a local append-only file substituting for the external sink).
+3. Emit a `PermissionDecision` StreamEvent on the session's `/stream/v1/:session_id` channel (§14 — emitted once §14 is shipped; until then, audit write alone suffices for conformance).
+
+**Forgery resistance (normative MUST).** The endpoint MUST NOT accept a decision that contradicts what the §10.3 resolver would compute. Concretely:
+- The submitted `tool` + `session.activeMode` + Tool Registry entry drive the deterministic `decision` per §10.3 steps 1–4. The endpoint **ignores** any client-supplied decision override (the request body does not even carry one) and computes the decision internally.
+- When the resolver output is `Prompt`, a valid `pda` is required. A signed PDA whose `canonical-decision.decision` field disagrees with the §10.3 output (e.g., PDA says AutoAllow but resolver computed Prompt) MUST be rejected with `403 reason="pda-decision-mismatch"` and audited as a suspect attempt.
+
+**Conformance linkage.**
+- `SV-PERM-20` (new) — endpoint schema conformance, scope enforcement, 201 writes audit record, 403 on missing decide scope.
+- `SV-PERM-21` (new) — PDA verify happy path (valid PDA → decision recorded).
+- `SV-PERM-22` (new) — PDA verify negative path (invalid PDA → 403/audit-record with pda-verify-failed).
+- `HR-14` — validator drives N AutoAllow decisions (no PDA needed for ReadOnly Tool Registry tools), reads accumulated chain via `/audit/records`, verifies integrity. Tamper test runs validator-side on the local copy.
+- `SV-AUDIT-RECORDS-01` / `SV-AUDIT-RECORDS-02` — same as HR-14 for accumulation and chain-integrity.
+
+**Relationship to §10.3.1.** Both endpoints exist and serve different purposes. Operators and validators use `/permissions/resolve` (GET) for "what would the resolver decide" — no side effects. They use `/permissions/decisions` (POST) for "actually decide, with audit" — full side effects. A caller wanting both transparency and a recorded decision issues GET first (predict), then POST (record); the two responses MUST carry identical `decision` values for the same `(tool, session_id)` pair (forgery resistance above).
+
 ### 10.4 Autonomous Handler and High-Risk Actions
 
 - **High-risk action** = any self-edit (§9), any tool with `risk_class = Destructive`, or a self-improvement iteration with `|training_score - baseline_training_score| > 0.10`.

@@ -1794,6 +1794,30 @@
       "profile": "core",
       "severity": "critical",
       "assertion": "POST /sessions with requested_activeMode > Agent Card's permissions.activeMode returns 403 with reason=ConfigPrecedenceViolation. Agent Card activeMode is the per-deployment upper bound; session activeMode is tighten-only from that bound."
+    },
+    "SV-PERM-20": {
+      "name": "Permission decision recording",
+      "section": "§10.3.2",
+      "section_title": "Permission Decision Recording",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "POST /permissions/decisions with valid body for an AutoAllow tool returns 201 with body conforming to schemas/permission-decision-response.schema.json. Exactly one audit record is appended; response.audit_this_hash equals the new tail hash. Decision matches what /permissions/resolve would return (forgery resistance). 403 ConfigPrecedenceViolation when bearer lacks permissions:decide scope."
+    },
+    "SV-PERM-21": {
+      "name": "PDA verification happy path",
+      "section": "§10.3.2, §6.1.1",
+      "section_title": "Permission Decision Recording + Artifact Signing Profile",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "POST /permissions/decisions with a tool whose resolver output is Prompt and a valid PDA whose canonical-decision.decision matches the resolver output returns 201 with handler_accepted=true. Audit record signer_key_id equals the PDA x5c[0] kid."
+    },
+    "SV-PERM-22": {
+      "name": "PDA verification negative paths",
+      "section": "§10.3.2, §6.1.1",
+      "section_title": "Permission Decision Recording + Artifact Signing Profile",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "POST /permissions/decisions with a cryptographically-invalid PDA returns 201 with decision=Deny, handler_accepted=false, reason=pda-verify-failed AND audits the attempt. POST with a PDA whose canonical-decision.decision disagrees with the resolver computation returns 403 reason=pda-decision-mismatch with no audit record written."
     }
   },
   "tests_by_category": {
@@ -1912,7 +1936,10 @@
       "SV-PERM-16",
       "SV-PERM-17",
       "SV-PERM-18",
-      "SV-PERM-19"
+      "SV-PERM-19",
+      "SV-PERM-20",
+      "SV-PERM-21",
+      "SV-PERM-22"
     ],
     "SV-REG": [
       "SV-REG-01",
@@ -2928,7 +2955,10 @@
           "SV-AUDIT-RECORDS-01",
           "SV-AUDIT-RECORDS-02",
           "SV-SESS-BOOT-01",
-          "SV-SESS-BOOT-02"
+          "SV-SESS-BOOT-02",
+          "SV-PERM-20",
+          "SV-PERM-21",
+          "SV-PERM-22"
         ]
       },
       {

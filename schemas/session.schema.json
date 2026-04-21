@@ -4,6 +4,7 @@
   "required": [
     "session_id",
     "format_version",
+    "activeMode",
     "messages",
     "workflow",
     "counters",
@@ -21,6 +22,11 @@
     },
     "created_at": {
       "type": "string"
+    },
+    "activeMode": {
+      "type": "string",
+      "enum": ["ReadOnly", "WorkspaceWrite", "DangerFullAccess"],
+      "description": "The session's bound capability. Set at §12.6 bootstrap; MUST be ≤ Agent Card's permissions.activeMode; MUST NOT change during a session's lifetime (handoff creates a new session per §17)."
     },
     "messages": {
       "type": "array"
