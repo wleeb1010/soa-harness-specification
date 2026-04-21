@@ -595,6 +595,58 @@ The Runner MUST invoke `consolidate_memories(aging_rules.consolidation_threshold
 
 The Memory MCP server MUST enforce `sharing_policy` on the server side based on the authenticated caller. Client-side enforcement is advisory.
 
+### 8.6 Memory State Observability (Normative)
+
+**Rationale.** §8.1–§8.5 define the Memory layer as MCP-connected with aging rules, consolidation triggers, and sharing-policy enforcement. Without an externally-observable state surface, `SV-MEM-01..08` cannot verify aging has fired, consolidation is pending/done, or sharing-policy is reflected in what's in-context for a session. Same pattern as §10.3.1, §10.5.2, §12.5.1 — define a read-only observation endpoint so conformance tests aren't blind-guessing.
+
+**Endpoint.** Every conformant Runner whose Agent Card carries `memory.enabled: true` MUST expose:
+
+```
+GET /memory/state?session_id=<session_id>
+```
+
+- **Transport, auth, rate-limit:** same pattern as §12.5.1 — TLS 1.3 / loopback plain, `sessions:read:<session_id>` scope (reuses the §12.6 default-granted bearer scope set), 120 rpm.
+- **Response schema:** `schemas/memory-state-response.schema.json`.
+- **Response body (200):**
+
+```json
+{
+  "session_id": "ses_...",
+  "sharing_policy": "none | session | project | tenant",
+  "in_context_notes": [
+    { "note_id": "mem_...",
+      "summary": "...",
+      "data_class": "public | internal | confidential | personal",
+      "weight_semantic": 0.42,
+      "weight_recency": 0.33,
+      "weight_graph_strength": 0.18,
+      "composite_score": 0.93,
+      "loaded_at": "<RFC 3339>"
+    }
+  ],
+  "available_notes_count": 142,
+  "consolidation": {
+    "last_run_at": "<RFC 3339>",
+    "next_due_at": "<RFC 3339>",
+    "pending_notes": 17
+  },
+  "aging": {
+    "temporal_indexing": true,
+    "consolidation_threshold": "P30D",
+    "max_in_context_tokens": 8000
+  },
+  "runner_version": "1.0",
+  "generated_at": "<RFC 3339>"
+}
+```
+
+- When `memory.enabled: false` in the Agent Card: endpoint returns `501 Not Implemented` with body `{"error":"memory-disabled","reason":"memory-disabled"}`.
+- When session exists but has no in-context notes: `in_context_notes` is an empty array, `available_notes_count >= 0`.
+
+**Not-a-side-effect (MUST).** Reading `/memory/state` MUST NOT: trigger consolidation, advance aging clocks, emit StreamEvents, or write audit rows. Byte-identity excludes `generated_at` (same rule as §12.5.1).
+
+**Conformance linkage.** `SV-MEM-STATE-01` (new) — schema + not-a-side-effect + memory-disabled 501 path. `SV-MEM-01..08` live paths use this endpoint as the observation surface for aging, consolidation, and sharing-policy assertions.
+
 ---
 
 ## 9. Self-Improvement Layer
@@ -1355,6 +1407,39 @@ Deny lists live in `AGENTS.md`; the syntax is one tool name per line under `### 
 - Sessions in flight during acceptance MUST continue with their pinned pool; they observe no tool additions or removals mid-session. The session file records the Tool Pool manifest by content hash.
 - On session resume: if the Tool Pool manifest hash no longer resolves (tools removed), the session MUST terminate with `StopReason::ToolPoolStale` and emit `ToolPoolStaleResume`. No partial-pool resume is permitted.
 
+### 11.4 Dynamic Registration Observability (Normative — M3 addition)
+
+**Rationale.** §11.1–§11.3 define the global Tool Registry + per-session Tool Pool + re-registration rules. Dynamic MCP registration (tools added to the registry at runtime) is M3 scope. Conformance validators need an observation surface to verify: current registered tools, pool assignments per session, and re-registration events since boot.
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+GET /tools/registered
+```
+
+Returns the currently-registered global Tool Registry state. `sessions:read:<any>` scope (any valid session bearer can read; registry is session-independent). Rate limit: 60 rpm.
+
+**Response schema:** `schemas/tools-registered-response.schema.json`. Body:
+
+```json
+{
+  "tools": [
+    { "name": "...",
+      "risk_class": "ReadOnly | Mutating | Destructive",
+      "default_control": "AutoAllow | Prompt | Deny",
+      "idempotency_retention_seconds": 3600,
+      "registered_at": "<RFC 3339>",
+      "registration_source": "static-fixture | mcp-dynamic"
+    }
+  ],
+  "registry_version": "sha256:...",
+  "runner_version": "1.0",
+  "generated_at": "<RFC 3339>"
+}
+```
+
+Byte-identity excludes `generated_at`. Not-a-side-effect: no registry state change, no StreamEvent emission on read. `SV-REG-01..05` consume this endpoint for registry-contract assertions.
+
 ---
 
 ## 12. Session Persistence & Workflow State
@@ -1719,6 +1804,45 @@ StopReason := NaturalStop
             | SelfImproveLockBusy
             | Crash
 ```
+
+### 13.5 Budget Projection Observability (Normative — M3 addition)
+
+**Rationale.** §13.1 defines the p95-over-window projection algorithm with 1.15 safety factor. §13.2 defines mid-stream enforcement. §13.3 defines cache accounting. Conformance tests (`SV-BUD-01..07` + `HR-02` + `HR-03` + `HR-06`) can't verify the projection is actually correct without reading the projection value. Standard observability-endpoint pattern.
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+GET /budget/projection?session_id=<session_id>
+```
+
+- `sessions:read:<session_id>` scope, 120 rpm, TLS 1.3 / loopback plain.
+- Response schema: `schemas/budget-projection-response.schema.json`.
+- Response body (200):
+
+```json
+{
+  "session_id": "ses_...",
+  "projected_tokens_remaining": 42381,
+  "max_tokens_per_run": 200000,
+  "cumulative_tokens_consumed": 157619,
+  "p95_tokens_per_turn_over_window_w": 3240,
+  "safety_factor": 1.15,
+  "projection_headroom": 5,
+  "stop_reason_if_exhausted": "BudgetExhausted",
+  "cold_start_baseline_active": false,
+  "cache_accounting": {
+    "prompt_tokens_cached": 12400,
+    "completion_tokens_cached": 0
+  },
+  "runner_version": "1.0",
+  "generated_at": "<RFC 3339>"
+}
+```
+
+- Not-a-side-effect: no counters advance, no cancellation fires, no events. Byte-identity excludes `generated_at`.
+- When session has no prior turns (cold start): `p95_tokens_per_turn_over_window_w` is the cold-start baseline per §13.1; `cold_start_baseline_active: true`.
+
+**Conformance linkage.** `SV-BUD-PROJ-01` (new) — schema + projection-math correctness. `SV-BUD-01..07` live paths use this endpoint. `HR-02` (previously M3-deferred per L-14) now has its observation surface — the test exercises projection-over-budget returning `StopReason::BudgetExhausted` BEFORE any actual API call fires.
 
 ---
 

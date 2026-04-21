@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "7fe53d9fa2fef81c1513a4bc885b6b3f0710776e4f17f59a5a9ea9bb791dbf09",
+        "sha256": "cf24bf8908c0444cb1021d2a7b17e92547a6cff7841390d6fba2641b43b477dc",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "dbcf87739deaa51163a67580626c77ce2d397202f7356dec13816fcfacc9a8d4",
+        "sha256": "c6cb02be818a34791953e4619dff90d4277222149b302060d1e2c855ad04e41c",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -71,6 +71,12 @@
         "name": "audit-tail-response.schema.json",
         "path": "schemas/audit-tail-response.schema.json",
         "sha256": "02af7a77d0e1f7ff6bb7bc83309e6d2e402153d617cdcc67f8a205c6e25fb13a",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "budget-projection-response.schema.json",
+        "path": "schemas/budget-projection-response.schema.json",
+        "sha256": "a9d98f7196e25bd25622c0ed9292215de2d93fe3c44a98eb20285513a349d081",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -107,6 +113,12 @@
         "name": "locale-map.schema.json",
         "path": "schemas/locale-map.schema.json",
         "sha256": "59b50c1043aa949e76d98cbc6630a0bbbce588719a932c655a31b7508a306379",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "memory-state-response.schema.json",
+        "path": "schemas/memory-state-response.schema.json",
+        "sha256": "bfd7cb51852a6fa8c73e82469c2869a3c6d2dc46e305a029b7fba773c6d4e929",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -161,6 +173,12 @@
         "name": "stream-event.schema.json",
         "path": "schemas/stream-event.schema.json",
         "sha256": "1da3c8bb74cfef487ea308ff24714ca9fc3be2314f12cebbf6cc818898597933",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "tools-registered-response.schema.json",
+        "path": "schemas/tools-registered-response.schema.json",
+        "sha256": "a183bc248474119e6fc0a085f0070c96f3f17134f78840502741c2e6e81ecf90",
         "canonicalization": "JCS-RFC-8785"
       },
       {

@@ -285,6 +285,24 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Impl impact:** zero. Impl's current emission is schema-valid after the update. SV-PERM-20 + SV-PERM-21 flip fail → pass on validator's next run against a pin-bumped impl.
 - **Pattern observation:** impl shipping a semantically-correct addition ahead of a matching schema update is the same pattern as L-26 (400 vs 403 error-code disagreement). Both times impl was right; spec caught up. This is the three-repo architecture's legitimate friction — impl iterates faster than the pinned spec, validator catches the drift, spec ratifies. The friction itself is a feature.
 
+### L-33 — M3 kickoff: Memory/Budget/Registry observability + bulk milestone tagging `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · M2 close · user approval to scope M3 at full 120/150 Core target, single bundled commit.
+- **M3 target:** 120/150 Core-profile tests green + start on UI profile. Master plan timeline: 4 weeks (compressed per ongoing cadence).
+- **Three new observability endpoints landed this commit (same L-27 front-loading discipline as M2):**
+  1. **§8.6 Memory State Observability** — `GET /memory/state?session_id=<sid>` returns persisted memory state with aging, consolidation, in-context notes, sharing-policy. Schema: `schemas/memory-state-response.schema.json`. 501 when `memory.enabled: false` in Agent Card. Not-a-side-effect. Unblocks SV-MEM-01..08.
+  2. **§11.4 Dynamic Registration Observability** — `GET /tools/registered` returns the current Tool Registry including `registration_source` (static-fixture vs mcp-dynamic) and `registry_version` (sha256 of JCS(tools[])). Schema: `schemas/tools-registered-response.schema.json`. Unblocks SV-REG-01..05 + dynamic MCP registration testing.
+  3. **§13.5 Budget Projection Observability** — `GET /budget/projection?session_id=<sid>` returns projection with safety_factor pinned at 1.15, cold-start-baseline flag, cache accounting, projection headroom in turns. Schema: `schemas/budget-projection-response.schema.json`. Unblocks SV-BUD-01..07 + HR-02 + HR-03 + HR-06.
+- **HR-02 un-deferred.** Previously M3-deferred in L-14 pending §13 ship. Now actively in M3 scope.
+- **Must-map bulk tagging:** 152 test IDs tagged as M3 (across SV-MEM, SV-BUD, SV-STR, SV-HOOK, SV-REG, SV-ENC, SV-PRIN, SV-STACK, SV-OPS, SV-GOV, SV-PRIV, SV-GOOD, SV-CLUS, SV-AGENTS, plus M3 HRs, plus untagged SV-CARD/SV-PERM/SV-BOOT/SV-SIGN remainders). Catalog total 223 → 226 (three new observability IDs: SV-MEM-STATE-01, SV-BUD-PROJ-01, SV-REG-OBS-01).
+- **Remaining untagged (55):** SV-SI (32, Self-Improvement — M5) + SV-A2A (14, Handoff — M5) + misc edge cases. No M3 work blocked on these.
+- **What M3 explicitly SKIPS (deferred / out of scope):**
+  - Full UI Gateway (UV-*, 186 tests) — start in M3 if time permits, complete in M4 per master plan.
+  - §14 StreamEvent full transport — existing §14 text covers transport; conformance tests use §12.5.4 /audit/sink-events pattern for state-transition events. Full transport verification (SSE/WebSocket) is validator-specific and can use test harness patterns established in M1/M2.
+  - §9 Self-Improvement (SV-SI 32) — M5.
+  - §17 A2A Handoff (SV-A2A 14) — M5.
+- **Plan-evaluator pass expected after this commit** — same cadence as L-27 → L-28 in M2. User will invoke; I'll execute findings at root before sibling plans.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
