@@ -159,6 +159,20 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Root-cause fix:** `schemas/session.schema.json` now mirrors §12.1 verbatim — `activeMode` added to `required` list, enum property defined, description copied from spec body. Future spec edits touching §12.1 should touch both the inline schema in the Markdown AND the standalone JSON file in the same commit.
 - **Plan note:** added to plan-refresh triggers — schema-folder drift is a detectable condition; CI should verify inline-schema ↔ standalone-schema identity.
 
+### L-21 — Conformance card fixture ↔ agent-card schema drift `[normative fixture, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · Week 3 day 3 · validator ran ajv against the L-18 conformance card fixture after impl's `RUNNER_CARD_FIXTURE` loader went live — three schema-validation errors surfaced:
+  1. `self_improvement.max_iterations = 0` violated `minimum: 1`
+  2. `permissions.policyEndpoint: null` violated `type: string` (field is optional, not nullable)
+  3. `security.trustAnchors[0].spki_sha256` placeholder literal `__IMPL_REPLACES_SPKI_AT_LOAD__…` violated `pattern: "^[A-Fa-f0-9]{64}$"`
+- **Why it matters:** validator's SV-CARD-01 vector-path assertion schema-validates every Agent Card fixture. The conformance card failed that assertion for honest reasons — the fixture was non-conformant against its own spec. Impls loading this fixture would produce non-conformant serve-time behavior; validators fetching would reject.
+- **Root-cause fix:**
+  1. `max_iterations: 0 → 1` (harmless: `self_improvement.enabled = false` disables the feature regardless of this value; picking `1` satisfies the schema's minimum).
+  2. Removed `policyEndpoint: null`; the field is optional per schema, so absent is valid.
+  3. Replaced the ASCII placeholder with a pinned valid hex placeholder: `16dc826f86941f2b6876f4f0f59d91f0021dacbd4ff17b76bbc9d39685250606` (SHA-256 of `"SOA-HARNESS-CONFORMANCE-TEST-FIXTURE-PLACEHOLDER-v1.0"`, deterministic, clearly synthetic). Impl still substitutes this with its runtime key's SPKI at load; MUST NOT serve the raw fixture with placeholder intact — that would advertise a trust anchor no legitimate key matches.
+- **Regression protection:** ajv-verified after fix — both the conformance card AND the default `test-vectors/agent-card.json` schema-validate cleanly. README updated with the new placeholder value.
+- **Process lesson:** fixtures SHOULD be ajv-validated against their spec schemas in CI before landing. The spec repo's `build-manifest.mjs` doesn't currently validate content, only digests. Adding a `validate-fixtures.mjs` CI step is a follow-up (L-22 candidate).
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

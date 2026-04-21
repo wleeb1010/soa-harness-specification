@@ -14,7 +14,7 @@
     "editable_surfaces": [],
     "benchmark_mcp_endpoint": "mcp://unused.conformance.test/",
     "min_score_threshold": 0.85,
-    "max_iterations": 0,
+    "max_iterations": 1,
     "holdout_fraction": 0.2
   },
   "memory": {
@@ -28,8 +28,7 @@
   "permissions": {
     "activeMode": "DangerFullAccess",
     "handler": "Interactive",
-    "toolRequirements": {},
-    "policyEndpoint": null
+    "toolRequirements": {}
   },
   "compaction": { "preserveRecentTurns": 4, "triggerTokens": 80000, "targetTokens": 40000 },
   "tokenBudget": { "maxTokensPerRun": 200000, "billingTag": "conformance-test" },
@@ -39,7 +38,7 @@
     "trustAnchors": [
       {
         "issuer": "CN=SOA-Harness Conformance Test CA, O=SOA-Harness Test Fixtures, C=US",
-        "spki_sha256": "__IMPL_REPLACES_SPKI_AT_LOAD__________________________________",
+        "spki_sha256": "16dc826f86941f2b6876f4f0f59d91f0021dacbd4ff17b76bbc9d39685250606",
         "uri": "https://unused.conformance.test/trust",
         "publisher_kid": "soa-conformance-test-release-v1.0"
       }

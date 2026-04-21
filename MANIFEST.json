@@ -190,13 +190,13 @@
       {
         "name": "README.md",
         "path": "test-vectors/conformance-card/README.md",
-        "sha256": "6d36bb1eac7772b38ce0a1fd4e42f058e03aaaff0b7162617d189128e6ac0190",
+        "sha256": "918d45a38957ce70a501a27cb397426c84b82d4cec5d8941f0480b75b38acb4e",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "agent-card.json",
         "path": "test-vectors/conformance-card/agent-card.json",
-        "sha256": "87c50683bb01fca6a1e95b9bae7e18e8aad7831e9ecb3e9e61061caf67534e05",
+        "sha256": "8f61a2dec98b9e92bcd65ab5ae9acf8352bf6ca8b0dd6b76574257280224344e",
         "canonicalization": "JCS-RFC-8785"
       },
       {

@@ -11,7 +11,7 @@ For SV-PERM-01's 24-cell sweep (8 tools × 3 activeModes) the conformance impl M
 ## How impl consumes this fixture
 
 1. Impl reads `agent-card.json` when `RUNNER_CARD_FIXTURE=<path-to-this-file>` is set.
-2. Impl substitutes the literal placeholder `__IMPL_REPLACES_SPKI_AT_LOAD__________________________________` in `security.trustAnchors[0].spki_sha256` with the hex SHA-256 of the Runner's actual signing key's SubjectPublicKeyInfo. This is the only field the impl rewrites at load time.
+2. Impl substitutes the pinned placeholder value `16dc826f86941f2b6876f4f0f59d91f0021dacbd4ff17b76bbc9d39685250606` in `security.trustAnchors[0].spki_sha256` with the hex SHA-256 of the Runner's actual signing key's SubjectPublicKeyInfo. This is the only field the impl rewrites at load time. The placeholder is a valid 64-char lowercase hex (SHA-256 of the ASCII string `SOA-HARNESS-CONFORMANCE-TEST-FIXTURE-PLACEHOLDER-v1.0`) chosen so the raw fixture schema-validates cleanly against `schemas/agent-card.schema.json`; impls MUST NOT serve the raw fixture with the placeholder intact — doing so would advertise a trust anchor that no legitimate key matches.
 3. Impl JCS-canonicalizes the (substituted) card bytes.
 4. Impl signs the canonical bytes with its runtime key, producing the detached JWS.
 5. Impl serves the (substituted) card at `/.well-known/agent-card.json` and the JWS at `/.well-known/agent-card.jws`.
