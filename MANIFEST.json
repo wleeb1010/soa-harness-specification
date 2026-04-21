@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "a7d4ed85d63a7710e28ce96cf20de1891208c3b8efbe46d2ed921b359d59605f",
+        "sha256": "740e35150dd6c0605edd17e227d8b20e21c9fffaa87a39acc87edfe7c59a65ed",
         "canonicalization": "raw-utf8"
       },
       {
@@ -53,6 +53,12 @@
         "name": "agent-card.schema.json",
         "path": "schemas/agent-card.schema.json",
         "sha256": "bc5a09b1fd707adefe9dcdbfd3be580f5472fdcc375672341261bc842e8b6ebd",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "audit-tail-response.schema.json",
+        "path": "schemas/audit-tail-response.schema.json",
+        "sha256": "02af7a77d0e1f7ff6bb7bc83309e6d2e402153d617cdcc67f8a205c6e25fb13a",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -101,6 +107,12 @@
         "name": "release-manifest.schema.json",
         "path": "schemas/release-manifest.schema.json",
         "sha256": "5829f7f37a7a9c36e6a55fa57dc3cf6cb1cce13feec504d9a4814d43ee306a85",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "session-bootstrap-response.schema.json",
+        "path": "schemas/session-bootstrap-response.schema.json",
+        "sha256": "bd9c335cba0edf7cf851fa431e6c06186ec814b9c7cc56efc80ae2abd9da56e3",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -443,6 +455,18 @@
         "name": "task.json",
         "path": "test-vectors/tasks-fingerprint/tasks/beta-regex/task.json",
         "sha256": "1e242158fe0b4368b28372d919d464650be8c975af9035e4d3a0806f77cb04da",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/tool-registry/README.md",
+        "sha256": "530ad36f58a2c424fba783bd0af3111e37e815144439eccc66a25fc314932885",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "tools.json",
+        "path": "test-vectors/tool-registry/tools.json",
+        "sha256": "2f122dbf3e1a5deb0fb3c19e114d3590aa71d8f5cf035298b34da5c5a0f66c39",
         "canonicalization": "JCS-RFC-8785"
       },
       {

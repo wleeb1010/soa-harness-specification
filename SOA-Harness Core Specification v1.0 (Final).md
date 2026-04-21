@@ -949,9 +949,11 @@ Every tool in the global Tool Registry (§11) MUST be pre-classified with a `ris
 
 ### 10.3 Resolution Algorithm
 
+`activeMode` as used throughout §10 denotes the **session's bound capability**, established at session bootstrap per §12.6 and constrained to be at-or-below the Agent Card's declared `permissions.activeMode`. The Agent Card's value is the upper bound (the deployment-wide maximum); each session carries its own bound value (MAY be tightened at bootstrap, MUST NOT be loosened). Older wording that reads "`activeMode`" in isolation — including in §10.1 and the assertion text of `SV-PERM-01` — refers to the session's bound value, not the Agent Card's.
+
 For each tool invocation the Runner MUST resolve `(capability, control, handler)`:
 
-1. Start with `capability = activeMode` and `control = tool.default_control`.
+1. Start with `capability = session.activeMode` (the bound value established at §12.6 bootstrap, ≤ the Agent Card's declared maximum) and `control = tool.default_control`.
 2. Reject if `tool.risk_class` is not permitted under `capability`:
    - `ReadOnly` permits only `risk_class = ReadOnly`.
    - `WorkspaceWrite` permits `ReadOnly` and `Mutating` (not `Destructive`).
@@ -1039,6 +1041,35 @@ Readiness rules at §5.4 prevent a Runner from accepting new traffic when the si
 Local buffer MUST be on the same file-system as `/audit/permissions.log` and MUST use atomic writes per §12.3 so a crash during buffering does not lose records. Buffered records retain their original `timestamp`; the sink-issued timestamp (§10.5 rule 3) is applied on ship, not at buffer time.
 
 New error codes introduced by this subsection: `AuditSinkDegraded`, `AuditSinkUnreachable`, `AuditSinkRecovered` (all under the `Audit` category in §24). Covered by `SV-PERM-19`.
+
+#### 10.5.2 Audit Tail Observability (Normative)
+
+**Rationale.** §10.5 defines the audit hash chain as tamper-evident — every record links to the previous record's hash. For that property to be independently verifiable, the chain's terminal state MUST be externally observable. `SV-PERM-01`'s not-a-side-effect property (§10.3.1) depends on it: the validator reads the tail hash before a query batch, runs the batch, reads the tail hash again, and asserts equality. Without a defined observation surface, tamper-evidence is a Runner-self-attested property — useless for independent verification. This section defines that surface as a first-class endpoint, not a test hook. Operators also legitimately need it for audit-integrity dashboards, incident response ("did the hash chain advance during window X?"), and handoff to WORM-sink reconciliation tooling.
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+GET /audit/tail
+```
+
+- **Transport:** HTTPS / TLS 1.3 on the public listener; loopback plain-HTTP permitted on Unix socket / named pipe co-located listeners (same rule as §10.3.1).
+- **Authentication:** the request MUST present a bearer token scoped for `audit:read` (issued via §12.6 session bootstrap or an operator-tool bearer issuance surface outside this spec). `401` unauthenticated, `403` without `audit:read` scope.
+- **Rate limiting:** at most 120 requests/minute per bearer. `429 Too Many Requests` with `Retry-After` when exceeded.
+
+**Response (200 OK).** JSON body conforming to `schemas/audit-tail-response.schema.json`, containing:
+- `this_hash`: the `this_hash` field of the most recent record in `/audit/permissions.log`. When the log is empty (no records written since genesis), the value is the literal string `"GENESIS"`.
+- `record_count`: integer count of records in the hash chain from GENESIS to the tail inclusive.
+- `last_record_timestamp`: RFC 3339 timestamp of the most recent record. When the log is empty, the field is omitted.
+- `runner_version`: matches the value reported by other observability endpoints, for drift attribution.
+- `generated_at`: RFC 3339 timestamp of when the Runner computed this response. Under an injected test clock (§10.6.1 testability note) this reports the injected clock value.
+
+**Other responses:**
+- `503 Service Unavailable` — `/ready` is 503. Body conforms to the §5.4 readiness-failure shape. The audit chain cannot be trusted before the WAL replay in §10.5.1 completes at boot, so `/audit/tail` returning 200 implies WAL replay is complete.
+- `5xx` for infrastructure failure reading the log — MUST NOT return a stale cached `this_hash` in lieu of a real read. A Runner that cannot read its own audit tail SHOULD transition `/ready` to 503 and recover.
+
+**Not-a-side-effect property (MUST).** Reading `/audit/tail` MUST NOT append a record to the audit log (no "tail was read by <bearer>" meta-record), MUST NOT emit a StreamEvent, MUST NOT mutate any Runner-internal counter. Observability of the audit chain is itself ambient — if a validator could trigger an audit mutation by reading, `SV-PERM-01`'s not-a-side-effect assertion would fail false-negative even on a perfectly conforming Runner. Implementations that wish to record "tail-hash was read" for their own operational monitoring MUST do so in a **separate** observability channel (logging, metrics) and MUST NOT touch `/audit/permissions.log`.
+
+**Conformance linkage.** `SV-AUDIT-TAIL-01` (new) asserts schema conformance of the response and the GENESIS fallback when the log is empty. `SV-PERM-01` consumes this endpoint for its not-a-side-effect assertion per §10.3.1.
 
 ### 10.6 Handler Key Management
 
@@ -1169,11 +1200,12 @@ A session file at `/sessions/<session-id>.json` MUST conform to:
 {
   "$id": "https://soa-harness.org/schemas/v1.0/session.schema.json",
   "type": "object",
-  "required": ["session_id", "format_version", "messages", "workflow", "counters", "tool_pool_hash", "card_version"],
+  "required": ["session_id", "format_version", "activeMode", "messages", "workflow", "counters", "tool_pool_hash", "card_version"],
   "properties": {
     "session_id": { "type": "string", "pattern": "^ses_[A-Za-z0-9]{16,}$" },
     "format_version": { "type": "string", "const": "1.0" },
     "created_at": { "type": "string" },
+    "activeMode": { "type": "string", "enum": ["ReadOnly", "WorkspaceWrite", "DangerFullAccess"], "description": "The session's bound capability. Set at §12.6 bootstrap; MUST be ≤ Agent Card's permissions.activeMode; MUST NOT change during a session's lifetime (handoff creates a new session per §17)." },
     "messages": { "type": "array" },
     "workflow": {
       "type": "object",
@@ -1253,6 +1285,67 @@ The two caches MUST NOT share storage or key space. A tool idempotency hit does 
 2. Verify `card_version` matches the currently served Agent Card; on mismatch, the session is terminated with `StopReason::CardVersionDrift`.
 3. Verify `tool_pool_hash` still resolves; see §11.3.
 4. For each `side_effects[i].phase`: replay `pending` with the recorded idempotency key; skip `committed`; run compensating actions for `inflight` whose tool supports it, else mark `compensated` with a `ResumeCompensationGap` note.
+
+### 12.6 Session Bootstrap (Normative)
+
+**Rationale.** §12.1 defines the session file format and §12.5 defines resume, but the spec prior to v1.0 defined no surface for *creating* a new session. Session creation was implicit — "sessions exist" — which left two gaps: (a) operators and validators had no defined mechanism to obtain a session bearer for the observability endpoints (§10.3.1, §10.5.2), and (b) the session's bound `activeMode` (§10.3) had no mechanism for tightening from the Agent Card's declared maximum on a per-session basis. Both are closed here with a single first-class endpoint.
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+POST /sessions
+Content-Type: application/json
+```
+
+- **Transport:** HTTPS / TLS 1.3 on the public listener; loopback plain-HTTP permitted on Unix socket / named pipe (same rule as §10.3.1 and §10.5.2).
+- **Authentication:** the request MUST present a **bootstrap bearer** — a deployment-defined credential (operator SSO token, service-account JWT, per-operator API key, etc.) that authorizes the caller to create a session. The mechanism for issuing bootstrap bearers is outside this spec (each deployment configures an `identity.bootstrapEndpoint` in its operator configuration). What IS in scope: the bootstrap bearer is a **distinct credential class** from the session bearer returned by this endpoint. The session bearer granted here MUST NOT be usable to create another session (scope does not include `sessions:create`).
+- **Rate limiting:** at most 30 requests/minute per bootstrap bearer. `429` with `Retry-After` when exceeded.
+
+**Request body.** JSON object with the following fields:
+
+```json
+{
+  "requested_activeMode": "ReadOnly" | "WorkspaceWrite" | "DangerFullAccess",
+  "user_sub": "<stable user identifier>",
+  "session_ttl_seconds": <optional integer, 60..86400>
+}
+```
+
+- `requested_activeMode` — MUST be a value in the §10.1 enum and MUST be at-or-below the Agent Card's declared `permissions.activeMode`. Requesting a stricter (smaller) mode than the card is permitted and is the expected path for validators exercising the capability lattice. Requesting a looser mode than the card MUST return `403 Forbidden` with reason `ConfigPrecedenceViolation`.
+- `user_sub` — stable identifier of the data subject associated with the session (drives §10.7 audit binding). Opaque to the Runner; not authenticated by the Runner — the bootstrap bearer's issuer is responsible for the user-sub binding being trustworthy.
+- `session_ttl_seconds` — optional; caller MAY request a session lifetime shorter than the deployment default. Runner enforces the default when omitted and clamps to the deployment maximum (typically ≤ 24 hours per §8 compaction rules).
+
+**Response (201 Created).** JSON body conforming to `schemas/session-bootstrap-response.schema.json`:
+
+```json
+{
+  "session_id": "ses_<16+ url-safe base64>",
+  "session_bearer": "<opaque token; used for /stream, /permissions/resolve, /audit/tail>",
+  "granted_activeMode": "ReadOnly" | "WorkspaceWrite" | "DangerFullAccess",
+  "expires_at": "<RFC 3339 timestamp>",
+  "runner_version": "1.0"
+}
+```
+
+- `session_id` — newly minted, matches the §12.1 schema's `session_id` pattern, not re-derivable from the bootstrap bearer. The Runner MUST persist the session file (§12.1) before returning 201.
+- `session_bearer` — an opaque bearer token authorizing `/stream`, `/permissions/resolve`, and `/audit/tail` for exactly this `session_id`. Scopes: `stream:read:<session_id>`, `permissions:resolve:<session_id>`, `audit:read`. Does NOT carry `sessions:create`.
+- `granted_activeMode` — MUST equal `requested_activeMode` when the request was within bounds; equals the Agent Card's activeMode clamped-down only when `requested_activeMode` was provided as a value stricter than the Agent Card's maximum (this is informative, not an error; the request succeeded with a tighter mode than requested is NEVER done — if requested is looser than card it's 403).
+
+**Other responses:**
+- `400 Bad Request` — malformed JSON or missing required fields
+- `401 Unauthorized` — missing or invalid bootstrap bearer
+- `403 Forbidden` with `reason: "ConfigPrecedenceViolation"` — requested_activeMode > Agent Card's activeMode
+- `429 Too Many Requests` — rate-limit exceeded
+- `503 Service Unavailable` — `/ready` is 503
+
+**No side effect other than session creation.** The endpoint MUST NOT write to the audit log merely for the act of creating the session (the audit chain covers permission decisions and self-edits, not session lifecycle events). Operators wanting session-lifecycle observability MUST consume the §14 StreamEvent `SessionCreated` (emitted on the newly-minted session's stream) or the local operator-log channel.
+
+**Bootstrap bearer issuance (informative).** `identity.bootstrapEndpoint` points to an external IdP or operator-tool surface (OAuth 2.1 with PKCE, SPIFFE, signed JWT issuance, etc.). For purely local test deployments a deployment MAY accept a literal fixed bootstrap bearer configured via the environment variable `SOA_RUNNER_BOOTSTRAP_BEARER`; such a deployment MUST NOT bind to any non-loopback interface (belt-and-suspenders: a fixed bootstrap bearer on a public listener is a trivially-reachable admin backdoor). Conformance harnesses like `soa-validate` consume the fixed-bearer path when running against a locally-bound test Runner.
+
+**Conformance linkage.**
+- `SV-SESS-BOOT-01` (new) — schema conformance of the 201 response and the granted_activeMode-clamping rule.
+- `SV-SESS-BOOT-02` (new) — 403 ConfigPrecedenceViolation for activeMode above Agent Card max.
+- `SV-PERM-01` (updated) — live-path consumes this endpoint to create three sessions (one per activeMode) and exercises the capability lattice across them.
 
 ---
 

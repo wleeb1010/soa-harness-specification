@@ -88,6 +88,37 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
     - `soa-validate-must-map.json` — SV-PERM-01 assertion text expanded to describe vector-path + live-path
 - **Commit landing this edit:** the same patch that added this L-09 entry. Check `git log --follow IMPLEMENTATION_LESSONS.md` for the exact SHA.
 
+### L-10 — Audit tail observability `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · Week 3 day 1 kickoff — validator session asked for a surface to read the audit log's tail `this_hash` so it could assert the §10.3.1 not-a-side-effect property. No such endpoint existed.
+- **What:** §10.5 defined the hash chain as tamper-evident but provided no external observation surface for the tail. Tamper-evidence that only the Runner can prove is useless for independent verification.
+- **Root-cause fix:** added §10.5.2 **Audit Tail Observability (Normative)** — `GET /audit/tail` returning `{ this_hash, record_count, last_record_timestamp, runner_version, generated_at }` conforming to the new `schemas/audit-tail-response.schema.json`. Bearer-scoped with `audit:read`, 120 rpm rate limit, TLS 1.3. Explicit not-a-side-effect property (reading MUST NOT append an audit meta-record — that would make the validator's assertion a false-negative even on a conforming Runner).
+- **Commit landing this edit:** the same patch that added this L-10 entry (check `git log --follow IMPLEMENTATION_LESSONS.md`).
+
+### L-11 — Session bootstrap + session-scoped activeMode `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · Week 3 day 1 — validator session flagged that the SV-PERM-01 capability-lattice sweep requires three activeMode values (ReadOnly, WorkspaceWrite, DangerFullAccess) but the spec only supported one activeMode per Agent Card (i.e., per deployment). Testing all three required three Runner deployments, which is an operational hack.
+- **What:** `activeMode` was effectively Agent-Card-scoped — one value for the whole deployment. Per §10.1 it was nominally described as "of a session" but no session-level mechanism existed to bind it.
+- **Root-cause fix:** (a) added §12.6 **Session Bootstrap (Normative)** — `POST /sessions` returning `{ session_id, session_bearer, granted_activeMode, expires_at, runner_version }` conforming to the new `schemas/session-bootstrap-response.schema.json`. Bootstrap-bearer authenticated, 30 rpm rate limit. `granted_activeMode` is tightened-only from the Agent Card's declared maximum — requesting a looser mode returns 403 `ConfigPrecedenceViolation`. (b) added `activeMode` as a required field in the §12.1 session file schema. (c) clarified §10.3 step 1 to read `capability = session.activeMode` (preserving the Agent Card as the per-deployment upper bound).
+- **Versioning note:** strictly additive from an external observability perspective but `session.activeMode` becoming a persisted field is a §12.1 schema change. Pre-1.0 impls that created sessions without the field MUST migrate on first resume (default to the Agent Card's activeMode, preserving existing behavior).
+- **New test IDs:** SV-SESS-BOOT-01 (schema conformance + clamping rule), SV-SESS-BOOT-02 (403 on looser-than-card request). Fold into the M1 Week 6 test-pass target.
+- **Commit landing this edit:** the same patch that added this L-11 entry.
+
+### L-12 — Pinned conformance Tool Registry fixture `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · Week 3 day 1 — validator asked for "the tools fixture path". None existed on the spec side; impl had its own demo fixture (4 tools) but that isn't spec-authoritative and both sides would diverge on what "the Tool Registry" means for conformance.
+- **What:** `SV-PERM-01` asserts behavior across every `(activeMode, risk_class, default_control)` combination. Without a pinned fixture both sides reference, the assertion's inputs drift per impl; cross-impl comparability evaporates.
+- **Root-cause fix:** added `test-vectors/tool-registry/tools.json` — 8 hand-authored tools spanning the full §10.2 × §10.3 matrix (each risk_class, each default_control, including the tighten-only edge case where `default_control = Deny` overrides even `DangerFullAccess`). The 24 expected decisions (8 tools × 3 activeModes) are documented in the accompanying README.md. Impls load this fixture for conformance runs via an impl-defined mechanism (e.g., `RUNNER_TOOLS_FIXTURE=<path>`). The fixture is pinned by digest in `MANIFEST.json.supplementary_artifacts`.
+- **Commit landing this edit:** the same patch that added this L-12 entry.
+
+### L-13 — Must-map catalog integration for new test IDs `[open, docs, follow-up commit target: this week]`
+
+- **Surfaced:** 2026-04-20 · during L-09 / L-10 / L-11 normative edits
+- **What:** §10.3.1, §10.5.2, and §12.6 reference test IDs `SV-PERM-01` (updated), `SV-AUDIT-TAIL-01` (new), `SV-SESS-BOOT-01` (new), `SV-SESS-BOOT-02` (new). SV-PERM-01 is already in `soa-validate-must-map.json` with updated assertion text (landed in the L-09 commit). The three new IDs are not yet in the catalog — spec sections reference them but the 213-test map has no entries.
+- **Why it matters:** `soa-validate` loads the must-map as the authoritative test catalog. Sections that reference IDs absent from the catalog produce dangling references; the catalog's invariant check ("No test in tests is orphaned") requires coordinated updates across three nested structures (`tests`, `must_coverage`, `execution_order.phases`).
+- **Destination:** single follow-up commit to `soa-validate-must-map.json` adding entries to all three structures. Catalog total moves 213 → 216 (three new test IDs).
+- **Not blocking:** validator can run the new tests without the catalog entries (vector-path via schema validation of responses; live-path via direct endpoint calls). Catalog integration is needed before v1.0 release gate passes the invariant check.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

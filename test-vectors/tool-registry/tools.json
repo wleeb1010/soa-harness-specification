@@ -1,0 +1,55 @@
+{
+  "schema": "https://soa-harness.org/schemas/v1.0/tool-registry.schema.json",
+  "description": "Pinned conformance Tool Registry fixture for SOA-Harness v1.0 SV-PERM-01 live-path and related permission-lattice tests. Deliberately small (8 tools) and deliberately spans every (risk_class, default_control) combination needed to exercise Core §10.3 steps 1-4 against every (session.activeMode) ∈ {ReadOnly, WorkspaceWrite, DangerFullAccess}. Implementations MAY use this fixture directly for their conformance runs or derive their own fixtures whose rows cover the same matrix.",
+  "version": "1.0",
+  "tools": [
+    {
+      "name": "fs__read_file",
+      "risk_class": "ReadOnly",
+      "default_control": "AutoAllow",
+      "description": "Read a file from the project workspace. Expected: AutoAllow under any activeMode."
+    },
+    {
+      "name": "fs__list_directory",
+      "risk_class": "ReadOnly",
+      "default_control": "AutoAllow",
+      "description": "List directory contents. Expected: AutoAllow under any activeMode."
+    },
+    {
+      "name": "fs__write_file",
+      "risk_class": "Mutating",
+      "default_control": "Prompt",
+      "description": "Write a file. Expected: CapabilityDenied under ReadOnly; Prompt under WorkspaceWrite and DangerFullAccess."
+    },
+    {
+      "name": "fs__append_file",
+      "risk_class": "Mutating",
+      "default_control": "AutoAllow",
+      "description": "Append to an existing file. Expected: CapabilityDenied under ReadOnly; AutoAllow under WorkspaceWrite and DangerFullAccess."
+    },
+    {
+      "name": "fs__delete_file",
+      "risk_class": "Destructive",
+      "default_control": "Prompt",
+      "description": "Delete a file. Expected: CapabilityDenied under ReadOnly and WorkspaceWrite; Prompt under DangerFullAccess."
+    },
+    {
+      "name": "net__http_get",
+      "risk_class": "ReadOnly",
+      "default_control": "Prompt",
+      "description": "Fetch a remote resource via HTTP GET. Read-only at the network layer but Prompt-gated by default because egress may leak data. Expected: Prompt under any activeMode."
+    },
+    {
+      "name": "proc__spawn_shell",
+      "risk_class": "Destructive",
+      "default_control": "Deny",
+      "description": "Spawn an arbitrary shell process. Expected: CapabilityDenied under ReadOnly and WorkspaceWrite; Deny under DangerFullAccess (even at max capability, default_control forces Deny)."
+    },
+    {
+      "name": "mem__recall",
+      "risk_class": "ReadOnly",
+      "default_control": "AutoAllow",
+      "description": "Recall an entry from the Memory MCP (§8). Expected: AutoAllow under any activeMode."
+    }
+  ]
+}
