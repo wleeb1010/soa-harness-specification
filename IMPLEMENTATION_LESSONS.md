@@ -262,6 +262,19 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Why not a digest-bypass env flag:** would require adding another production-guard test hook and would weaken the L-21 anti-tampering property. Ship fixtures is cleaner — both conformance variants are first-class pinned artifacts.
 - **Test ID SV-SESS-09** per must-map assertion ("card-drift terminates") is now conformance-testable with zero impl code changes beyond what L-29 (resume triggers) already requires. Validator flips SKIP → PASS when both L-29 and the fixture swap land together.
 
+### L-31 — §12.2 significant-events closed set + markers for permission decisions `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · M2 Day 1 close · validator Finding H: 5 of 7 crash-test markers are defined in impl but never actually fire at runtime. Root cause validator diagnosed precisely: call sites gate on `markerPhase.side_effect` which no production caller passes. The underlying issue is that §12.2 didn't explicitly list `POST /permissions/decisions` as a "significant event" — impl correctly implemented bracket-persist + markers for tool invocations, but tool invocations are M3 scope, so the markers sit dormant.
+- **Root-cause fix:** §12.2 now carries a **Significant events (normative closed set)** block enumerating four event classes: tool invocations, `POST /permissions/decisions` calls, handoff events (§17, M5), self-improvement iterations (§9.7, M5). Second block explicitly maps each §12.5.3 marker to where it fires during a `/permissions/decisions` call:
+  - `SOA_MARK_PENDING_WRITE_DONE` — after fsync of `phase=pending` side_effect write, before §10.3 dispatch
+  - `SOA_MARK_TOOL_INVOKE_START` — at §10.3 step 5 dispatch boundary (fires even without actual tool execution)
+  - `SOA_MARK_TOOL_INVOKE_DONE` — after handler returns (decision computed)
+  - `SOA_MARK_COMMITTED_WRITE_DONE` — after fsync of `phase=committed` side_effect
+  - `SOA_MARK_DIR_FSYNC_DONE` — after directory-level fsync atomic commit
+- **Also added:** idempotency for permission decisions — re-submitting the same `(session_id, idempotency_key)` to `/permissions/decisions` MUST return the original decision + audit_record_id without appending a second audit row. Makes HR-04/HR-05 replay-on-resume semantics well-defined for decisions, not just tool invocations.
+- **Impl impact:** small — wire `markerPhase.side_effect` through `POST /permissions/decisions` handler. Populate a `side_effect` entry at pending phase before dispatch, transition to committed phase after decision recorded. Markers fire at the appropriate boundaries. `workflow.side_effects[]` in `/state` response populates naturally from this path.
+- **Validator impact:** zero code change. V2-04 crash-harness already consumes the §12.5.3 markers correctly; with impl wiring the emission path, the 5 marker-gated handlers (HR-04, HR-05, SV-SESS-03, SV-SESS-07, SV-SESS-08, SV-SESS-10) flip SKIP → PASS.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

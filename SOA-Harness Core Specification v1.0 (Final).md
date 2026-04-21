@@ -1397,13 +1397,26 @@ A session file at `/sessions/<session-id>.json` MUST conform to:
 
 ### 12.2 Significant Events and Persistence Points
 
+**Significant events (normative closed set).** The following operations are "significant events" for §12.2 purposes:
+1. Tool invocations that produce side-effects (MCP `tools/call`, HTTP tool calls, etc.).
+2. Permission decisions recorded via `POST /permissions/decisions` (§10.3.2) — each decision, whether AutoAllow / Prompt / Deny / CapabilityDenied / ConfigPrecedenceViolation, advances the audit chain and therefore warrants bracket-persist in the session's `workflow.side_effects[]`.
+3. Handoff events (§17) — out of M2 scope; listed for completeness.
+4. Self-improvement iterations (§9.7) — out of M2 scope; listed for completeness.
+
 Persistence is **bracketed** around each significant event. For each significant event the Runner MUST:
 
 1. Persist `phase = pending` with an **idempotency key** (UUIDv4) and `args_digest` BEFORE executing.
-2. Execute.
+2. Execute (or, for permission decisions, dispatch the §10.3 step 5 handler outcome).
 3. Persist `phase = committed` with `result_digest` AFTER successful execution, OR `phase = compensated` on failure followed by the compensating action.
 
-This gives **at-least-once** semantics on resume: `pending` tools are replayed; `committed` are not. Each tool MUST accept an `X-Soa-Idempotency-Key` header (for HTTP-like tools) or MCP equivalent and MUST dedupe on it.
+Bracket-persist events MUST emit the §12.5.3 crash-test markers at the corresponding boundaries when `RUNNER_CRASH_TEST_MARKERS=1`. For `POST /permissions/decisions`:
+- `SOA_MARK_PENDING_WRITE_DONE` fires after fsync of the `phase=pending` side_effect entry (before §10.3 dispatch).
+- `SOA_MARK_TOOL_INVOKE_START` fires at the §10.3 step 5 dispatch boundary (the handler accepting its input). For decisions without actual tool execution, this marker MUST still fire — the decision pipeline's dispatch IS the "invoke-start" event for observability purposes.
+- `SOA_MARK_TOOL_INVOKE_DONE` fires after the handler returns (decision computed).
+- `SOA_MARK_COMMITTED_WRITE_DONE` fires after fsync of the `phase=committed` side_effect entry.
+- `SOA_MARK_DIR_FSYNC_DONE` fires after the directory-level fsync that atomically commits the side_effect entry.
+
+This gives **at-least-once** semantics on resume: `pending` tools are replayed; `committed` are not. Each tool MUST accept an `X-Soa-Idempotency-Key` header (for HTTP-like tools) or MCP equivalent and MUST dedupe on it. Permission decisions MUST also be replayable on resume via the `idempotency_key`; re-submitting the same `(session_id, idempotency_key)` to `/permissions/decisions` MUST return the original decision + audit_record_id without appending a second audit row.
 
 **Tool-side retention window (normative).** The tool's dedupe cache for a given `idempotency_key` MUST retain the committed result for at least the longer of:
 - **1 hour** (absolute minimum floor — covers routine restart windows), OR
