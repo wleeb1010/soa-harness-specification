@@ -1059,13 +1059,17 @@ Content-Type: application/json
 - `handler_accepted` — true when the PDA (if required) verified successfully against `security.trustAnchors`, or when the decision was AutoAllow/Deny/CapabilityDenied (handler not required). False only when a required PDA failed verification; in that case `decision` is coerced to `Deny` with `reason="pda-verify-failed"` AND an audit row is still written (the attempted decision is itself an auditable event).
 
 **Other responses:**
-- `400 Bad Request` — malformed JSON, missing required fields, unknown tool
+- `400 Bad Request` — client-side request envelope is wire-level malformed. Authoritative reason codes for this endpoint:
+  - `reason="malformed-json"` — the request body isn't parseable JSON.
+  - `reason="missing-required-field"` — JSON parses but is missing `tool`, `session_id`, or `args_digest`.
+  - `reason="unknown-tool"` — `tool` is not in the Tool Registry (§11); also returnable as 404 — implementations MAY choose either but MUST be consistent.
+  - `reason="pda-malformed"` — submitted `pda` field is not a parseable compact JWS (three base64url segments separated by dots). Structural/wire failure distinct from signature-invalid (which returns 201+audited per the handler_accepted path) and from pda-decision-mismatch (403; PDA parses and verifies but claims disagree with resolver). Moved here from the L-22 403 enum because semantically the client sent invalid wire bytes — an authorization check never had a parseable subject to evaluate.
 - `401 Unauthorized` — missing or invalid bearer
 - `403 Forbidden` — authoritative closed-set reasons for this endpoint:
   - `reason="insufficient-scope"` — bearer lacks the required `permissions:decide:<session_id>` scope. Most common failure mode for callers that authenticated via POST /sessions without `request_decide_scope: true`.
   - `reason="session-bearer-mismatch"` — bearer is valid but scoped for a different session_id than the one in the request body.
   - `reason="pda-decision-mismatch"` — PDA's `canonical-decision.decision` disagrees with what the §10.3 resolver computed for the same (tool, session_id). No audit record is written — the attempt is rejected before dispatch.
-  - `reason="pda-malformed"` — submitted `pda` field is not a parseable compact JWS (structural failure, distinct from signature-invalid which returns 201+audited per the handler_accepted path above).
+  - (`pda-malformed` MOVED to the 400 Bad Request enum above — a wire-malformed JWS is a client-side request-envelope issue, not an auth-scope denial. See the 400 block.)
   Error-code name `ConfigPrecedenceViolation` is RESERVED for §10.3 step 3 (toolRequirements loosens default) and MUST NOT be returned by this endpoint for auth-scope or PDA failures.
 - `404 Not Found` — `tool` unknown or `session_id` unknown
 - `429 Too Many Requests` — rate-limit exceeded

@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "8f2869699777e78656d7f5f35508ab9f4d7900d7715cb4b0b0dea73c02d594dd",
+        "sha256": "94a9e350819333659f166255b71d6ae86ff7bc0dd5ec717e0ca2ba6e2e2f65e4",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "f8cec2e13f9f2fddcec75a0dc17ea2b8cf76d217c4c3ec5c9a0f946b850676a1",
+        "sha256": "fdcd288c21458595a2ddb9c1e5bbb21c3a35f6bbd3b920f677088641ef1ced09",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -226,13 +226,13 @@
       {
         "name": "README.md",
         "path": "test-vectors/handler-keypair/README.md",
-        "sha256": "31af3bac61bb8a0a9bafa7317feaf74c714b2f73cf71b1f6817a3ff65e61f717",
+        "sha256": "baf8648a36c8c6db4a657167416bffc6b378e04978b74428bbf8ca3d7a7727ea",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "private.pem",
         "path": "test-vectors/handler-keypair/private.pem",
-        "sha256": "dd4db0aff58e4fb3c892e801bf16b8b5c8a5200c22d9c670213db7161328bccf",
+        "sha256": "06980fa41873944c728b7e38a9a51529b3e605ddd6bb871f48c7f8c42bb5e556",
         "canonicalization": "raw-utf8"
       },
       {
@@ -244,13 +244,13 @@
       {
         "name": "public.pem",
         "path": "test-vectors/handler-keypair/public.pem",
-        "sha256": "4013bada6f3aec776a37caeeff20c8ca5b0170d99f928f01071fe63e048e3843",
+        "sha256": "9545573a825e97bda9ccd3ec60f35420253c1240cb67f7ec4ee61fd55b66251a",
         "canonicalization": "raw-utf8"
       },
       {
         "name": "spki_sha256.txt",
         "path": "test-vectors/handler-keypair/spki_sha256.txt",
-        "sha256": "3d0812385495ee0aec1f6e3d732f0e803a6f7a8503623c223413abcee38e70b1",
+        "sha256": "6cfa4b2187878c2450f10b0c5d3145b4c36eb721250fcf61fe736f3a668cb975",
         "canonicalization": "raw-utf8"
       },
       {
@@ -484,7 +484,7 @@
       {
         "name": "README.md",
         "path": "test-vectors/permission-prompt-signed/README.md",
-        "sha256": "69998ef3984c755a804a67ef8956089811eca82b7695b8ba42004c701e8f99f5",
+        "sha256": "057a14dfb577eb9d9162e243bb1405472327495a86b4fc0b8aa4aa0e4870b490",
         "canonicalization": "raw-utf8"
       },
       {
@@ -496,7 +496,7 @@
       {
         "name": "pda.jws",
         "path": "test-vectors/permission-prompt-signed/pda.jws",
-        "sha256": "a24d7680ead2423c8ef7e537aaabe5f38fe4db6ffd4ca34d7f969de850947f45",
+        "sha256": "0dc393bfb6d0b60186246c25802f3bc10b2a581fa5eb941dd6ba8a1365f58940",
         "canonicalization": "raw-utf8"
       },
       {

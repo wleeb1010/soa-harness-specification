@@ -202,6 +202,18 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Validator adoption:** small. Read `test-vectors/handler-keypair/private.pem` at test startup; use either the pre-signed `pda.jws` (simplest) or sign its own `canonical-decision.json` bodies with the pinned private key. SV-PERM-21 flips SKIP → PASS on next live run.
 - **Security note:** the committed private key is PUBLIC. Any Runner serving real traffic with this fixture's trust anchor configured accepts signatures from anyone with a git clone of this repo. Production deployments MUST NOT load this fixture.
 
+### L-26 — §10.3.2 pda-malformed moves 403 → 400 `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · Post-M1-close · activating the L-24 PDA verify path (via impl e59f708) exposed that a wire-malformed JWS hits impl's 400 pda-malformed branch before the L-22 403 auth checks run. Impl was semantically correct; spec was wrong.
+- **Root-cause diagnosis:** L-22's 403 enum included `pda-malformed` alongside real auth-scope failures (`insufficient-scope`, `session-bearer-mismatch`, `pda-decision-mismatch`). Wrong categorization — a malformed JWS means the client sent invalid wire bytes; no authorization check has a parseable subject to evaluate. Semantically 400 (bad request), not 403 (forbidden).
+- **Fix:**
+  - §10.3.2 400 Bad Request block now enumerates `{malformed-json, missing-required-field, unknown-tool, pda-malformed}`
+  - §10.3.2 403 Forbidden block removes `pda-malformed`; retains `{insufficient-scope, session-bearer-mismatch, pda-decision-mismatch}`
+  - Forward-pointer left in the 403 block so readers of the old location find the new home
+- **Must-map update:** SV-PERM-20 assertion text now enumerates both sets and the split rationale. Validators filter each negative case against the correct status code.
+- **Impl impact:** zero code change. Impl was already returning 400 for wire-malformed JWS; spec catches up. SV-PERM-22 regression that surfaced this reverts to PASS after validator adjusts expectation.
+- **Why this is a normative fix (not a spec-convention preference):** status-code choice affects error-handling code in callers. A caller retrying on 4xx-vs-5xx or logging auth-failures differently from malformed-body failures needs the spec to match real semantics. Conflating 400 and 403 in spec wording would silently break caller instrumentation.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
