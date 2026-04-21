@@ -1051,9 +1051,18 @@ Content-Type: application/json
   "audit_this_hash": "<64-char hex>",
   "handler_accepted": true,
   "runner_version": "1.0",
-  "recorded_at": "<RFC 3339>"
+  "recorded_at": "<RFC 3339>",
+  "idempotency_key": "<UUIDv4 — surface for §12.2 idempotency replay>",
+  "replayed": false
 }
 ```
+
+When the caller supplies an `Idempotency-Key` request header matching a prior `(session_id, idempotency_key)` pair, the Runner MUST:
+- Return the cached decision body with the same `audit_record_id` and `audit_this_hash`
+- Set `replayed: true`
+- NOT append a second audit row (chain does not advance)
+
+This surfaces the §12.2 idempotency rule for permission decisions as an observable API property rather than a silent implementation detail.
 
 - `audit_record_id` / `audit_this_hash` — the identifier and chain hash of the audit row written for this decision. Callers reconcile by fetching `/audit/records` and matching.
 - `handler_accepted` — true when the PDA (if required) verified successfully against `security.trustAnchors`, or when the decision was AutoAllow/Deny/CapabilityDenied (handler not required). False only when a required PDA failed verification; in that case `decision` is coerced to `Deny` with `reason="pda-verify-failed"` AND an audit row is still written (the attempted decision is itself an auditable event).

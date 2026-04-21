@@ -55,6 +55,15 @@
     "recorded_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The idempotency key (UUIDv4) associated with this decision's bracket-persist entry per §12.2. Set by the Runner when it mints the side_effect on first call. Callers MAY present this value in an Idempotency-Key request header on subsequent calls to replay the same decision; the Runner MUST return the cached decision + audit_record_id without appending a second audit row. Enables the §12.2 normative idempotency rule for permission decisions."
+    },
+    "replayed": {
+      "type": "boolean",
+      "description": "True when this response was served from the idempotency cache (a prior /permissions/decisions call with the same (session_id, idempotency_key) already ran and its decision is being returned verbatim). False or omitted when this is the first time the (session_id, idempotency_key) pair was processed. Validators asserting idempotency semantics use this flag to distinguish fresh-dispatch responses from cache-hit responses. audit_this_hash is unchanged across replay: the same audit_record_id is returned, no new chain advance."
     }
   }
 }

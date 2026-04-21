@@ -275,6 +275,16 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Impl impact:** small — wire `markerPhase.side_effect` through `POST /permissions/decisions` handler. Populate a `side_effect` entry at pending phase before dispatch, transition to committed phase after decision recorded. Markers fire at the appropriate boundaries. `workflow.side_effects[]` in `/state` response populates naturally from this path.
 - **Validator impact:** zero code change. V2-04 crash-harness already consumes the §12.5.3 markers correctly; with impl wiring the emission path, the 5 marker-gated handlers (HR-04, HR-05, SV-SESS-03, SV-SESS-07, SV-SESS-08, SV-SESS-10) flip SKIP → PASS.
 
+### L-32 — §10.3.2 response body + idempotency_key surface `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · M2 post-L-31 validator run · Finding J: impl shipped `idempotency_key` in the POST /permissions/decisions response body to surface the §12.2 idempotency replay behavior. Spec's `schemas/permission-decision-response.schema.json` has `additionalProperties: false` and didn't list the field. Schema validation fails for SV-PERM-20 + SV-PERM-21.
+- **Root cause:** L-31 introduced the idempotency rule for permission decisions ("re-submitting same `(session_id, idempotency_key)` returns original decision + audit_record_id") but didn't surface the mechanism in the response schema. Impl's addition is semantically correct — caller needs to KNOW the idempotency_key assigned to the decision to replay it — but shipped ahead of a matching schema update.
+- **Root-cause fix:**
+  - `schemas/permission-decision-response.schema.json` now lists `idempotency_key` (optional string, UUIDv4) and `replayed` (optional boolean) as defined properties.
+  - §10.3.2 response-body spec documents the fields and the replay contract (caller presents `Idempotency-Key` header matching prior decision; Runner returns cached body with `replayed: true`, same audit_record_id, no chain advance).
+- **Impl impact:** zero. Impl's current emission is schema-valid after the update. SV-PERM-20 + SV-PERM-21 flip fail → pass on validator's next run against a pin-bumped impl.
+- **Pattern observation:** impl shipping a semantically-correct addition ahead of a matching schema update is the same pattern as L-26 (400 vs 403 error-code disagreement). Both times impl was right; spec caught up. This is the three-repo architecture's legitimate friction — impl iterates faster than the pinned spec, validator catches the drift, spec ratifies. The friction itself is a feature.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
