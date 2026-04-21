@@ -1,0 +1,12 @@
+{
+  "prompt_id": "prm_conformance_test_01",
+  "nonce": "soa-conformance-test-nonce-01",
+  "decision": "approve",
+  "user_sub": "user_conformance_test",
+  "tool": "fs__write_file",
+  "args_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "capability": "WorkspaceWrite",
+  "control": "Prompt",
+  "handler_kid": "soa-conformance-test-handler-v1.0",
+  "decided_at": "2026-04-20T12:00:00Z"
+}

@@ -191,6 +191,17 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Impl rename:** `400 pda-verify-not-configured` → `503 pda-verify-unavailable`. Simple code-path swap plus a reason-string rename.
 - **L-24 candidate (not yet logged):** SV-PERM-21 happy path still SKIP because there's no signing fixture — need a pinned test handler keypair + a pre-signed PDA fixture that impl can verify. Separate spec commit scope.
 
+### L-24 — Conformance test handler keypair + pre-signed PDA fixture `[normative fixture, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · Week 3 day 3 · `SV-PERM-21` (PDA verify happy path) was stuck at SKIP because no pinned handler keypair existed. Validators had two bad options: (a) generate an ephemeral keypair per test run and hope the impl's trust anchors dynamically include it (impractical), (b) leave SV-PERM-21 permanently skipped (dishonest for M1 conformance). Both wrong.
+- **Root-cause fix:**
+  - `test-vectors/handler-keypair/` — pinned Ed25519 keypair (both halves published: private key is a test fixture, not a credential). Deterministically derived from a 32-byte seed so any regen yields byte-identical fixture. SPKI: `749f3fd468e5a7e7e6604b71c812b66b45793228b557a44e25388ed07a8591e3`. Files: `private.pem`, `public.pem`, `public.jwk.json`, `spki_sha256.txt`, `README.md`.
+  - `test-vectors/permission-prompt-signed/` — pre-signed compact JWS. `canonical-decision.json` declares a Prompt-approval for `fs__write_file` under `WorkspaceWrite`/`Prompt` (matches resolver output for that tool from the pinned Tool Registry). `pda.jws` is the compact JWS over JCS(canonical-decision.json) signed by the pinned handler private key. Header: `{"alg":"EdDSA","kid":"soa-conformance-test-handler-v1.0","typ":"soa-pda+jws"}`. Round-trip-verified at commit time.
+  - `test-vectors/conformance-card/agent-card.json` — `security.trustAnchors` extended to a SECOND entry pinning the handler-keypair SPKI. `trustAnchors[0]` remains the impl-substituted placeholder (card signing); `trustAnchors[1]` is the static handler-key anchor (PDA verify). Impl's PDA verification path iterates trustAnchors looking for a matching `kid`; no code change required on impl beyond adding trustAnchors[1] to the loaded anchor store.
+- **Impl adoption:** minimal. When `RUNNER_CARD_FIXTURE` is set, impl now loads TWO trust anchors instead of one; the second (handler) anchor is used for PDA verify. If impl's current trust-anchor loader already iterates the trustAnchors array (it should, per §6.1.1), this is zero-code-change from impl side.
+- **Validator adoption:** small. Read `test-vectors/handler-keypair/private.pem` at test startup; use either the pre-signed `pda.jws` (simplest) or sign its own `canonical-decision.json` bodies with the pinned private key. SV-PERM-21 flips SKIP → PASS on next live run.
+- **Security note:** the committed private key is PUBLIC. Any Runner serving real traffic with this fixture's trust anchor configured accepts signatures from anyone with a git clone of this repo. Production deployments MUST NOT load this fixture.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

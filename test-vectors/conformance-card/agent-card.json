@@ -41,6 +41,12 @@
         "spki_sha256": "16dc826f86941f2b6876f4f0f59d91f0021dacbd4ff17b76bbc9d39685250606",
         "uri": "https://unused.conformance.test/trust",
         "publisher_kid": "soa-conformance-test-release-v1.0"
+      },
+      {
+        "issuer": "CN=SOA-Harness Conformance Test Handler CA, O=SOA-Harness Test Fixtures, C=US",
+        "spki_sha256": "749f3fd468e5a7e7e6604b71c812b66b45793228b557a44e25388ed07a8591e3",
+        "uri": "https://unused.conformance.test/handler",
+        "publisher_kid": "soa-conformance-test-handler-v1.0"
       }
     ],
     "auditSink": "file:///tmp/soa-conformance-audit/"
