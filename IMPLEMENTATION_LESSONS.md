@@ -356,6 +356,35 @@ If actual skip count exceeds 25, raise to user before sibling plans proceed to W
   - §17 A2A Handoff (SV-A2A 14) — M5.
 - **Plan-evaluator pass expected after this commit** — same cadence as L-27 → L-28 in M2. User will invoke; I'll execute findings at root before sibling plans.
 
+### L-34 — M3 sibling-plan evaluator resolution `[normative, in-spec @ <this-commit>]`
+
+Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + validator `121cc69`) and produced 15 findings + 6 structural challenges. All spec-side resolutions bundled here. Plan-file corrections follow in sibling repo commits.
+
+**Spec additions:**
+
+1. **§8.3.1 MemoryDegraded Observability (NEW clarification)** — `MemoryDegraded` is a `StopReason` (§13.4), not a direct §14.1 StreamEvent. External observation is via `SessionEnd.payload.stop_reason: "MemoryDegraded"` OR the System Event Log (§14.2). Resolves F-01: sibling plans implied a bare `MemoryDegraded` event that doesn't exist in the 25-type enum.
+
+2. **§11.3.1 Runtime Tool-Addition Test Hook (NEW, normative testability)** — `SOA_RUNNER_DYNAMIC_TOOL_REGISTRATION=<trigger-file-path>` env var. Runner watches file; writes trigger §11.1 registration. Same production-guard pattern as other test hooks (loopback-only). Resolves F-09: `SV-REG-03` had no runtime tool-add transport.
+
+3. **`test-vectors/memory-mcp-mock/` (NEW fixture directory)** — pinned protocol specification + `corpus-seed.json` (20 notes with varied data_class for SV-MEM-03..05 weighting). Env vars:
+   - `SOA_MEMORY_MCP_MOCK_TIMEOUT_AFTER_N_CALLS=<n>` (HR-17 three-timeout driver)
+   - `SOA_MEMORY_MCP_MOCK_RETURN_ERROR=<tool_name>`
+   - `SOA_MEMORY_MCP_MOCK_SEED=<path>`
+   README documents `HR-17` test choreography using the fixture + observation via `SessionEnd.stop_reason`. Resolves F-08: Memory MCP mock was unscheduled, gating 9 tests.
+
+**Must-map retags:**
+- `SV-CLUS-01..04` → M4 (§12.4 distributed coordination is Gateway-adjacent). Resolves F-07: SV-CLUS classified as "manifest-check" but requires runtime coordination + fencing.
+- `SV-GOV-10` → M5 (core+handoff profile requires §17 A2A). Resolves F-06 partial.
+- `SV-GOV-12` → M5 (status=reserved, §17 dep). Resolves F-06 partial.
+
+**Final milestone tally (230 total):** M1: 1 · M2: 22 · M3: **139** (was 145) · M4: 8 (was 4) · M5: 60 (was 58).
+
+**Revised M3 skip budget:** 139 tagged; target ≥120 green → 19-test skip budget. Tighter than pre-L-34's 25.
+
+**Plan-file corrections (applied in sibling repos separately — F-02, F-03, F-04, F-05, F-10, F-11, F-12, F-13, F-14, S-3, S-4, S-6):** test-count arithmetic refreshes, Week-4 scaffold pattern extended, validator V-9 split into V-9a/V-9b/V-9c, impl T-0 Memory MCP mock slot added, full SHA correction, wall-clock baseline task added, machine-readable STATUS.md schema suggested.
+
+**Citation graph stale vs M3 kickoff additions (F-15):** `graphify-out/citations.json` indexes no HR tests and no OBS-category test nodes (SV-MEM-STATE-*, SV-BUD-PROJ-*, SV-REG-OBS-*, SV-STR-OBS-*). Not a plan-validity blocker; spec-repo graph-maintenance item. `refresh-graph.py` re-runs at this commit should reduce the drift.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

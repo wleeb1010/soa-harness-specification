@@ -581,6 +581,15 @@ On each Runner loop iteration (defined as one execution of §16 state 1 → stat
 - On timeout or connection failure during startup: the Runner MUST fail startup with `MemoryUnavailableStartup`. Fail-open to empty memory is NOT permitted.
 - On timeout mid-loop: the Runner MUST proceed with the last successfully loaded memory slice and emit `MemoryDegraded` on the System Event Log. A persistent failure (≥ 3 consecutive loops) MUST terminate the session with `StopReason::MemoryDegraded`.
 
+### 8.3.1 MemoryDegraded Observability (Normative — clarification for L-34)
+
+**Rationale.** `MemoryDegraded` is a `StopReason` (§13.4 enum) emitted when the Memory MCP server fails three consecutive calls. It is NOT a bare `StreamEvent` type in the §14.1 25-value closed enum. For external observation:
+
+1. **Via SessionEnd event:** when `MemoryDegraded` terminates a session, the `SessionEnd` StreamEvent (a §14.1 type) carries `payload.stop_reason: "MemoryDegraded"`. Validators assert `HR-17` (Memory MCP timeouts → MemoryDegraded) by polling `GET /events/recent` for a `SessionEnd` event with this stop_reason.
+2. **Via System Event Log:** the `/logs/system.log` entry per §14.2 carries the `MemoryDegraded` category.
+
+Do NOT interpret "MemoryDegraded StreamEvent" in any plan, test harness, or validator assertion as a direct §14.1 type — it is always observed through `SessionEnd.payload.stop_reason` or the System Event Log.
+
 ### 8.4 Consolidation Trigger
 
 The Runner MUST invoke `consolidate_memories(aging_rules.consolidation_threshold)` at least once per 24 hours, or after any session accumulating ≥ 100 new notes, whichever is sooner. A dedicated consolidation process MAY perform this out-of-band.
@@ -1406,6 +1415,16 @@ Deny lists live in `AGENTS.md`; the syntax is one tool name per line under `### 
 - On self-improvement iteration acceptance (§9.5 step 12e), the Runner MUST pin the **new** Tool Pool for **new** sessions.
 - Sessions in flight during acceptance MUST continue with their pinned pool; they observe no tool additions or removals mid-session. The session file records the Tool Pool manifest by content hash.
 - On session resume: if the Tool Pool manifest hash no longer resolves (tools removed), the session MUST terminate with `StopReason::ToolPoolStale` and emit `ToolPoolStaleResume`. No partial-pool resume is permitted.
+
+#### 11.3.1 Runtime Tool-Addition Test Hook (Normative — Testability)
+
+**Rationale.** `SV-REG-03` asserts "Tools added mid-session do not appear in in-flight pool". §11.2 covers session-start pool assembly; §11.3 covers re-registration at SI acceptance (M5). Neither path gives a validator a deterministic way to add a tool at runtime during a single M3 test execution without invoking the full self-improvement flow. This section defines a test-only env-var hook.
+
+**Env var `SOA_RUNNER_DYNAMIC_TOOL_REGISTRATION=<trigger-file-path>`** — when set, conformant Runners watch the named file (fsnotify or equivalent polling) and, when a JSON-array of tool entries is written to it, invoke the §11.1 registration path with each entry. The validator writes a tool-spec JSON to this file during a test to simulate MCP dynamic registration. After the file is consumed, the Runner MUST truncate it so a subsequent write triggers another registration.
+
+**Production guard:** same rule as `RUNNER_TEST_CLOCK` / `RUNNER_CRASH_TEST_MARKERS` — MUST NOT be reachable by untrusted principals, MUST refuse startup with the env set on a non-loopback interface. The env var is test-only; production deployments add tools via the MCP transport per §11.2/§11.3.
+
+**Conformance linkage.** `SV-REG-03` validator drives the env var with a controlled tool entry; asserts `registry_version` (`/tools/registered` per §11.4) updates AND the in-flight session's `tool_pool_hash` does NOT (mid-session pool is pinned per §11.2).
 
 ### 11.4 Dynamic Registration Observability (Normative — M3 addition)
 

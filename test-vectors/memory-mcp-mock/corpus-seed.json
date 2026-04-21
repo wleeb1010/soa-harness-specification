@@ -1,0 +1,27 @@
+{
+  "schema": "https://soa-harness.org/schemas/v1.0/memory-corpus-seed.json",
+  "description": "Pinned seed corpus for Memory MCP mock test fixture. 20 synthetic note entries with varied data_class values for SV-MEM-03..05 weighting assertions.",
+  "version": "1.0",
+  "notes": [
+    { "note_id": "mem_seed_0001", "summary": "User prefers Python for data analysis tasks.", "data_class": "internal", "recency_days_ago": 3, "graph_strength": 0.6 },
+    { "note_id": "mem_seed_0002", "summary": "Project timeline target is Q3 release.", "data_class": "internal", "recency_days_ago": 12, "graph_strength": 0.8 },
+    { "note_id": "mem_seed_0003", "summary": "API key rotation scheduled for 2026-05-15.", "data_class": "confidential", "recency_days_ago": 1, "graph_strength": 0.9 },
+    { "note_id": "mem_seed_0004", "summary": "Team standups moved to 10am Tuesdays.", "data_class": "internal", "recency_days_ago": 20, "graph_strength": 0.3 },
+    { "note_id": "mem_seed_0005", "summary": "Dependency on canonicalize npm package for JCS.", "data_class": "public", "recency_days_ago": 5, "graph_strength": 0.7 },
+    { "note_id": "mem_seed_0006", "summary": "User prefers verbose logging during debugging.", "data_class": "internal", "recency_days_ago": 2, "graph_strength": 0.5 },
+    { "note_id": "mem_seed_0007", "summary": "Conformance tests run on 3-platform CI matrix.", "data_class": "public", "recency_days_ago": 8, "graph_strength": 0.6 },
+    { "note_id": "mem_seed_0008", "summary": "Agent Card schema includes activeMode enum.", "data_class": "public", "recency_days_ago": 15, "graph_strength": 0.7 },
+    { "note_id": "mem_seed_0009", "summary": "HR-02 asserts budget projection over limit.", "data_class": "internal", "recency_days_ago": 4, "graph_strength": 0.4 },
+    { "note_id": "mem_seed_0010", "summary": "SV-PERM-01 asserts ReadOnly rejects Mutating.", "data_class": "public", "recency_days_ago": 7, "graph_strength": 0.8 },
+    { "note_id": "mem_seed_0011", "summary": "Session bootstrap grants scopes per §12.6.", "data_class": "internal", "recency_days_ago": 6, "graph_strength": 0.6 },
+    { "note_id": "mem_seed_0012", "summary": "MANIFEST digest regenerated after fixture bump.", "data_class": "internal", "recency_days_ago": 10, "graph_strength": 0.5 },
+    { "note_id": "mem_seed_0013", "summary": "PDA signing uses Ed25519 per §6.1.1.", "data_class": "public", "recency_days_ago": 13, "graph_strength": 0.7 },
+    { "note_id": "mem_seed_0014", "summary": "Token budget projection uses p95-over-W algorithm.", "data_class": "public", "recency_days_ago": 9, "graph_strength": 0.6 },
+    { "note_id": "mem_seed_0015", "summary": "Cold-cache CI budget is 120 seconds on all platforms.", "data_class": "public", "recency_days_ago": 11, "graph_strength": 0.4 },
+    { "note_id": "mem_seed_0016", "summary": "Audit chain uses SHA-256 per-record linkage.", "data_class": "public", "recency_days_ago": 14, "graph_strength": 0.9 },
+    { "note_id": "mem_seed_0017", "summary": "Tool Registry entry carries risk_class and default_control.", "data_class": "public", "recency_days_ago": 16, "graph_strength": 0.8 },
+    { "note_id": "mem_seed_0018", "summary": "Permission decision endpoint requires decide scope.", "data_class": "public", "recency_days_ago": 17, "graph_strength": 0.7 },
+    { "note_id": "mem_seed_0019", "summary": "Resume algorithm runs at boot for in-progress sessions.", "data_class": "internal", "recency_days_ago": 18, "graph_strength": 0.5 },
+    { "note_id": "mem_seed_0020", "summary": "Conformance card ships with DangerFullAccess activeMode.", "data_class": "public", "recency_days_ago": 19, "graph_strength": 0.6 }
+  ]
+}

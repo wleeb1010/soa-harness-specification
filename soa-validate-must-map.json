@@ -2044,8 +2044,8 @@
       "profile": "core+handoff",
       "severity": "critical",
       "assertion": "A2A JWT carries soa_core_version claim matching the negotiated version; absent or mismatched claim → HandoffRejected(reason=version-not-negotiated).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — core+handoff profile requires §17 A2A infrastructure (M5). Retagged from M3 per L-34 finding F-06."
     },
     "SV-GOV-11": {
       "name": "Release-build verification gate",
@@ -2064,8 +2064,8 @@
       "profile": "core",
       "severity": "moderate",
       "assertion": "Single-host contention → SelfImproveLockBusy after 30s.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-CLUS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — §12.4 distributed coordination + fencing-token infrastructure is Gateway-adjacent (fits alongside UI Gateway shipment in M4). Retagged from M3 per L-34 finding F-07."
     },
     "SV-CLUS-02": {
       "name": "Distributed fencing",
@@ -2074,8 +2074,8 @@
       "profile": "core",
       "severity": "moderate",
       "assertion": "SOA_COORD_MODE=distributed: commits carry Soa-Fencing-Token trailer.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-CLUS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — §12.4 distributed coordination + fencing-token infrastructure is Gateway-adjacent (fits alongside UI Gateway shipment in M4). Retagged from M3 per L-34 finding F-07."
     },
     "SV-CLUS-03": {
       "name": "Token gap detection",
@@ -2084,8 +2084,8 @@
       "profile": "core",
       "severity": "moderate",
       "assertion": "Non-monotonic adjacent fencing tokens → SelfImproveFencingViolation; loop pauses.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-CLUS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — §12.4 distributed coordination + fencing-token infrastructure is Gateway-adjacent (fits alongside UI Gateway shipment in M4). Retagged from M3 per L-34 finding F-07."
     },
     "SV-CLUS-04": {
       "name": "Lease expiry rejection",
@@ -2094,8 +2094,8 @@
       "profile": "core",
       "severity": "moderate",
       "assertion": "Writer holding an expired lease rejected at commit.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-CLUS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — §12.4 distributed coordination + fencing-token infrastructure is Gateway-adjacent (fits alongside UI Gateway shipment in M4). Retagged from M3 per L-34 finding F-07."
     },
     "SV-GOOD-01": {
       "name": "Holdout gate",
@@ -2182,8 +2182,8 @@
       "profile": "core",
       "assertion": "Runner detects an upstream-A2A major-version bump that breaks any §17 wire property and refuses the peer with HandoffRejected(reason=wire-incompatibility).",
       "status": "reserved",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M5",
+      "milestone_reason": "M5 — status=reserved entry depends on §17 A2A. Retagged from M3 per L-34 finding F-06."
     },
     "SV-AUDIT-TAIL-01": {
       "name": "Audit tail observability response",

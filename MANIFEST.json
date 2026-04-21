@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "89315a784526936536cfe432fa4ae5c7ba61866a6bac89e10720e42bd937a46d",
+        "sha256": "621b62b2050780e3ba7450085586db6b29ed681271016bad6a84614e954feb22",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "ecc05cd72d2309027ba7dbd71aa554a1c5161b06890d942abf1a6ecac5c93d8e",
+        "sha256": "a473a5aeca4d6a3d58321d31d5c83ebc2c3283aa59ad8507b56457d2a3f81bf6",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -503,6 +503,18 @@
         "name": "package.json",
         "path": "test-vectors/jcs-parity/package.json",
         "sha256": "960c20cbe10938b8304a1dbeaef113d469b2129b5d55eb72969b178bd5332bef",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/memory-mcp-mock/README.md",
+        "sha256": "00470a533a66c840d01c4a46a5729955ef1f1c0056f3e140b53bccd86cfe7cc9",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "corpus-seed.json",
+        "path": "test-vectors/memory-mcp-mock/corpus-seed.json",
+        "sha256": "48e84f489ceefedc77dbe03e9b633c9441e7805e23a75f81379f58cb32d02289",
         "canonicalization": "JCS-RFC-8785"
       },
       {
