@@ -1,0 +1,14 @@
+{
+  "schema": "https://soa-harness.org/schemas/v1.0/tool-registry.schema.json",
+  "description": "M2 filtered sub-fixture for SV-SESS-05 + SV-SESS-11 negative paths. Single tool: non_compliant_ephemeral_tool (Mutating/AutoAllow with zero idempotency retention — INVALID per §12.2). Runner MUST refuse startup with ToolPoolStale reason=idempotency-retention-insufficient.",
+  "version": "1.0",
+  "tools": [
+    {
+      "name": "non_compliant_ephemeral_tool",
+      "risk_class": "Mutating",
+      "default_control": "AutoAllow",
+      "description": "A tool that lacks dedupe support AND is incorrectly classified. §12.2 REQUIRES rejection at Tool Registry load with ToolPoolStale reason=idempotency-retention-insufficient.",
+      "idempotency_retention_seconds": 0
+    }
+  ]
+}

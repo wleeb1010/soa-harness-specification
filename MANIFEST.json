@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "ea9fdee4fa20ed4170da4b16d82d4620559075ab5535f3b352699badef970900",
+        "sha256": "c97ba3e17157ef07f01212822317d219d6810bf02aae4c19bc511d70fb31acac",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "b143ac2b3b083c39613641bd97573ef2f5b48e3a34efa288043fa165da8c8b3d",
+        "sha256": "dbcf87739deaa51163a67580626c77ce2d397202f7356dec13816fcfacc9a8d4",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -59,6 +59,12 @@
         "name": "audit-records-response.schema.json",
         "path": "schemas/audit-records-response.schema.json",
         "sha256": "3c4a1b68127cf202ff8cfdd0e3bbd0af5345404287a347e3e68264cf68bc176d",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "audit-sink-events-response.schema.json",
+        "path": "schemas/audit-sink-events-response.schema.json",
+        "sha256": "e8a8ab7ed9f226f33b7029b538f4ad572f9aab66a21b69250c4d8360012b5a6b",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -136,7 +142,7 @@
       {
         "name": "session-state-response.schema.json",
         "path": "schemas/session-state-response.schema.json",
-        "sha256": "4f216b01550f494e3a794606aa59ef17e05ddd59f664493359d0d4923660f2ba",
+        "sha256": "6df25aed7c5edd379a9bb2a32d1940b026834a3e5ba5a04cbb5b4c0bf2150ce0",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -578,9 +584,21 @@
         "canonicalization": "raw-utf8"
       },
       {
+        "name": "tools-compliant-only.json",
+        "path": "test-vectors/tool-registry-m2/tools-compliant-only.json",
+        "sha256": "138a1e70945908206f59c3dce50a4349bb3a03e3af63668eb41d15658f2f4b03",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "tools-non-compliant-only.json",
+        "path": "test-vectors/tool-registry-m2/tools-non-compliant-only.json",
+        "sha256": "124f182844f9c1ae74bb97d7a603a80d768cd2d031cbdfcc1cd404a1bef34367",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
         "name": "tools.json",
         "path": "test-vectors/tool-registry-m2/tools.json",
-        "sha256": "83785cdec471baea1838bf6a0f38952a3d5e6cf10314e13ba4a9e90efe1243f6",
+        "sha256": "14b9c7afbcf516cb7e2fa187c2b2538272bc8d0c677db84d3c80b960b34e91ee",
         "canonicalization": "JCS-RFC-8785"
       },
       {

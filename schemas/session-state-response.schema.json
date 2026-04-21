@@ -39,7 +39,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["tool", "idempotency_key", "phase"],
+            "required": ["tool", "idempotency_key", "phase", "args_digest", "first_attempted_at", "last_phase_transition_at"],
             "additionalProperties": false,
             "properties": {
               "tool": { "type": "string" },

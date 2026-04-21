@@ -1503,6 +1503,8 @@ The body MUST reflect the current state of the session as it would appear if `re
 3. Emit a StreamEvent
 4. Touch the session file on disk (read-only in-memory observation; implementations that need to sync from disk do so AT MOST once per request and treat it as a cache refresh, not a file mutation)
 
+**Byte-identity contract (normative).** Two successive `GET /sessions/.../state` calls against an otherwise-quiescent session MUST return response bodies that are byte-identical **when `generated_at` is excluded from the comparison**. `generated_at` is wall-clock per-request timestamp — excluding it from the identity check is the validator's conformance predicate for not-a-side-effect. Every other field (session_id, activeMode, workflow.*, counters, tool_pool_hash, card_version, runner_version) MUST match byte-for-byte across the two responses. A conformant validator predicate: `strip(response_body, "generated_at") == strip(response_body_prior, "generated_at")`.
+
 **Conformance linkage.**
 - `SV-SESS-STATE-01` (new) — schema conformance of the response; correct fields populated for a session with known bracket-persist state
 - `HR-04` — validator drives a tool invocation, reads /state before the Runner commits the side-effect, asserts `phase=pending` with a populated `idempotency_key`; kills the Runner subprocess at that point; restarts; reads /state again; asserts `phase=committed` after replay (assuming tool's dedupe accepted the replay) or stays `pending` + `first_attempted_at` preserved if the tool refused
@@ -1520,9 +1522,70 @@ The body MUST reflect the current state of the session as it would appear if `re
 SOA_RUNNER_AUDIT_SINK_FAILURE_MODE=<enum>
 ```
 
-with values `healthy | degraded-buffering | unreachable-halt`. When set, the Runner behaves AS IF the sink were in the named state for state-machine-observation purposes, bypassing actual sink reachability checks. `SV-PERM-19` validator flips the env var across the three states (via subprocess restart, since env vars are read at boot) and asserts the corresponding Runner behaviors (buffering, 503-flip, StreamEvent emission) per §10.5.1.
+with values `healthy | degraded-buffering | unreachable-halt`. When set, the Runner behaves AS IF the sink were in the named state AND drives the corresponding concrete side effects: in `degraded-buffering` the Runner MUST actually write audit records to the fsync-backed `/audit/pending/` local queue (so crash-recovery tests over this buffer exercise real persistence), and in `unreachable-halt` the Runner MUST actually refuse Mutating/Destructive tool calls per §10.5.1 (not just set `/ready` to 503). The env var bypasses external-sink reachability checks but does NOT elide the Runner-internal persistence behaviors those states require.
+
+**State-transition-on-restart (normative clarification for SV-PERM-19).** A fresh Runner process booting with `SOA_RUNNER_AUDIT_SINK_FAILURE_MODE` set MUST emit the corresponding `AuditSink*` StreamEvent exactly once at boot, treating the fresh process as transitioning from an implicit `healthy` prior state. This makes env-var-restart testing deterministic: `SV-PERM-19` validators can restart the subprocess across the three values and observe exactly one StreamEvent per boot matching the env value.
 
 **Production guard:** same rule as §10.6.1's clock-injection test hook — the sink-failure env var MUST NOT be reachable by untrusted principals in production, and conformance-tested Runners SHOULD refuse to start with this env var set when bound to a non-loopback interface.
+
+#### 12.5.3 Crash Test Markers + Session Isolation Env Vars (Normative — Testability)
+
+**Rationale.** `HR-04`, `HR-05`, `SV-SESS-03`, `SV-SESS-04` require the validator to kill the Runner subprocess at specific fsync boundaries and observe post-resume behavior. Without a deterministic marker protocol, the validator can't name a kill point; tests become impl-version-coupled. This section pins the marker names + emission points so cross-impl validators (including `soa-validate`) can target the same boundaries.
+
+**Env var `RUNNER_CRASH_TEST_MARKERS=1`** — when set, conformant Runners MUST emit structured marker lines to stderr at each of the following boundaries, in order:
+
+| Marker | Emitted when | Context |
+|---|---|---|
+| `SOA_MARK_PENDING_WRITE_DONE session_id=<sid> side_effect=<sidx>` | After fsync of the `phase=pending` session-file write completes successfully | §12.2 bracket step 1 |
+| `SOA_MARK_TOOL_INVOKE_START session_id=<sid> side_effect=<sidx>` | Immediately before the tool's actual invocation (post-permission-dispatch) | §12.2 step 2 |
+| `SOA_MARK_TOOL_INVOKE_DONE session_id=<sid> side_effect=<sidx> result=<committed\|compensated>` | After tool returns, before persistence of the committed/compensated phase | §12.2 step 3 pre-persist |
+| `SOA_MARK_COMMITTED_WRITE_DONE session_id=<sid> side_effect=<sidx>` | After fsync of the `phase=committed` session-file write completes | §12.2 step 3 post-persist |
+| `SOA_MARK_DIR_FSYNC_DONE session_id=<sid>` | After dir-fsync (§12.3 POSIX) or `MoveFileExW(WRITE_THROUGH)` (§12.3 Windows) completes — the true atomic-write boundary | §12.3 |
+| `SOA_MARK_AUDIT_APPEND_DONE audit_record_id=<aid>` | After an audit row's local fsync completes (`/audit/permissions.log` append) | §10.5 |
+| `SOA_MARK_AUDIT_BUFFER_WRITE_DONE audit_record_id=<aid>` | After an audit row is written to the `/audit/pending/` local buffer (in `degraded-buffering`) | §10.5.1 |
+
+Cross-platform identity: the markers MUST fire in the same logical order on Linux, macOS, and Windows for equivalent workflow paths. Platform-specific differences (fsync on POSIX vs FlushFileBuffers+MoveFileEx on Windows) are ABSTRACTED behind the `SOA_MARK_DIR_FSYNC_DONE` marker — a validator kill-at-marker harness doesn't need to know platform mechanics.
+
+**Env var `RUNNER_SESSION_DIR=<path>`** — overrides the default `/sessions/` directory. REQUIRED for crash-recovery test harnesses that need isolated per-test session state. When unset, Runners use their platform-default session directory. This env var is a production-safe configuration knob (not a test-only hook) — deployments routinely override the session directory for multi-tenant isolation or encrypted-disk placement.
+
+**Production guard for `RUNNER_CRASH_TEST_MARKERS`:** the marker-emission env var MUST NOT be enabled on production Runners; the stderr stream could leak session identifiers to log aggregators that don't carry the required confidentiality controls. Conformance-tested Runners SHOULD refuse to start with `RUNNER_CRASH_TEST_MARKERS=1` on non-loopback interfaces.
+
+#### 12.5.4 Audit-Sink Event Channel (Normative — M2 Minimum Observability)
+
+**Rationale.** §10.5.1's three-state degradation model emits `AuditSinkDegraded`, `AuditSinkUnreachable`, `AuditSinkRecovered` as StreamEvents. Full StreamEvent transport (§14) is M3 scope — which would leave `SV-PERM-19` untestable in M2. This section defines a minimum-viable observability channel for these three event types in M2.
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+GET /audit/sink-events?after=<event_id>&limit=<n>
+```
+
+- **Transport, auth, rate-limit:** identical rules to `/audit/tail` / `/audit/records` — `audit:read` scope, TLS 1.3 / loopback plain allowed, 60 rpm per bearer.
+- **Pagination:** `after`/`limit`/`next_after`/`has_more` per the same protocol as `/audit/records` (§10.5.3).
+
+**Response (200 OK).** JSON body with array of state-transition events:
+
+```json
+{
+  "events": [
+    { "event_id": "evt_...",
+      "type": "AuditSinkDegraded | AuditSinkUnreachable | AuditSinkRecovered",
+      "transition_at": "<RFC 3339>",
+      "detail": { "first_failed_at": "<RFC 3339>", "buffered_records": 42 }
+    }
+  ],
+  "next_after": "evt_...",
+  "has_more": false,
+  "runner_version": "1.0",
+  "generated_at": "<RFC 3339>"
+}
+```
+
+Response schema: `schemas/audit-sink-events-response.schema.json`. Byte-identity contract: same as `/sessions/:id/state` (excluding `generated_at` from comparison).
+
+**Deprecation note.** When §14 StreamEvent transport ships (M3), this endpoint is retained as an alternate polling-friendly observability path. Validators that prefer long-poll over push semantics continue using it.
+
+**Conformance linkage.** `SV-PERM-19` validator fetches this endpoint at each state-transition checkpoint and asserts the expected `AuditSink*` event emitted exactly once per transition.
 
 ### 12.6 Session Bootstrap (Normative)
 
@@ -1566,7 +1629,7 @@ Content-Type: application/json
 ```
 
 - `session_id` — newly minted, matches the §12.1 schema's `session_id` pattern, not re-derivable from the bootstrap bearer. The Runner MUST persist the session file (§12.1) before returning 201.
-- `session_bearer` — an opaque bearer token authorizing `/stream`, `/permissions/resolve`, and `/audit/tail` for exactly this `session_id`. Scopes: `stream:read:<session_id>`, `permissions:resolve:<session_id>`, `audit:read`. Does NOT carry `sessions:create`.
+- `session_bearer` — an opaque bearer token authorizing session-scoped endpoints for exactly this `session_id`. Default-granted scopes: `stream:read:<session_id>`, `permissions:resolve:<session_id>`, `sessions:read:<session_id>`, `audit:read`. When `request_decide_scope: true` is present in the request body, the additional `permissions:decide:<session_id>` scope is also granted (per L-19). Does NOT carry `sessions:create`. `sessions:read:<session_id>` authorizes `GET /sessions/<session_id>/state` (§12.5.1) without a separate scope-grant request — the state-observability surface is a default privilege of any minted session bearer because it reads data the bearer already has access to indirectly via the same session's other endpoints.
 - `granted_activeMode` — MUST equal `requested_activeMode` when the request was within bounds; equals the Agent Card's activeMode clamped-down only when `requested_activeMode` was provided as a value stricter than the Agent Card's maximum (this is informative, not an error; the request succeeded with a tighter mode than requested is NEVER done — if requested is looser than card it's 403).
 
 **Other responses:**

@@ -1,0 +1,14 @@
+{
+  "schema": "https://soa-harness.org/schemas/v1.0/tool-registry.schema.json",
+  "description": "M2 filtered sub-fixture for SV-SESS-05 positive path. Single tool: compliant_ephemeral_tool (Destructive/Prompt with zero idempotency retention — valid under §12.2). Runner MUST boot clean with this fixture loaded.",
+  "version": "1.0",
+  "tools": [
+    {
+      "name": "compliant_ephemeral_tool",
+      "risk_class": "Destructive",
+      "default_control": "Prompt",
+      "description": "A tool that lacks dedupe support but is correctly classified as Destructive + Prompt. Valid per §12.2.",
+      "idempotency_retention_seconds": 0
+    }
+  ]
+}

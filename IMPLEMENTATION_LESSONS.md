@@ -225,6 +225,26 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Must-map catalog:** 8 M2 test IDs tagged with `implementation_milestone: "M2"`. New SV-SESS-STATE-01 added for the state endpoint schema + not-a-side-effect assertions. Catalog total 221 → 222.
 - **Why ship upfront:** M1 taught us that speccing "define the verb but not the window" produces mid-sprint churn. M2 has the same structural risk with session state + audit-sink observations. Landing the surfaces now means both siblings can plan against a stable spec from day 1 rather than discovering gaps at day 5.
 
+### L-28 — M2 plan-evaluator resolution: 16 findings fixed at root `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · plan-evaluator subagent run against spec commit `6566707` + both sibling M2 plans. Subagent produced 16 findings (4 critical, 8 moderate, 4 minor) + 9 structural challenges. User directive: resolve all at the spec first, then plans.
+- **Root-cause fixes in this commit:**
+  1. **F-01 (byte-identity contradiction):** §12.5.1 not-a-side-effect contract now specifies byte-identity EXCLUDING `generated_at` — which is required per-request wall-clock timestamp. Validator predicate: `strip(body, "generated_at") == strip(body_prior, "generated_at")`. Plans will update to reference the exclusion predicate.
+  2. **F-02 (optional fields asserted as present):** `schemas/session-state-response.schema.json` now REQUIRES `first_attempted_at` + `last_phase_transition_at` + `args_digest` in `side_effects.items.required`. Validator V2-06/V2-07 assertions now have schema-backed fields.
+  3. **F-03 (`inherits_from` undefined):** removed from `test-vectors/tool-registry-m2/tools.json`. README updated to say impls MAY concatenate with M1 fixture at load; no magical inheritance field.
+  4. **F-04 (filtered sub-fixtures missing):** shipped `test-vectors/tool-registry-m2/tools-compliant-only.json` + `tools-non-compliant-only.json` — single-tool fixtures for the SV-SESS-05 positive/negative subprocess harnesses.
+  5. **F-05 (M2-T5 WORM sink has no must-map coverage):** SV-PERM-16/17 formally deferred to M3 with rationale about external infrastructure dependencies. Plans will drop M2-T5 from M2 scope.
+  6. **F-06 + F-07 (SV-SESS-06..11 in silent limbo):** all six tagged as `implementation_milestone: "M2"` with validator-plan cross-reference. M2 now has 15 M2-tagged tests (was 9).
+  7. **F-10 (§12.5.2 hook ambiguous on buffer behavior):** clarified — env var drives CONCRETE side effects (buffer writes to `/audit/pending/`, actual Mutating refusal). Does NOT elide Runner-internal persistence.
+  8. **F-11 (SV-SESS-04 dedupe half):** plan bullet will be updated to assert dedupe via audit-chain single-record-for-one-decision observation (achievable at M2 without tool-side counter).
+  9. **F-12 (crash-marker protocol unspecified):** new §12.5.3 Testability Note pins 7 named markers (`SOA_MARK_PENDING_WRITE_DONE`, `SOA_MARK_TOOL_INVOKE_START`, `SOA_MARK_TOOL_INVOKE_DONE`, `SOA_MARK_COMMITTED_WRITE_DONE`, `SOA_MARK_DIR_FSYNC_DONE`, `SOA_MARK_AUDIT_APPEND_DONE`, `SOA_MARK_AUDIT_BUFFER_WRITE_DONE`) with cross-platform identity guarantee. `RUNNER_CRASH_TEST_MARKERS=1` + `RUNNER_SESSION_DIR` env vars documented with production-guard rules.
+  10. **F-13 (state-transition semantics under restart):** §12.5.2 clarified — a fresh boot with the env var set MUST emit exactly one matching `AuditSink*` event at boot, treating the fresh process as transitioning from implicit `healthy`. Makes env-var-restart testing deterministic.
+  11. **F-14 (StreamEvent transport undefined for M2):** new §12.5.4 Audit-Sink Event Channel + `schemas/audit-sink-events-response.schema.json` + new test ID SV-AUDIT-SINK-EVENTS-01. `GET /audit/sink-events` as minimum-viable M2 observability channel. Retained in M3 as polling-friendly alternate to §14 StreamEvent transport.
+  12. **F-15 (§12.6 scope-granting for `sessions:read`):** §12.6 response description now explicitly lists default-granted scope set including `sessions:read:<session_id>`. Plans can assume bootstrap grants it.
+- **Catalog totals:** 222 → 223 tests. Six new M2 tags (SV-SESS-06..11), two M3 deferrals (SV-PERM-16/17), one new test ID (SV-AUDIT-SINK-EVENTS-01).
+- **Validator plan impact:** four findings require plan-file updates (F-08 off-by-one, F-09 unit-test-count labeling, F-11 dedupe assertion wording, F-16 literal placeholder). Also structural reordering per subagent's Structural Challenges 1-9. Plans rewrite to rev 2 in follow-up commits.
+- **Why ship as one commit:** the 12 spec fixes form a coherent "M2 kickoff rev 2" — individually small, collectively the full set of adjustments surfaced by the evaluator. Bundling reduces pin-bump churn on siblings.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

@@ -1,8 +1,7 @@
 {
   "schema": "https://soa-harness.org/schemas/v1.0/tool-registry.schema.json",
-  "description": "M2-extension Tool Registry fixture — adds SV-SESS-05 coverage (non-idempotent tool MUST be classified Destructive with default_control=Prompt per §12.2). Inherits all 8 tools from test-vectors/tool-registry/tools.json plus 2 new entries that specifically exercise the idempotency-classification rule.",
+  "description": "M2-extension Tool Registry fixture — adds SV-SESS-05 + SV-SESS-11 coverage (non-idempotent tool MUST be classified Destructive with default_control=Prompt per §12.2). Standalone: does NOT inherit from the M1 fixture; implementations MAY concatenate with test-vectors/tool-registry/tools.json at load time if they want the combined 10-tool pool for full conformance runs.",
   "version": "1.0",
-  "inherits_from": "test-vectors/tool-registry/tools.json",
   "tools": [
     {
       "name": "compliant_ephemeral_tool",

@@ -49,7 +49,8 @@
     "SV-OPS": "Operational probes: liveness + readiness (§5.4).",
     "SV-AUDIT": "Audit chain observability (tail hash + records + chain integrity, §10.5.2/§10.5.3).",
     "SV-SESS-BOOT": "Session bootstrap endpoint (§12.6).",
-    "SV-SESS-STATE": "Session state observability (§12.5.1)."
+    "SV-SESS-STATE": "Session state observability (§12.5.1).",
+    "SV-AUDIT-SINK": "Audit-sink event channel observability (§12.5.4)."
   },
   "tests": {
     "HR-01": {
@@ -1114,7 +1115,9 @@
       "section_title": "Pending/Committed Bracket",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Every tool in the pool declares idempotency_retention_seconds ≥ max(3600, session resume-grace window, session max lifetime up to 24 h). Tools declaring < 3600 s whose risk_class is not Destructive MUST be rejected at pool assembly with ToolPoolStale(reason=idempotency-retention-insufficient)."
+      "assertion": "Every tool in the pool declares idempotency_retention_seconds ≥ max(3600, session resume-grace window, session max lifetime up to 24 h). Tools declaring < 3600 s whose risk_class is not Destructive MUST be rejected at pool assembly with ToolPoolStale(reason=idempotency-retention-insufficient).",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 §12.3 atomic-write + §12.5 resume + §12.2 idempotency floor scope. Validator plan v2 covers via V2-06/V2-07/V2-08/V2-09/V2-10."
     },
     "SV-PERM-16": {
       "name": "WORM retention tiers",
@@ -1122,7 +1125,9 @@
       "section_title": "Audit Trail",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "DangerFullAccess sessions retained ≥ 365 days; other sessions ≥ 90 days."
+      "assertion": "DangerFullAccess sessions retained ≥ 365 days; other sessions ≥ 90 days.",
+      "implementation_milestone": "M3",
+      "milestone_reason": "External WORM sink retention + audit-reader access require external infrastructure (S3 Object Lock, Azure Blob immutable, etc.) that operators deploy in-band. M2 uses local file:// append-only as substitute; full WORM conformance defers to M3 alongside the operator-deployment story."
     },
     "SV-PERM-17": {
       "name": "Audit-reader access",
@@ -1130,7 +1135,9 @@
       "section_title": "Audit Trail",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Read-only verifier credentials can list/read records without write authority."
+      "assertion": "Read-only verifier credentials can list/read records without write authority.",
+      "implementation_milestone": "M3",
+      "milestone_reason": "External WORM sink retention + audit-reader access require external infrastructure (S3 Object Lock, Azure Blob immutable, etc.) that operators deploy in-band. M2 uses local file:// append-only as substitute; full WORM conformance defers to M3 alongside the operator-deployment story."
     },
     "SV-REG-01": {
       "name": "list_tools metadata-only",
@@ -1228,7 +1235,9 @@
       "section_title": "Atomic Writes",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Crash after fsync+rename produces exactly-one consistent file."
+      "assertion": "Crash after fsync+rename produces exactly-one consistent file.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 §12.3 atomic-write + §12.5 resume + §12.2 idempotency floor scope. Validator plan v2 covers via V2-06/V2-07/V2-08/V2-09/V2-10."
     },
     "SV-SESS-07": {
       "name": "Windows atomic write",
@@ -1236,7 +1245,9 @@
       "section_title": "Atomic Writes",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Crash across MoveFileExW produces exactly-one consistent file."
+      "assertion": "Crash across MoveFileExW produces exactly-one consistent file.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 §12.3 atomic-write + §12.5 resume + §12.2 idempotency floor scope. Validator plan v2 covers via V2-06/V2-07/V2-08/V2-09/V2-10."
     },
     "SV-SESS-08": {
       "name": "Resume replays pending",
@@ -1244,7 +1255,9 @@
       "section_title": "Resume Algorithm",
       "profile": "core",
       "severity": "critical",
-      "assertion": "pending-phase tool replays; committed-phase skipped."
+      "assertion": "pending-phase tool replays; committed-phase skipped.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 §12.3 atomic-write + §12.5 resume + §12.2 idempotency floor scope. Validator plan v2 covers via V2-06/V2-07/V2-08/V2-09/V2-10."
     },
     "SV-SESS-09": {
       "name": "Card-drift terminates",
@@ -1252,7 +1265,9 @@
       "section_title": "Resume Algorithm",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Card version changed mid-session → StopReason::CardVersionDrift on resume."
+      "assertion": "Card version changed mid-session → StopReason::CardVersionDrift on resume.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 §12.3 atomic-write + §12.5 resume + §12.2 idempotency floor scope. Validator plan v2 covers via V2-06/V2-07/V2-08/V2-09/V2-10."
     },
     "SV-SESS-10": {
       "name": "Inflight compensation",
@@ -1260,7 +1275,9 @@
       "section_title": "Resume Algorithm",
       "profile": "core",
       "severity": "critical",
-      "assertion": "phase=inflight on resume → compensating action if tool supports; else mark compensated with ResumeCompensationGap note."
+      "assertion": "phase=inflight on resume → compensating action if tool supports; else mark compensated with ResumeCompensationGap note.",
+      "implementation_milestone": "M2",
+      "milestone_reason": "M2 §12.3 atomic-write + §12.5 resume + §12.2 idempotency floor scope. Validator plan v2 covers via V2-06/V2-07/V2-08/V2-09/V2-10."
     },
     "SV-BUD-01": {
       "name": "Projection algorithm",
@@ -1844,6 +1861,15 @@
       "severity": "critical",
       "assertion": "GET /sessions/<session_id>/state returns 200 with body conforming to schemas/session-state-response.schema.json. Response reflects persisted state (not stale pre-flush in-memory state). Reading MUST NOT advance workflow state, emit StreamEvents, or append audit rows. Rate limit 120 rpm per bearer; 401/403/404/429/503 per spec.",
       "implementation_milestone": "M2"
+    },
+    "SV-AUDIT-SINK-EVENTS-01": {
+      "name": "Audit-sink event channel (M2 minimum observability)",
+      "section": "§12.5.4",
+      "section_title": "Audit-Sink Event Channel",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "GET /audit/sink-events returns 200 with body conforming to schemas/audit-sink-events-response.schema.json. Each event has event_id, type ∈ {AuditSinkDegraded, AuditSinkUnreachable, AuditSinkRecovered}, transition_at. Fresh Runner boot with SOA_RUNNER_AUDIT_SINK_FAILURE_MODE=<state> emits exactly one matching event (the implicit transition from healthy). Pagination via after/next_after/has_more; audit:read scope required.",
+      "implementation_milestone": "M2"
     }
   },
   "tests_by_category": {
@@ -2116,6 +2142,9 @@
     ],
     "SV-SESS-STATE": [
       "SV-SESS-STATE-01"
+    ],
+    "SV-AUDIT-SINK": [
+      "SV-AUDIT-SINK-EVENTS-01"
     ]
   },
   "must_coverage": {
@@ -2988,7 +3017,8 @@
           "SV-PERM-20",
           "SV-PERM-21",
           "SV-PERM-22",
-          "SV-SESS-STATE-01"
+          "SV-SESS-STATE-01",
+          "SV-AUDIT-SINK-EVENTS-01"
         ]
       },
       {
