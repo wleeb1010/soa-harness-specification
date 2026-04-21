@@ -1801,7 +1801,7 @@
       "section_title": "Permission Decision Recording",
       "profile": "core",
       "severity": "critical",
-      "assertion": "POST /permissions/decisions with valid body for an AutoAllow tool returns 201 with body conforming to schemas/permission-decision-response.schema.json. Exactly one audit record is appended; response.audit_this_hash equals the new tail hash. Decision matches what /permissions/resolve would return (forgery resistance). 403 ConfigPrecedenceViolation when bearer lacks permissions:decide scope."
+      "assertion": "POST /permissions/decisions with valid body for an AutoAllow tool returns 201 with body conforming to schemas/permission-decision-response.schema.json. Exactly one audit record is appended; response.audit_this_hash equals the new tail hash. Decision matches what /permissions/resolve would return (forgery resistance). 403 Forbidden reason=\"insufficient-scope\" when bearer lacks permissions:decide:<session_id> scope; 403 reason=\"session-bearer-mismatch\" when bearer belongs to a different session. ConfigPrecedenceViolation is RESERVED for §10.3 step 3 and MUST NOT be used here."
     },
     "SV-PERM-21": {
       "name": "PDA verification happy path",

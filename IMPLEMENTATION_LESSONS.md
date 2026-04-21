@@ -173,6 +173,15 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Regression protection:** ajv-verified after fix — both the conformance card AND the default `test-vectors/agent-card.json` schema-validate cleanly. README updated with the new placeholder value.
 - **Process lesson:** fixtures SHOULD be ajv-validated against their spec schemas in CI before landing. The spec repo's `build-manifest.mjs` doesn't currently validate content, only digests. Adding a `validate-fixtures.mjs` CI step is a follow-up (L-22 candidate).
 
+### L-22 — §10.3.2 403 reason enum + SV-PERM-20 assertion text `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · Week 3 day 3 · validator exercised POST /permissions/decisions negative paths and found SV-PERM-20's must-map assertion required `reason="ConfigPrecedenceViolation"` for missing `permissions:decide` scope. That's wrong — `ConfigPrecedenceViolation` is §10.3 step 3's error (toolRequirements loosens default), not an auth-scope failure. Impl correctly returned `reason="missing-scope"` instead; the divergence was a spec typo I introduced in L-19.
+- **Root-cause fix:**
+  1. §10.3.2 403 Forbidden response list now enumerates a **closed set of reason codes**: `insufficient-scope` (preferred over `missing-scope` for OAuth-adjacent consistency; kebab-case to match spec convention) | `session-bearer-mismatch` | `pda-decision-mismatch` | `pda-malformed`. Explicit MUST statement that `ConfigPrecedenceViolation` MUST NOT be used here.
+  2. SV-PERM-20 assertion text updated to reference the corrected enum.
+- **Impl impact:** impl currently returns `error: "missing-scope"`. Trivial one-line change to `error: "insufficient-scope"`. Alternatively, impl could emit both (`error: "insufficient-scope", legacy_alias: "missing-scope"`) during a transition, but since nothing else is pinned to the old name, straight rename is fine.
+- **Why the spec term wins:** the impl picked a reasonable name ("missing-scope") on its own, but the spec is authoritative for closed enumerations. Validators filter on the spec-declared reason strings; impls that don't match fail conformance. Spec typos like this are exactly what the independent-judge architecture catches — validator ran its assertion, impl diverged, error surfaced in <24h.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

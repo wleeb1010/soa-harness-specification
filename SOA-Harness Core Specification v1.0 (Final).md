@@ -1061,7 +1061,12 @@ Content-Type: application/json
 **Other responses:**
 - `400 Bad Request` — malformed JSON, missing required fields, unknown tool
 - `401 Unauthorized` — missing or invalid bearer
-- `403 Forbidden` — bearer lacks `permissions:decide:<session_id>` scope; or session lookup does not match bearer; or PDA signature invalid when the configuration rejects the decision outright (body reports `reason="pda-verify-failed"` and no audit record is written — different semantics from `handler_accepted=false` above; this path is for malformed/unparseable PDAs vs. cryptographically-invalid ones)
+- `403 Forbidden` — authoritative closed-set reasons for this endpoint:
+  - `reason="insufficient-scope"` — bearer lacks the required `permissions:decide:<session_id>` scope. Most common failure mode for callers that authenticated via POST /sessions without `request_decide_scope: true`.
+  - `reason="session-bearer-mismatch"` — bearer is valid but scoped for a different session_id than the one in the request body.
+  - `reason="pda-decision-mismatch"` — PDA's `canonical-decision.decision` disagrees with what the §10.3 resolver computed for the same (tool, session_id). No audit record is written — the attempt is rejected before dispatch.
+  - `reason="pda-malformed"` — submitted `pda` field is not a parseable compact JWS (structural failure, distinct from signature-invalid which returns 201+audited per the handler_accepted path above).
+  Error-code name `ConfigPrecedenceViolation` is RESERVED for §10.3 step 3 (toolRequirements loosens default) and MUST NOT be returned by this endpoint for auth-scope or PDA failures.
 - `404 Not Found` — `tool` unknown or `session_id` unknown
 - `429 Too Many Requests` — rate-limit exceeded
 - `503 Service Unavailable` — `/ready` is 503
