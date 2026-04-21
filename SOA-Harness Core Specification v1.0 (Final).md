@@ -1444,6 +1444,14 @@ The two caches MUST NOT share storage or key space. A tool idempotency hit does 
 3. Verify `tool_pool_hash` still resolves; see §11.3.
 4. For each `side_effects[i].phase`: replay `pending` with the recorded idempotency key; skip `committed`; run compensating actions for `inflight` whose tool supports it, else mark `compensated` with a `ResumeCompensationGap` note.
 
+**Trigger points (normative, added at L-29).** `resume_session` MUST be invoked at the following trigger points. Without explicit triggers the algorithm's function-level correctness is unobservable externally and the persisted-session file format becomes write-only in practice.
+
+1. **Runner startup scan.** At every Runner boot, immediately after trust bootstrap (§5.3) and before opening any public listener, the Runner MUST enumerate the session directory (§12.1 default `/sessions/` or `RUNNER_SESSION_DIR` override) and invoke `resume_session(session_id)` for every session file whose `workflow.status` is in the in-progress set `{Planning, Executing, Optimizing, Handoff, Blocked}`. Sessions whose status is terminal (`Succeeded`, `Failed`, `Cancelled`) MUST NOT be auto-resumed. Each auto-resume's outcome (success, `CardVersionDrift`, `SessionFormatIncompatible`, `ResumeCompensationGap`) MUST be recorded in the audit log.
+2. **Client reconnect.** When a session-scoped bearer is presented against `/stream/v1/<session_id>` or `/sessions/<session_id>/state` for a session_id that exists on disk but is not currently active in memory, the Runner MUST invoke `resume_session(session_id)` before serving the request. This is the lazy-hydrate path.
+3. **Explicit operator-tool invocation (optional).** Operators MAY trigger `resume_session` through administrative tooling (not normatively specified here; deployment-defined).
+
+Triggers 1 and 2 are both MUST. A Runner that ships `resume_session` as a callable function without wiring either trigger is non-conformant — the resume algorithm becomes dead code and `HR-04`, `HR-05`, `SV-SESS-02`, `SV-SESS-04`, `SV-SESS-08`, `SV-SESS-09`, `SV-SESS-10` all go untestable despite the function existing.
+
 #### 12.5.1 Session State Observability (Normative)
 
 **Rationale.** §12.1 defines the session-file schema, §12.2 defines bracket-persist semantics, §12.3 defines atomic writes, §12.5 defines resume. Every element is on-disk state, which means without an external observation surface the bracket-persist + atomic-write + resume-algorithm behaviors are Runner-self-attested. A conformance validator cannot verify `HR-04` (pending replays idempotently), `HR-05` (committed does NOT replay), `SV-SESS-03` (bracket observed for every event), or `SV-SESS-04` (replay same idempotency key) without a way to read the session's current state while the Runner is live. Filesystem access is not universally available (validator may be remote; containerized deployments mount `/sessions/` privately). This section defines the on-wire observation path.

@@ -245,6 +245,23 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Validator plan impact:** four findings require plan-file updates (F-08 off-by-one, F-09 unit-test-count labeling, F-11 dedupe assertion wording, F-16 literal placeholder). Also structural reordering per subagent's Structural Challenges 1-9. Plans rewrite to rev 2 in follow-up commits.
 - **Why ship as one commit:** the 12 spec fixes form a coherent "M2 kickoff rev 2" — individually small, collectively the full set of adjustments surfaced by the evaluator. Bundling reduces pin-bump churn on siblings.
 
+### L-29 — Resume algorithm trigger points normative `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · M2 Week 2 close · validator Finding C: impl's `resumeSession()` has zero callers. No boot scan, no lazy-hydrate. The function is correct but unreachable — blocks HR-04, HR-05, SV-SESS-02/04/08/09/10.
+- **Root-cause diagnosis:** §12.5 defined the algorithm but did NOT specify when the Runner MUST invoke it. Impl implemented the function and stopped. Spec let impl stop because no trigger was stated.
+- **Root-cause fix:** §12.5 now adds a **Trigger points** block listing two MUST triggers:
+  1. Runner startup scan — enumerate `/sessions/` directory, invoke `resume_session` for every session with in-progress `workflow.status` before opening any public listener.
+  2. Client reconnect / lazy hydrate — when a session-scoped bearer hits `/stream/v1/<sid>` or `/sessions/<sid>/state` for an on-disk-but-not-in-memory session, invoke `resume_session` before serving.
+- **Impl impact:** wire `resume_session` into the boot orchestrator AFTER trust bootstrap but BEFORE opening listeners. Small surface (~20 lines) — the function already exists. Also wire the lazy-hydrate path in the /state endpoint handler.
+- **Audit of similar "defined function, no trigger" patterns in the spec:** checked at close-of-commit. No other L-29-style cases found; §10.5.2 /audit/tail, §10.5.3 /audit/records, §12.5.1 /state all have explicit endpoint-invocation as their triggers.
+
+### L-30 — v1.1 conformance-card fixture for SV-SESS-09 drift test `[normative fixture, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · M2 Week 2 close · validator Finding D: impl's L-21 MANIFEST digest check prevents validator from mutating the served Agent Card to trigger `card_version` drift. The digest check is correct (L-21 exists to refuse tampered fixtures) but blocks SV-SESS-09's legitimate test requirement.
+- **Root-cause fix:** ship a SECOND pinned conformance card fixture with `"version": "1.1.0"` (vs original's `"1.0.0"`). All other fields byte-identical. Both fixtures pinned in MANIFEST.supplementary_artifacts with distinct digests. Validator swaps `RUNNER_CARD_FIXTURE` env var between the two paths via subprocess restart — each file passes its own digest check individually. Legitimate reconfiguration, not tampering.
+- **Why not a digest-bypass env flag:** would require adding another production-guard test hook and would weaken the L-21 anti-tampering property. Ship fixtures is cleaner — both conformance variants are first-class pinned artifacts.
+- **Test ID SV-SESS-09** per must-map assertion ("card-drift terminates") is now conformance-testable with zero impl code changes beyond what L-29 (resume triggers) already requires. Validator flips SKIP → PASS when both L-29 and the fixture swap land together.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

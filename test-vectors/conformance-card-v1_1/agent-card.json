@@ -1,0 +1,54 @@
+{
+  "soaHarnessVersion": "1.0",
+  "name": "soa-conformance-test-agent",
+  "version": "1.1.0",
+  "description": "SOA-Harness v1.0 conformance test fixture — card_version variant for SV-SESS-09 drift testing. Semantically equivalent to test-vectors/conformance-card/agent-card.json EXCEPT the version field is 1.1.0. A session persisted against the v1.0 card attempting resume under this v1.1 card MUST terminate with CardVersionDrift per §12.5 step 2.",
+  "url": "https://conformance.example.test",
+  "protocolVersion": "a2a-0.3",
+  "agentType": "general-purpose",
+  "skills": ["conformance-testing"],
+  "provider": "soa-harness-conformance",
+  "self_improvement": {
+    "enabled": false,
+    "directive_file": "program.md",
+    "editable_surfaces": [],
+    "benchmark_mcp_endpoint": "mcp://unused.conformance.test/",
+    "min_score_threshold": 0.85,
+    "max_iterations": 1,
+    "holdout_fraction": 0.2
+  },
+  "memory": {
+    "enabled": false,
+    "mcp_endpoint": "mcp://unused.conformance.test/",
+    "type": "evolving-graph",
+    "sharing_policy": "project",
+    "aging_rules": { "temporal_indexing": true, "consolidation_threshold": "P30D", "max_in_context_tokens": 8000 },
+    "in_context_strategy": { "weights": { "semantic_relevance": 0.5, "recency": 0.3, "graph_strength": 0.2 }, "tie_breaker": "importance" }
+  },
+  "permissions": {
+    "activeMode": "DangerFullAccess",
+    "handler": "Interactive",
+    "toolRequirements": {}
+  },
+  "compaction": { "preserveRecentTurns": 4, "triggerTokens": 80000, "targetTokens": 40000 },
+  "tokenBudget": { "maxTokensPerRun": 200000, "billingTag": "conformance-test" },
+  "observability": { "otelExporter": "https://unused.conformance.test/otel" },
+  "security": {
+    "oauthScopes": [],
+    "trustAnchors": [
+      {
+        "issuer": "CN=SOA-Harness Conformance Test CA, O=SOA-Harness Test Fixtures, C=US",
+        "spki_sha256": "16dc826f86941f2b6876f4f0f59d91f0021dacbd4ff17b76bbc9d39685250606",
+        "uri": "https://unused.conformance.test/trust",
+        "publisher_kid": "soa-conformance-test-release-v1.0"
+      },
+      {
+        "issuer": "CN=SOA-Harness Conformance Test Handler CA, O=SOA-Harness Test Fixtures, C=US",
+        "spki_sha256": "749f3fd468e5a7e7e6604b71c812b66b45793228b557a44e25388ed07a8591e3",
+        "uri": "https://unused.conformance.test/handler",
+        "publisher_kid": "soa-conformance-test-handler-v1.0"
+      }
+    ],
+    "auditSink": "file:///tmp/soa-conformance-audit/"
+  }
+}
