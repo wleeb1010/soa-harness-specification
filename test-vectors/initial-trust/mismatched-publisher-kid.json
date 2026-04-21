@@ -1,0 +1,9 @@
+{
+  "soaHarnessVersion": "1.0",
+  "publisher_kid": "soa-attacker-masquerade-v1.0",
+  "spki_sha256": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+  "issuer": "CN=SOA-Harness Test Release CA, O=SOA-Harness Test Fixtures, C=US",
+  "issued_at": "2026-01-01T00:00:00Z",
+  "not_after": "2099-12-31T23:59:59Z",
+  "channel": "sdk-pinned"
+}

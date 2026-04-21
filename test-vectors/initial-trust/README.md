@@ -13,6 +13,7 @@ The validator session flagged a Week 2 gap: no happy-path fixture existed for HR
 | `valid.json` | **valid** | `not_after` in 2099, `channel = operator-bundled` | Accept; load trust anchor; continue boot. |
 | `expired.json` | **valid** | `not_after` = 2020-06-30 (past) | **Reject** with `HostHardeningInsufficient`, reason `bootstrap-expired`. Must NOT be caught by schema — only by the post-parse clock check. |
 | `channel-mismatch.json` | **invalid** (enum violation on `channel`) | n/a (schema rejects before semantic checks run) | **Reject** at schema-validation stage with `HostHardeningInsufficient`, reason `bootstrap-invalid-schema`. Demonstrates the closed-enum guard on `channel`. |
+| `mismatched-publisher-kid.json` | **valid** | `channel = sdk-pinned`; `publisher_kid = soa-attacker-masquerade-v1.0` intentionally does NOT match what the served Agent Card claims | **Reject** at card-load with `HostHardeningInsufficient`, reason `bootstrap-missing`. Exercises **SV-BOOT-01 negative path**: the SDK-pinned channel MUST refuse to load an Agent Card whose `security.trustAnchors[].publisher_kid` does not match the SDK-pinned value. Use by pointing the Runner to this fixture + a standard valid card — the boot rejection proves the gate is working. |
 
 ## Fixed test values (DO NOT USE IN PRODUCTION)
 

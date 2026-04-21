@@ -119,6 +119,21 @@ A lesson is `in-spec` when its destination file has been updated and the commit 
 - **Destination:** single follow-up commit to `soa-validate-must-map.json` adding entries to all three structures. Catalog total moves 213 → 216 (three new test IDs).
 - **Not blocking:** validator can run the new tests without the catalog entries (vector-path via schema validation of responses; live-path via direct endpoint calls). Catalog integration is needed before v1.0 release gate passes the invariant check.
 
+### L-16 — Tampered Agent Card fixture for HR-12 `[normative fixture, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · plan-evaluator review Week 3 day 2. `HR-12` per must-map requires "Tampered Card bytes → CardInvalid; Runner fails closed". No tampered-card fixture existed — both impl and validator had to author their own, producing no cross-impl comparability.
+- **Root-cause fix:** added `test-vectors/tampered-card/agent-card.json.tampered.jws` (same protected header as the valid fixture; all-zeros signature) + fixture README documenting the impl and validator contracts. Conformance impl consumes via `RUNNER_CARD_JWS=<path>`, asserts boot-time rejection (`CardSignatureFailed`, reason `signature-invalid`) + `/ready` flips 503 with reason `card-signature-invalid`.
+
+### L-17 — Mismatched publisher_kid fixture for SV-BOOT-01 `[normative fixture, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · plan-evaluator review Week 3 day 2. `SV-BOOT-01` per must-map requires "SDK-pinned channel refuses to load an Agent Card whose `security.trustAnchors[].publisher_kid` does not match the SDK-pinned value". Testing the **negative path** required a fixture whose `publisher_kid` deliberately mismatched. Only happy-path testing existed (via `/ready`=200 assertion).
+- **Root-cause fix:** added `test-vectors/initial-trust/mismatched-publisher-kid.json` with `publisher_kid: soa-attacker-masquerade-v1.0` + `channel: sdk-pinned`. Conformance impl pointed at this file alongside a standard valid card MUST refuse to boot with `HostHardeningInsufficient` (reason `bootstrap-missing`). Impl-binary-coupled test (validator invokes impl process, reads exit code + stderr); documented in the fixture's README.
+
+### L-18 — Conformance Agent Card fixture with DangerFullAccess `[normative fixture, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-20 · Week 3 day 2 — validator reported the card fixture in use declares `activeMode: ReadOnly`. §12.6 session bootstrap tightens-only from the card's declared maximum, so validator could only exercise `ReadOnly`, not the full `SV-PERM-01` sweep across all three capability levels.
+- **Root-cause fix:** added `test-vectors/conformance-card/agent-card.json` — a pinned Agent Card TEMPLATE declaring `activeMode: DangerFullAccess`. Impl consumes via `RUNNER_CARD_FIXTURE=<path>`; substitutes only the `security.trustAnchors[0].spki_sha256` placeholder with the Runner's actual key's SPKI at load; signs with runtime key; serves at the spec-defined endpoints. Validator now creates three sessions (ReadOnly, WorkspaceWrite, DangerFullAccess) via §12.6 against this card and exercises the 24-cell Tool Registry × activeMode matrix end-to-end. Fixture deliberately disables optional feature surfaces (self_improvement, memory, policyEndpoint) to keep the matrix deterministic.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

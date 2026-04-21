@@ -171,6 +171,18 @@
       },
       {
         "name": "README.md",
+        "path": "test-vectors/conformance-card/README.md",
+        "sha256": "3b4e8384a1a7152871843c251d5dc8eee29b89d5539497acae6df34fa7b94331",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "agent-card.json",
+        "path": "test-vectors/conformance-card/agent-card.json",
+        "sha256": "87c50683bb01fca6a1e95b9bae7e18e8aad7831e9ecb3e9e61061caf67534e05",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "README.md",
         "path": "test-vectors/crl/README.md",
         "sha256": "7354a39f2dd89f0438f55eeb920be0d4aecaad3ab52c55cc52ee0648d6418cbb",
         "canonicalization": "raw-utf8"
@@ -196,7 +208,7 @@
       {
         "name": "README.md",
         "path": "test-vectors/initial-trust/README.md",
-        "sha256": "0d3faa5d69761f4a0b9174a927fe92544bbb31af97147aab87fb70889ca03a23",
+        "sha256": "8cf31a56e1b9aa3b1bdbd3bbf4f13415eb1fefa707827bf1c3efc715e61d4cab",
         "canonicalization": "raw-utf8"
       },
       {
@@ -209,6 +221,12 @@
         "name": "expired.json",
         "path": "test-vectors/initial-trust/expired.json",
         "sha256": "c138af101ef6c1ea81066c54887a22c9712bc45edbd4772fda8d663f070c220c",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "mismatched-publisher-kid.json",
+        "path": "test-vectors/initial-trust/mismatched-publisher-kid.json",
+        "sha256": "0b37a69743ef3f30289730ce5a8b3d00dbb6e0e834c52756c02f53bb64cc87b9",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -417,6 +435,18 @@
       },
       {
         "name": "README.md",
+        "path": "test-vectors/tampered-card/README.md",
+        "sha256": "f25e7144011dbba641d3a5320e4dcf406928a95eb3efcaeac6912476d47d1d70",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "agent-card.json.tampered.jws",
+        "path": "test-vectors/tampered-card/agent-card.json.tampered.jws",
+        "sha256": "712f84533fcc86139fe46e3aaf560ca044eb5e30045de55fa8b93d85c54bd11d",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "README.md",
         "path": "test-vectors/tasks-fingerprint/README.md",
         "sha256": "d8946baa59c63ee34aae63098717a31d7735e056934181d46ffbf037eda28381",
         "canonicalization": "raw-utf8"
@@ -460,7 +490,7 @@
       {
         "name": "README.md",
         "path": "test-vectors/tool-registry/README.md",
-        "sha256": "530ad36f58a2c424fba783bd0af3111e37e815144439eccc66a25fc314932885",
+        "sha256": "9e26d06edd3dfa8355dcd69a925af0dc6e526345e1c938690abe35db1b4a51dc",
         "canonicalization": "raw-utf8"
       },
       {
