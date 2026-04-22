@@ -186,6 +186,23 @@ A deployment MUST select exactly ONE bootstrap channel per §5.3. When a Runner 
 
 Covered by `SV-BOOT-05`.
 
+#### 5.3.3 Bootstrap Testability Env Hooks (Normative — L-43)
+
+**Rationale.** `SV-BOOT-03`, `SV-BOOT-04`, `SV-BOOT-05` exercise the DNSSEC-TXT channel, the 24h revocation-poll cadence, and multi-channel split-brain detection respectively. Real DNSSEC resolvers, real 24-hour polling intervals, and real multi-channel coordination are infeasible in conformance test runs. Three env hooks enable deterministic injection.
+
+**Env vars (all three follow the same production-guard pattern as §8.4.1 / §11.3.1 — MUST refuse startup with any set on a non-loopback interface):**
+
+- `SOA_BOOTSTRAP_DNSSEC_TXT=<file-path>` — when set, the Runner reads the pinned file at the given path instead of issuing a real DNSSEC resolver query for `_soa-trust.<deployment-domain>`. The file's contents MUST be a JSON object of shape `{ "txt_record": "<string>", "ad_bit": true|false, "empty": true|false }` — matching the three scenarios `SV-BOOT-03` asserts (valid AD-validated record, missing AD bit, empty response). Fixture set lives at `test-vectors/dnssec-bootstrap/`.
+- `RUNNER_BOOTSTRAP_POLL_TICK_MS=<milliseconds>` — poll interval for the §5.3.1 revocation-check loop. Default 3600000 (1 hour) when unset. Validators set to a small value (e.g., 100) so `SV-BOOT-04` observes the poll firing within a test window. Complementary env `SOA_BOOTSTRAP_REVOCATION_FILE=<file-path>` — when set, the Runner watches that file path on each poll tick; presence of the file with a matching `publisher_kid` triggers the §5.3.1 revocation refusal path immediately.
+- `SOA_BOOTSTRAP_SECONDARY_CHANNEL=<file-path>` — when set, the Runner treats the pinned file as if it were a second observable bootstrap channel (e.g., a dissenting DNSSEC TXT when the authoritative channel is `operator-bundled`). File shape matches `initial-trust.json`. `SV-BOOT-05` uses `test-vectors/bootstrap-secondary-channel/initial-trust.json` as the dissenting fixture and asserts `HostHardeningInsufficient(reason=bootstrap-split-brain)` emission per §5.3.2 rule 2.
+
+**Production guard:** all three env vars MUST NOT be reachable by untrusted principals. Runner MUST refuse startup when any of them is set AND the Runner's listener binds to a non-loopback interface. Same enforcement mechanism as `SOA_MEMORY_MCP_MOCK_TIMEOUT_AFTER_N_CALLS`, `SOA_RUNNER_DYNAMIC_TOOL_REGISTRATION`, `SOA_RUNNER_AGENTS_MD_PATH`.
+
+**Conformance linkage.**
+- `SV-BOOT-03` uses `SOA_BOOTSTRAP_DNSSEC_TXT` pointing at each of `test-vectors/dnssec-bootstrap/{valid,empty,missing-ad-bit}.json`.
+- `SV-BOOT-04` uses `RUNNER_BOOTSTRAP_POLL_TICK_MS=100` + `SOA_BOOTSTRAP_REVOCATION_FILE=<injection-path>`; writes the injection file after ≥1 tick, asserts `HostHardeningInsufficient(bootstrap-revoked)` emission within 200ms.
+- `SV-BOOT-05` uses `SOA_BOOTSTRAP_SECONDARY_CHANNEL=test-vectors/bootstrap-secondary-channel/initial-trust.json` combined with an SDK-pinned authoritative channel carrying a different `publisher_kid`.
+
 Implementations MUST select exactly one bootstrap channel per deployment and document the choice in their operator manual. The bootstrap-supplied trust anchor serves two distinct verification paths, each with its own verification object:
 
 1. **Release bundle integrity.** The anchor verifies `MANIFEST.json.jws`, which in turn pins the SHA-256 digests of the shipped release artifacts (specs, schemas, test vectors, seccomp profile). This path establishes "did this bundle come from the SOA-WG and has it been tampered with in transit?"

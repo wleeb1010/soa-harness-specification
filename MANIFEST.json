@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "3078d5973fcf69c02c7f092721208432a8f1fc61ba2dc6d026e803bf6ed62d63",
+        "sha256": "9fdd3080e91908db08b5faa3089d34448318863b47aad78d2edb60fcc3c8247d",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "653f3f0ab59d1dd72a04c324521f0bda351cb3f9e4966d46592b1232e4147188",
+        "sha256": "cd84554633b5a233f313fe8af142638b390250f5bdbd91c038cea3d37e5fb2cc",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -261,6 +261,18 @@
       },
       {
         "name": "README.md",
+        "path": "test-vectors/bootstrap-secondary-channel/README.md",
+        "sha256": "f4117f4e2a4fbdf73ff92fe9537d0eefc0a743195fdaccb41536ce9c57fa1c8f",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "initial-trust.json",
+        "path": "test-vectors/bootstrap-secondary-channel/initial-trust.json",
+        "sha256": "b1630db78e631aab634568031acf98cef807534e75a181b7aa9a2e1ad0b07b60",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "README.md",
         "path": "test-vectors/conformance-card/README.md",
         "sha256": "918d45a38957ce70a501a27cb397426c84b82d4cec5d8941f0480b75b38acb4e",
         "canonicalization": "raw-utf8"
@@ -341,6 +353,30 @@
         "name": "stale.json",
         "path": "test-vectors/crl/stale.json",
         "sha256": "f296f7edbbc1865e1a73e2e5d1bfb7d6e4225cea92992c2106a8a07abbcae0d9",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/dnssec-bootstrap/README.md",
+        "sha256": "0362226a51c9496ce3acfaa273ae97f49a04a2f670ff547b5ed38d32d6edeea2",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "empty.json",
+        "path": "test-vectors/dnssec-bootstrap/empty.json",
+        "sha256": "8f5b954f6a9e16dcd6b7cfeae2aef087ac2edbaa9e41eb17379c72389b3e59ae",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "missing-ad-bit.json",
+        "path": "test-vectors/dnssec-bootstrap/missing-ad-bit.json",
+        "sha256": "7699158da8adef45aeb6c28578ff79b2d02f48325e46f34213fb1c4d62f425ba",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "valid.json",
+        "path": "test-vectors/dnssec-bootstrap/valid.json",
+        "sha256": "76b79c5c77564545267c30ade3243fedc8957ea3f9ca5ae3fbc5d95852555764",
         "canonicalization": "JCS-RFC-8785"
       },
       {

@@ -1,0 +1,6 @@
+{
+  "publisher_kid": "soa-dissenting-channel-v1.0",
+  "spki_sha256": "ffff00000000000000000000000000000000000000000000000000000000001",
+  "issuer": "CN=SOA-Harness Dissenting Test Channel, O=SOA-Harness Test Fixtures, C=US",
+  "description": "Intentionally dissenting bootstrap anchor for SV-BOOT-05. The spki_sha256 pattern ffff…0001 is deliberately unusable for any real crypto verification; this fixture exists only to trigger §5.3.2 rule 2 split-brain detection."
+}

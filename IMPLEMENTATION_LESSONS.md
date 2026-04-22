@@ -629,6 +629,31 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Pattern note:** The program-md generator pattern — deterministic regeneration from pinned keypair — should become the template for future signed fixtures. Ed25519 PureEdDSA canonicality means the `.jws` bytes are reproducible, so the pin is the generator-script + payload, not a potentially-drifting signed blob. Future MANIFEST-style signed fixtures should adopt the same regenerator pattern.
 
+### L-43 — V-9c trust-init env hooks + DNSSEC + split-brain fixtures `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-22 · validator V-9c landed +2 flips, 3 routed. Three impl env hooks + two fixture sets needed for SV-BOOT-03/04/05.
+- **What:**
+  - **AP (SV-BOOT-03 DNSSEC):** real DNSSEC resolver calls infeasible in tests. Need `SOA_BOOTSTRAP_DNSSEC_TXT` env hook + three-scenario fixture (valid / empty / missing-AD-bit).
+  - **AQ (SV-BOOT-04 24h poll + revocation):** real 24-hour polling infeasible in tests. Need `RUNNER_BOOTSTRAP_POLL_TICK_MS` override + `SOA_BOOTSTRAP_REVOCATION_FILE` watch path for injecting a revocation synchronously.
+  - **AR (SV-BOOT-05 split-brain):** need `SOA_BOOTSTRAP_SECONDARY_CHANNEL` env hook + dissenting-channel fixture to simulate §5.3.2 multi-channel disagreement.
+
+**Spec additions:**
+
+1. **§5.3.3 Bootstrap Testability Env Hooks (NEW normative)** — three env vars, same production-guard pattern as §8.4.1 / §11.3.1 / §11.2.1 (loopback-only, refuse startup on non-loopback). Documents the synchronous injection mechanism for each of the three SV-BOOT tests.
+
+2. **`test-vectors/dnssec-bootstrap/` (NEW)** — `README.md` + three JSON fixtures (`valid.json`, `empty.json`, `missing-ad-bit.json`) matching the Runner's read-shape for the env-hook injection path.
+
+3. **`test-vectors/bootstrap-secondary-channel/` (NEW)** — `README.md` + `initial-trust.json` carrying a dissenting `publisher_kid` (`soa-dissenting-channel-v1.0`) + obviously-unusable SPKI pattern (`ffff…0001`) so split-brain detection is the only path that triggers.
+
+**Must-map updates:**
+- `SV-BOOT-03/04/05` assertions sharpened with env-hook references + fixture paths + exact observability assertions.
+
+**Milestone tally:** unchanged. 135 M3 · 12 M4 · 60 M5 · 22 M2 · 1 M1.
+
+**Version impact:** §19.4 minor errata. 1.0.7 → 1.0.8. Additive fixtures + one new normative subsection + must-map sharpenings. No breaking changes.
+
+**Pattern note:** Three consecutive spec bundles (L-40 §8.4.1, L-42 deterministic generator, L-43 bootstrap hooks) all ship test-only env hooks following the identical production-guard shape. That consistency is intentional — once impl implements one such hook correctly, subsequent hooks reuse the same guard enforcement code. Any deviation in future test hooks from this pattern should be flagged as a spec-design concern.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
