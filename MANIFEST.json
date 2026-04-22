@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "1367d95043d4aa662b3e08f93385e6c71689f43f91da5bea6664c631f6701ce3",
+        "sha256": "3078d5973fcf69c02c7f092721208432a8f1fc61ba2dc6d026e803bf6ed62d63",
         "canonicalization": "raw-utf8"
       },
       {
@@ -52,13 +52,13 @@
       {
         "name": "agent-card.schema.json",
         "path": "schemas/agent-card.schema.json",
-        "sha256": "bc5a09b1fd707adefe9dcdbfd3be580f5472fdcc375672341261bc842e8b6ebd",
+        "sha256": "3073b4256553f952292f3db34c941614c420d4f50214cfa2cb6fe8bae796984f",
         "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": "audit-records-response.schema.json",
         "path": "schemas/audit-records-response.schema.json",
-        "sha256": "bf10e40bd366fcc7dd1c4202bb03402e547ea2b8be707fa3832b515fb76014b2",
+        "sha256": "54e6353ec73a40ca26e2887ee1380f183db72f6ecd66915704c32806bbebe292",
         "canonicalization": "JCS-RFC-8785"
       },
       {

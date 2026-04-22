@@ -464,6 +464,16 @@
           "format": "uri",
           "description": "WORM audit sink endpoint (§10.5); scheme MAY be https, s3, gs, azblob, or a site-local scheme"
         },
+        "data_residency": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "description": "ISO 3166-1 alpha-2 country code. Runner MUST enforce residency per §10.7 layered-defence gate. Absence of this field means no residency constraint."
+          },
+          "uniqueItems": true,
+          "description": "OPTIONAL residency pinning per §10.7 step 5 (L-41). Array of ISO 3166-1 alpha-2 country codes. When present, Runner MUST apply the layered-defence gate (tool-declared primary signal + network cross-check) and deny tool invocations that resolve to a region outside this list with StopReason::ResidencyViolation and a ResidencyCheck audit row."
+        },
         "coordinationEndpoint": {
           "type": "string",
           "format": "uri",

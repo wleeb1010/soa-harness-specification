@@ -567,6 +567,36 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Version impact:** §19.4 minor errata. 1.0.4 → 1.0.5. Additive schema fields (backwards-compatible) + new test-hook env vars + one retag. No breaking changes.
 
+### L-41 — Admin audit record subtypes + Agent Card `security.data_residency` field `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-22 · validator T-12 probe batch — +7 flips but 5 new findings (3 impl-side: AF/AG/AH; 2 spec-side: AI/AJ). One accidental live-runner audit-chain poisoning exposed Finding AJ (validator's first SV-PRIV-03 probe wrote SubjectSuppression rows against :7700 which failed schema validation under the old decision-only required-field set).
+- **What:**
+  - **Gap A (AJ — SV-AUDIT-RECORDS-01/02/HR-14/SV-PERM-21 cascade):** `schemas/audit-records-response.schema.json` required `args_digest, capability, control, handler, signer_key_id` for every record. The privacy endpoints (`/privacy/delete_subject`, `/privacy/export_subject`) and the residency gate (`/permissions/decisions` with `security.data_residency` declared) emit `SubjectSuppression`, `SubjectExport`, `ResidencyCheck` rows that carry NO permission-decision fields. Any such row breaks schema validation on subsequent `/audit/records` reads, cascading into 4 tests when it lands on a chain page.
+  - **Gap B (AI — SV-PRIV-05):** `agent-card.schema.json` `security` object has `additionalProperties: false`, rejecting the `data_residency` field that §10.7 step 5 normatively requires.
+
+**Spec additions:**
+
+1. **`schemas/audit-records-response.schema.json` (EXTENDED)** — `decision` enum grew from 5 to 8 values adding `SubjectSuppression`, `SubjectExport`, `ResidencyCheck`. Record shape switches to `oneOf` with `decision` as discriminator: decision-rows require the full §10.5 field set; admin-rows require the reduced `{id, timestamp, session_id, subject_id, decision, reason, prev_hash, this_hash}` set. Both participate in the same hash-chain. Backwards-compatible for existing decision rows.
+
+2. **`schemas/agent-card.schema.json` + §7 inline (EXTENDED)** — `security.data_residency: array<string>` added as OPTIONAL. Items pattern `^[A-Z]{2}$` (ISO 3166-1 alpha-2). When present, Runner MUST apply layered-defence gate per §10.7 step 5 and emit `ResidencyCheck` audit rows.
+
+3. **§10.5.4 Admin Audit Record Subtypes (NEW normative)** — defines the three admin subtypes, required-field contract, hash-chain participation rule, schema discriminator explanation, and conformance linkage to `SV-AUDIT-RECORDS-01/02`, `SV-PRIV-03`, `SV-PRIV-05`.
+
+**Routed to impl (no spec change — AF/AG/AH):**
+- **Finding AF (SV-GOV-02/03/04/11 + SV-PRIV-01):** serve `docs/{stability-tiers,migrations,errata-v1.0,release-gate,data-inventory}` via `/docs/*` HTTP routes. Currently repo-root files unreachable from a live Runner.
+- **Finding AG (SV-PRIV-02):** `MemoryDeletionForbidden` error on sensitive-personal consolidation is swallowed at `sessions-route.ts:455` (console.warn only). Emit a `/logs/system/recent` record with category `SelfImprovement` or `Error` so validators can observe.
+- **Finding AH (SV-PRIV-04):** `RetentionSweepScheduler` has no env override for testing. Add `RUNNER_RETENTION_TICK_MS` + `RUNNER_RETENTION_INTERVAL_MS` mirroring §8.4.1 consolidation-hook pattern. Needs a matching spec clause (§10.7 step 6 or §10.7.1 testability subsection).
+
+**URGENT: :7700 audit chain bounce required.** Validator's first SV-PRIV-03 probe wrote 1+ `SubjectSuppression` rows to the live :7700 in-memory chain before switching to subprocess isolation. Under the old schema those rows break validation; 4 tests going red: `HR-14`, `SV-AUDIT-RECORDS-01`, `SV-AUDIT-RECORDS-02`, `SV-PERM-21`. After L-41 schema update, the rows validate. Impl SHOULD still bounce :7700 to reset the in-memory chain to GENESIS for test determinism.
+
+**Must-map:** no existing assertion changes needed — `SV-PRIV-05` already points at `data_residency`; `SV-AUDIT-RECORDS-*` already allow admin rows implicitly once schema validates them.
+
+**Milestone tally:** unchanged. 135 M3 · 12 M4 · 60 M5 · 22 M2 · 1 M1.
+
+**Version impact:** §19.4 minor errata. 1.0.5 → 1.0.6. Additive schema fields + backwards-compatible `oneOf` restructure + new spec clause. No breaking changes.
+
+**Pattern note:** Finding AJ is a valuable "latent bug" find — the schema gap existed for as long as the privacy endpoints have been declared normatively (§10.7 in the original v1.0 spec). Nobody caught it until validator's live-runner probe wrote a real SubjectSuppression row and then read the chain back. Exactly the independent-judge property paying off.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

@@ -16,24 +16,18 @@
       "type": "array",
       "minItems": 0,
       "maxItems": 1000,
-      "description": "Audit records in chain order (earliest first). Each record conforms to the §10.5 required-field set.",
+      "description": "Audit records in chain order (earliest first). Two record shapes, discriminated on `decision`: (1) decision-audit rows (existing §10.5 required-field set) when decision ∈ {AutoAllow, Prompt, Deny, CapabilityDenied, ConfigPrecedenceViolation}; (2) admin-audit rows (SubjectSuppression, SubjectExport, ResidencyCheck) with a reduced required set — these carry no tool/args_digest/capability/control/handler because no permission decision was evaluated. Both shapes participate in the same hash-chain (prev_hash/this_hash).",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "timestamp",
-          "session_id",
-          "subject_id",
-          "tool",
-          "args_digest",
-          "capability",
-          "control",
-          "handler",
-          "decision",
-          "reason",
-          "signer_key_id",
-          "prev_hash",
-          "this_hash"
+        "oneOf": [
+          {
+            "properties": { "decision": { "enum": ["AutoAllow", "Prompt", "Deny", "CapabilityDenied", "ConfigPrecedenceViolation"] } },
+            "required": ["id", "timestamp", "session_id", "subject_id", "tool", "args_digest", "capability", "control", "handler", "decision", "reason", "signer_key_id", "prev_hash", "this_hash"]
+          },
+          {
+            "properties": { "decision": { "enum": ["SubjectSuppression", "SubjectExport", "ResidencyCheck"] } },
+            "required": ["id", "timestamp", "session_id", "subject_id", "decision", "reason", "prev_hash", "this_hash"]
+          }
         ],
         "additionalProperties": false,
         "properties": {
@@ -76,7 +70,7 @@
           },
           "decision": {
             "type": "string",
-            "enum": ["AutoAllow", "Prompt", "Deny", "CapabilityDenied", "ConfigPrecedenceViolation"]
+            "enum": ["AutoAllow", "Prompt", "Deny", "CapabilityDenied", "ConfigPrecedenceViolation", "SubjectSuppression", "SubjectExport", "ResidencyCheck"]
           },
           "reason": {
             "type": "string"

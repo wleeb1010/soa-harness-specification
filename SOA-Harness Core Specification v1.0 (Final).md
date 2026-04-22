@@ -420,6 +420,7 @@ The Agent Card MUST validate against the JSON Schema 2020-12 document below.
         },
         "mtlsRequired": { "type": "boolean", "default": true },
         "auditSink": { "type": "string", "format": "uri", "description": "WORM audit sink endpoint (§10.5); scheme MAY be https, s3, gs, azblob, or a site-local scheme" },
+        "data_residency": { "type": "array", "items": { "type": "string", "pattern": "^[A-Z]{2}$", "description": "ISO 3166-1 alpha-2 country code" }, "uniqueItems": true, "description": "OPTIONAL residency pinning per §10.7 step 5 (L-41). Array of ISO 3166-1 country codes. When present, Runner MUST apply the layered-defence gate and emit a ResidencyCheck audit row per tool invocation." },
         "coordinationEndpoint": { "type": "string", "format": "uri", "pattern": "^https://", "description": "REQUIRED when Runner runs in SOA_COORD_MODE=distributed per §12.4; points at the etcd/ZooKeeper/Redis/MCP coordination service issuing monotonic fencing tokens for clustered self-improvement acceptance." }
       }
     }
@@ -1311,6 +1312,22 @@ GET /audit/records?after=<record_id>&limit=<n>
 - `SV-AUDIT-RECORDS-01` (new) — schema conformance of the response; pagination semantics (after → next_after → has_more transitions correctly).
 - `SV-AUDIT-RECORDS-02` (new) — chain integrity: validator reads all records, verifies `records[0].prev_hash == "GENESIS"` and `∀ i > 0, records[i].prev_hash == records[i-1].this_hash`.
 - `HR-14` (existing, §15.5) — tamper detection: validator reconstructs the full chain via this endpoint, **mutates** one `prev_hash` in its local copy, re-runs chain verification, asserts **failure**. Because mutation happens validator-side, this doesn't require a "tampered" endpoint on the Runner — the Runner only needs to serve the real chain faithfully.
+
+#### 10.5.4 Admin Audit Record Subtypes (Normative — L-41)
+
+**Rationale.** §10.5–§10.5.3 describe the canonical permission-decision audit row. Three additional record types are emitted by non-permission subsystems but share the same hash-chain for integrity:
+
+- **`SubjectSuppression`** — emitted by `POST /privacy/delete_subject` per §10.7 step 3 (WORM-compatible redaction). No permission decision was evaluated; no tool was invoked; these fields are absent.
+- **`SubjectExport`** — emitted by `POST /privacy/export_subject` per §10.7 step 4 (subject-access export compliance record). Same shape as SubjectSuppression.
+- **`ResidencyCheck`** — emitted by `POST /permissions/decisions` per §10.7 step 5 when `security.data_residency` is declared on the Agent Card; records the layered-defence verdict (tool-declared signal + network cross-check). Even when a companion decision row is also written for the same invocation, the ResidencyCheck row is a separate chain entry preserving the verdict independently for audit.
+
+**Required fields for admin subtypes:** `id, timestamp, session_id, subject_id, decision, reason, prev_hash, this_hash` (the decision-only fields — `tool, args_digest, capability, control, handler, signer_key_id` — are absent because no permission decision was evaluated).
+
+**Hash-chain participation:** admin rows MUST participate in the same chain as decision rows. `prev_hash` equals the prior record's `this_hash` regardless of subtype. Chain verification per `HR-14` walks both subtypes uniformly.
+
+**Schema discriminator:** `schemas/audit-records-response.schema.json` uses `oneOf` with `decision` as the discriminator. Five decision-values require the full field set; three admin-values require the reduced set. `additionalProperties: false` applies to both; unknown record fields are invalid.
+
+**Conformance linkage.** `SV-AUDIT-RECORDS-01/02` validate BOTH subtypes roundtrip through `/audit/records`. `SV-PRIV-03` asserts `SubjectSuppression` + `SubjectExport` emission on the privacy endpoints. `SV-PRIV-05` asserts `ResidencyCheck` emission on residency-gated decisions.
 
 ### 10.6 Handler Key Management
 
