@@ -1149,21 +1149,21 @@
     },
     "SV-PERM-03": {
       "name": "Autonomous escalation",
-      "section": "§10.4",
-      "section_title": "Autonomous Handler and High-Risk Actions",
+      "section": "§10.4 + §10.4.1 + §10.4.2",
+      "section_title": "Autonomous Handler / Escalation State-Machine / Escalation Test Hooks",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Autonomous handler facing high-risk MUST escalate; 30s silence → deny.",
+      "assertion": "Runner started with RUNNER_HANDLER_ESCALATION_TIMEOUT_MS=500 + SOA_HANDLER_ESCALATION_RESPONDER=<tempfile> (§10.4.2). Submit high-risk PDA signed by Autonomous handler; leave responder file empty for ≥600ms. Assert 403 {error:PermissionDenied, reason:escalation-timeout} + audit row with handler:Autonomous, decision:Deny, reason:escalation-timeout per §10.4.1 step 4.",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
     },
     "SV-PERM-04": {
       "name": "HITL == Interactive",
-      "section": "§10.4, §19.6",
-      "section_title": "Autonomous Handler / Human-in-the-Loop",
+      "section": "§10.4 + §10.4.1 + §10.4.2 + §19.6",
+      "section_title": "Autonomous Handler / Escalation State-Machine / Escalation Test Hooks / Normative Terminology",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Coordinator/Autonomous signature does not satisfy HITL for high-risk.",
+      "assertion": "Same setup as SV-PERM-03. Submit high-risk PDA signed by Autonomous handler; write {\"kid\":\"<Autonomous-kid>\", \"response\":\"approve\"} to responder file. Runner MUST reject with 403 {error:PermissionDenied, reason:hitl-required, detail:autonomous-insufficient} — Autonomous cannot satisfy HITL even via responder surface (§10.4.2). Coordinator-signed variant rejects with detail:coordinator-insufficient.",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
     },

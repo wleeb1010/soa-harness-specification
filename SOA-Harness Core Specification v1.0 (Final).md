@@ -1197,9 +1197,46 @@ This surfaces the §12.2 idempotency rule for permission decisions as an observa
 
 ### 10.4 Autonomous Handler and High-Risk Actions
 
-- **High-risk action** = any self-edit (§9), any tool with `risk_class = Destructive`, or a self-improvement iteration with `|training_score - baseline_training_score| > 0.10`.
+- **High-risk action** = any self-edit (§9), any tool with `risk_class = Destructive`, or a self-improvement iteration with `|training_score - baseline_training_score| > 0.10`. Additionally, tools with `risk_class ∈ {Mutating, DangerFullAccess}` trigger escalation when the signer's handler role is `Autonomous` (per §10.4.1).
 - Autonomous handlers MUST NOT auto-approve high-risk actions. An Autonomous handler facing a high-risk Prompt MUST escalate to an Interactive or Coordinator handler. If none is reachable within 30 seconds the action MUST be denied.
-- Human-in-the-Loop (§19) is satisfied only when an `Interactive` handler signs the prompt decision.
+- Human-in-the-Loop (§19) is satisfied only when an `Interactive` handler signs the prompt decision. Coordinator and Autonomous signatures do NOT satisfy HITL for high-risk decisions; a Coordinator/Autonomous-signed Prompt on a HITL-gated action MUST reject with `403 {error:"PermissionDenied", reason:"hitl-required", detail:"autonomous-insufficient"}` (or `detail:"coordinator-insufficient"`).
+
+#### 10.4.1 Escalation State-Machine (Normative — L-49)
+
+When the resolved control for a decision is `Prompt` AND the signing handler's role is `Autonomous` AND the tool's `risk_class ∈ {Mutating, DangerFullAccess}`, the Runner MUST:
+
+1. Block the decision (do NOT return to caller immediately).
+2. Emit a `PermissionPrompt` StreamEvent with `handler: "Interactive"` per §14.1.1 (the prompt is now awaiting an Interactive responder, regardless of the originally-submitted signature's role).
+3. Await an Interactive responder via the production-configured surface (UI Gateway interactive-prompt socket per UI §11, operator console, or equivalent).
+4. On timeout (≥ 30 seconds per §10.4, operator-configurable downward but NOT upward in conformance), emit `403 {error:"PermissionDenied", reason:"escalation-timeout"}` + append an audit record with `handler: "Autonomous"` (the original signer), `decision: "Deny"`, `reason: "escalation-timeout"`.
+5. On responder approval (Interactive-signed PDA arriving before timeout), process the decision normally with the Interactive handler as the audit-row `handler`.
+6. On responder denial, emit `403 {error:"PermissionDenied", reason:"hitl-denied"}` + audit with `handler: "Interactive"`, `decision: "Deny"`, `reason: "hitl-denied"`.
+
+The escalation state-machine applies only when resolved_control is `Prompt`; `AutoAllow`/`Deny` short-circuit before reaching this path. `Coordinator`-signed Prompt on a HITL-gated action bypasses escalation and directly rejects with `hitl-required` + `coordinator-insufficient` per §10.4 (escalation-to-Interactive is only from Autonomous; Coordinator is not a valid escalation waypoint for HITL).
+
+#### 10.4.2 Escalation Test Hooks (Normative — L-49, testability)
+
+**Rationale.** The 30-second production timeout is infeasible for conformance runs; real Interactive-responder surfaces (UI Gateway, operator console) are not part of the Runner. Two env hooks make `SV-PERM-03` / `SV-PERM-04` deterministic, following the established §5.3.3 / §8.4.1 / §10.6.2 loopback-guarded pattern.
+
+**`RUNNER_HANDLER_ESCALATION_TIMEOUT_MS=<milliseconds>`** — overrides the §10.4 30-second timeout. Default `30000` (production). Validators set a small value (e.g., 500ms) for sub-second test cadence. Production guard: MUST refuse startup when set on non-loopback interface.
+
+**`SOA_HANDLER_ESCALATION_RESPONDER=<file-path>`** — when set, the Runner watches the named file for JSON responder injections. When a pending escalation exists, the Runner reads the file and, if it contains a JSON object matching the shape below, applies the response:
+
+```json
+{ "kid": "<responder-kid>", "response": "approve" | "deny" | "silence" }
+```
+
+- `response: "approve"` — treat as an Interactive-signed approval. The `kid` MUST be a handler enrolled with role `Interactive` (per §10.6.3 enrollment or Card-pinned trust anchor). A `kid` bound to `Autonomous` or `Coordinator` role MUST be rejected per §10.4 with `hitl-required` — an Autonomous/Coordinator responder cannot forge Interactive satisfaction.
+- `response: "deny"` — treat as Interactive denial; emit §10.4.1 step 6.
+- `response: "silence"` — ignore the file; let the timeout fire per §10.4.1 step 4. (Same as not writing to the file at all; included for explicit test choreography.)
+
+After the Runner consumes the file, it MUST truncate (so a subsequent write triggers another responder cycle). Same truncate-after-ingest pattern as §11.3.1 dynamic-tool registration.
+
+Production guard: MUST refuse startup when set on non-loopback interface. The env var is test-only; production deployments deliver Interactive responses via the Gateway's operator console.
+
+**Conformance linkage.**
+- `SV-PERM-03` (autonomous escalation timeout): `RUNNER_HANDLER_ESCALATION_TIMEOUT_MS=500` + no file write for 600ms → `403 {error:"PermissionDenied", reason:"escalation-timeout"}` + audit row with `handler:"Autonomous", decision:"Deny", reason:"escalation-timeout"`.
+- `SV-PERM-04` (Coordinator/Autonomous insufficient for HITL): submit high-risk Prompt signed by an Autonomous handler. Write `{"response":"approve", "kid":"<Autonomous-kid>"}` to the responder file. Runner MUST reject with `403 {error:"PermissionDenied", reason:"hitl-required", detail:"autonomous-insufficient"}` — Autonomous cannot satisfy HITL even via the responder surface.
 
 ### 10.5 Audit Trail
 

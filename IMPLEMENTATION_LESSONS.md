@@ -820,6 +820,55 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Pattern note:** L-48 is the first bundle adding first-class runtime endpoints (not just env hooks + schemas). `/audit/reader-tokens`, `/handlers/enroll`, `/security/key-storage` are all new operator-bearer surfaces following the existing `/docs/*`, `/release-gate.json`, `/errata/v1.0.json` pattern from T-12. Operator-bearer is crystallizing as the canonical "runtime enrollment / administrative mint" scope alongside session-scope (read-write), admin:read (read-only cross-session), and audit:read (read-only audit). Future §10.x runtime surfaces should adopt the same scope taxonomy.
 
+### L-49 — Finding BB: §10.4 escalation state-machine + test hooks `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-22 · validator resurfaced the missing BB diagnostic with full detail after L-48 landed. BB covers SV-PERM-03 (Autonomous escalation timeout) + SV-PERM-04 (HITL-required rejection of Autonomous/Coordinator). Two tests; lines up with the escalation state-machine §10.4 already references in one prose bullet but never formalizes.
+- **What:** §10.4 says "Autonomous handlers MUST escalate to an Interactive or Coordinator handler. If none is reachable within 30 seconds the action MUST be denied." The prose was normative but left the state-machine implicit, the 30s timeout testability ambiguous, and the Coordinator-insufficient-for-HITL case unstated. Validator couldn't deterministically probe escalation without (a) sub-second timeout override, (b) a test-only responder injection path, (c) normative explicit rejection detail for Autonomous/Coordinator on HITL-gated actions.
+
+**Spec additions:**
+
+1. **§10.4 extended (existing prose tightened, L-49)** — Coordinator/Autonomous signature explicitly does NOT satisfy HITL for high-risk decisions; rejection shape defined (`hitl-required` + `autonomous-insufficient`/`coordinator-insufficient` detail). Also tightened: tools with `risk_class ∈ {Mutating, DangerFullAccess}` trigger escalation when signer is `Autonomous`.
+
+2. **§10.4.1 Escalation State-Machine (NEW normative)** — 6-step state machine:
+   1. Block decision.
+   2. Emit `PermissionPrompt` with `handler: Interactive`.
+   3. Await Interactive responder.
+   4. On timeout → `403 {reason: escalation-timeout}` + audit `handler:Autonomous, decision:Deny`.
+   5. On Interactive approval → process normally with Interactive as audit handler.
+   6. On Interactive denial → `403 {reason: hitl-denied}` + audit `handler:Interactive, decision:Deny`.
+   
+   Coordinator-signed Prompt on HITL-gated action bypasses escalation and directly rejects with `coordinator-insufficient` (escalation-to-Interactive applies only from Autonomous).
+
+3. **§10.4.2 Escalation Test Hooks (NEW normative, testability)** — two env hooks following the §5.3.3 / §8.4.1 / §10.6.2 loopback-guarded pattern:
+   - `RUNNER_HANDLER_ESCALATION_TIMEOUT_MS=<ms>` — overrides §10.4 30-second timeout (default 30000). Validators set 500ms for sub-second test cadence.
+   - `SOA_HANDLER_ESCALATION_RESPONDER=<file-path>` — test-only file the Runner watches for JSON responder injections `{kid, response ∈ {approve, deny, silence}}`. Truncate-after-ingest per §11.3.1 dynamic-tool-registration pattern. Responder `kid` bound to Autonomous/Coordinator role rejected with `hitl-required` (an Autonomous responder cannot forge Interactive satisfaction).
+
+**Must-map updates:**
+- `SV-PERM-03` section `§10.4` → `§10.4 + §10.4.1 + §10.4.2`; assertion specifies env-hook configuration + probe choreography + exact reject shape.
+- `SV-PERM-04` section `§10.4, §19.6` → `§10.4 + §10.4.1 + §10.4.2 + §19.6`; assertion specifies responder-based Autonomous-insufficient probe + Coordinator variant.
+
+**Impl routing (Finding BB):**
+- Implement §10.4.1 6-step state machine at the decision-resolver boundary.
+- Honor `RUNNER_HANDLER_ESCALATION_TIMEOUT_MS` + `SOA_HANDLER_ESCALATION_RESPONDER` per §10.4.2, loopback-guarded.
+- Ship Coordinator-insufficient / Autonomous-insufficient rejection shapes per §10.4 tightened prose.
+- Responder-kid role check (reject Autonomous/Coordinator responder with `hitl-required`).
+
+**Trajectory correction (validator noted):** earlier projection attributed SV-PERM-02 to BB; actually covered by Finding AW (precedence-guard axis 3, same surface as HR-11). Corrected attribution:
+- AE → SV-STR-10 (+1)
+- AV → HR-07 (+1)
+- AW → SV-PERM-02 + HR-11 (+2)
+- BA → SV-AGENTS-08 (+1)
+- BB → SV-PERM-03 + SV-PERM-04 (+2)
+- L-48 set (BC/BD/BE/BF/BG/BH/BI/BJ) → SV-PERM-06/07/08/09/10/12/13/14/15/16/17 (+11)
+
+Total impl-pending after L-48 + L-49 ships: +18 flips from current 134 → 152 ceiling (before ops-fix restoration of 9 tests hidden by wrong-fixture binding).
+
+**Milestone tally:** unchanged. 135 M3 · 12 M4 · 60 M5 · 22 M2 · 1 M1.
+
+**Version impact:** §19.4 minor errata. 1.0.13 → 1.0.14. Additive (§10.4 extended prose is a tightening of existing normative language — "Coordinator/Autonomous does NOT satisfy HITL" was implicit in the existing "Human-in-the-Loop is satisfied only when an Interactive handler signs"; L-49 makes it explicit with reject shapes). §10.4.1 + §10.4.2 purely additive.
+
+**Ops issue reminder:** impl still running wrong tools fixture on `:7700` (agents-md-denylist/tools-with-denied.json instead of conformance tools fixture). Rebind is pending from the L-48 paste. 9 tests stuck in 404 "unknown-tool" until rebind completes; they're not real regressions.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
