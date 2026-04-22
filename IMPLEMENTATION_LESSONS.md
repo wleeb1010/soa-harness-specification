@@ -597,6 +597,38 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Pattern note:** Finding AJ is a valuable "latent bug" find — the schema gap existed for as long as the privacy endpoints have been declared normatively (§10.7 in the original v1.0 spec). Nobody caught it until validator's live-runner probe wrote a real SubjectSuppression row and then read the chain back. Exactly the independent-judge property paying off.
 
+### L-42 — V-9a card/sign fixtures: precedence-violation + program.md JWS `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-22 · validator V-9a bulk wiring landed +11 flips. 3 remaining required fixtures; routed as Findings AL + AM.
+- **What:**
+  - **AL (SV-CARD-10):** no fixture exercised the §10.3 three-axis tightening rule. Validator needs a Card intentionally violating precedence (lower-axis loosening upper) so the Runner's ConfigPrecedenceViolation refusal path can be tested.
+  - **AM (SV-SIGN-02 + SV-SIGN-05):** no fixture for §9.2 program.md signing profile. Validator needs a signed detached JWS pair — basic `{alg, kid, typ}` form for SV-SIGN-02, plus `x5t#S256` variant for SV-SIGN-05's two-step signer resolution path.
+
+**Spec additions:**
+
+1. **`test-vectors/conformance-card-precedence-violation/` (NEW)** — `agent-card.json` + `README.md`. Card combines `agentType: "explore"` (implicit ReadOnly-only per §11.2) with `permissions.activeMode: "DangerFullAccess"` — lower-precedence axis attempting to loosen. Runner MUST refuse bootstrap: `/ready` 503, `/logs/system/recent` category=`Config` carries exactly one `ConfigPrecedenceViolation` record. Intentionally non-conformant; DO NOT use as a real template.
+
+2. **`test-vectors/program-md/` (NEW)** — four files:
+   - `program.md` — pinned minimal §9.2-shaped program.
+   - `program.md.jws` — detached JWS, header `{alg: "EdDSA", kid: "soa-conformance-test-handler-v1.0", typ: "soa-program+jws"}`, signature over `base64url(header).base64url(program.md bytes)`. Payload is **raw UTF-8**, not JCS.
+   - `program.md.x5t.jws` — same structure with added `x5t#S256` header containing base64url-no-pad SHA-256 of handler-keypair SPKI DER (`dJ8_1Gjlp-fmYEtxyBK2a0V5Mii1V6ROJTiO0HqFkeM` = hex `749f3fd4…8591e3`).
+   - `generate.mjs` — deterministic regenerator using handler-keypair; Ed25519 PureEdDSA signatures are canonical so output is reproducible byte-for-byte.
+   - `README.md` — signing contract + two-step signer resolution choreography for SV-SIGN-05.
+
+**Must-map updates:**
+- `SV-CARD-10` assertion points at precedence-violation fixture + bootstrap refusal observables.
+- `SV-SIGN-02` assertion points at `program.md.jws` fixture + header constraints.
+- `SV-SIGN-05` assertion points at `program.md.x5t.jws` fixture + two-step resolution contract.
+
+**Also noted from V-9a landing:**
+- **SV-CARD-04 assertion calibration** (validator self-correction): original assertion required `JWS.kid ∈ trustAnchors[].publisher_kid`. Per §6.1, chain validation is cryptographic (cert chain → anchor SPKI), not identity match by kid. Validator loosened to structural shape (anchors + x5c present); full X.509 chain crypto verification stays as future work. No spec change — the original assertion was stricter than the spec mandates.
+
+**Milestone tally:** unchanged. 135 M3 · 12 M4 · 60 M5 · 22 M2 · 1 M1.
+
+**Version impact:** §19.4 minor errata. 1.0.6 → 1.0.7. Additive fixtures only.
+
+**Pattern note:** The program-md generator pattern — deterministic regeneration from pinned keypair — should become the template for future signed fixtures. Ed25519 PureEdDSA canonicality means the `.jws` bytes are reproducible, so the pin is the generator-script + payload, not a potentially-drifting signed blob. Future MANIFEST-style signed fixtures should adopt the same regenerator pattern.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

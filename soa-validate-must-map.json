@@ -383,7 +383,7 @@
       "section_title": "Artifact Signing Profile",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "program.md JWS is detached over the raw UTF-8 bytes (NOT JCS), alg ∈ {EdDSA,ES256}, typ=soa-program+jws.",
+      "assertion": "Fixture test-vectors/program-md/program.md.jws parses as detached JWS over raw UTF-8 bytes of program.md (NOT JCS); header.alg=EdDSA (ES256 also acceptable), header.typ=soa-program+jws, header.kid=soa-conformance-test-handler-v1.0. Signature verifies against test-vectors/handler-keypair/public.jwk.json.",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — core-profile completion; SV-SIGN category extends M1/M2 assertions."
     },
@@ -413,7 +413,7 @@
       "section_title": "Artifact Signing Profile",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Verifier computes SHA-256 over DER bytes of x5c[0] and rejects mismatch with x5t#S256 header as CardSignatureFailed(reason=x5t-thumbprint-mismatch). Separately, verifier walks the x5c chain and rejects chains whose terminal SPKI does not match any security.trustAnchors[].spki_sha256 with CardSignatureFailed(reason=chain-anchor-mismatch). The two checks are disjoint preconditions.",
+      "assertion": "Fixture test-vectors/program-md/program.md.x5t.jws carries x5t#S256 header containing base64url-no-pad SHA-256 of handler-keypair SPKI. Verifier performs two-step resolution: (1) decode x5t#S256 to 32 bytes, match against trustAnchors[].spki_sha256; (2) verify that matched anchor's publisher_kid equals the JWS header kid. Both steps MUST succeed. Mismatch → CardSignatureFailed(reason=x5t-thumbprint-mismatch | chain-anchor-mismatch).",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — core-profile completion; SV-SIGN category extends M1/M2 assertions."
     },
@@ -633,7 +633,7 @@
       "section_title": "Precedence Among Declaration Sources",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Lower-precedence source attempting to loosen higher is ConfigPrecedenceViolation.",
+      "assertion": "Runner started with RUNNER_AGENT_CARD_PATH=test-vectors/conformance-card-precedence-violation/agent-card.json (agentType=explore + permissions.activeMode=DangerFullAccess — lower-precedence agentType constraint says ReadOnly-only per §11.2 line 1407; Card's activeMode tries to loosen). Runner MUST refuse bootstrap: /ready returns 503, /logs/system/recent category=Config carries exactly one record with code=ConfigPrecedenceViolation.",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — core-profile completion; SV-CARD category extends M1/M2 assertions."
     },

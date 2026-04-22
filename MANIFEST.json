@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "5211406122009a8759aecaee987075ee2fe679e08380730b69a69357b7704868",
+        "sha256": "653f3f0ab59d1dd72a04c324521f0bda351cb3f9e4966d46592b1232e4147188",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -293,6 +293,18 @@
         "name": "agent-card.json",
         "path": "test-vectors/conformance-card-memory-project/agent-card.json",
         "sha256": "fc552c43d860dc063015f3bf6bbb36e333a2e665db723b25914589086bb4b7b7",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/conformance-card-precedence-violation/README.md",
+        "sha256": "6d975618cacfeadd2eed6864dd27a078da9f9315d84946eaa05659ed00e81ec7",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "agent-card.json",
+        "path": "test-vectors/conformance-card-precedence-violation/agent-card.json",
+        "sha256": "5d1cbcc39437bf9ccf67aeffed77201ba49b450855b3bf1845a073c053672d39",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -617,6 +629,36 @@
         "name": "pda.jws",
         "path": "test-vectors/permission-prompt-signed/pda.jws",
         "sha256": "0dc393bfb6d0b60186246c25802f3bc10b2a581fa5eb941dd6ba8a1365f58940",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/program-md/README.md",
+        "sha256": "b39940afef91cbae97de5ba770125a7d588229b228cd911eed037d52117f9557",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "generate.mjs",
+        "path": "test-vectors/program-md/generate.mjs",
+        "sha256": "6809149f16a68e088aeb1ad015249d6a40ededee6f3198148497768145074b68",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "program.md",
+        "path": "test-vectors/program-md/program.md",
+        "sha256": "051ebc33a2d7013b2211c86cd35196c2ace99527a99ab1fda3070120ca08e75f",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "program.md.jws",
+        "path": "test-vectors/program-md/program.md.jws",
+        "sha256": "94ada378457f29870e3eccd3fa5359aff4448bdd11b3d1db28cb8f7a6e627ad1",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "program.md.x5t.jws",
+        "path": "test-vectors/program-md/program.md.x5t.jws",
+        "sha256": "851cb5394089e92459b6eca3c3ae7eba8f4b1d404619d8b0b64fe05a5e9ee6a3",
         "canonicalization": "raw-utf8"
       },
       {
