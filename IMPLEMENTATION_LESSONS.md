@@ -505,6 +505,30 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Milestone tally:** unchanged at 136 M3 · 11 M4 · 60 M5 · 22 M2 · 1 M1.
 
+### L-39 — Conformance card variants for path-coverage probes `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · validator V-9 cleanup — board at 67/0/13/0, validator self-corrected one phantom fail (SV-STR-07 attribute set — Finding X retracted, impl already had service.version correctly)
+- **What:** Two SV-* probes need non-default Agent Card variants to exercise card-driven paths that the base `conformance-card` fixture can't:
+  - **SV-BUD-02** (projection-over-budget): base card carries `maxTokensPerRun=200000`. Burning 200k tokens of driven traffic per test is infeasible; need a low-value variant.
+  - **SV-MEM-06** (sharing_policy threading): base card carries `memory.enabled=false`. Memory MCP paths can't be exercised without `enabled=true` + a reachable `mcp_endpoint`. Validator also needs the card to carry a non-default `sharing_policy` value so they can assert the Runner threads the card value through to `search_memories` calls (Finding V shipped the code path; this fixture exercises it).
+
+**Spec additions:**
+
+1. **`test-vectors/conformance-card-low-budget/` (NEW)** — `agent-card.json` + `README.md`. Delta from base: `name`, `tokenBudget.maxTokensPerRun=1000`, `tokenBudget.billingTag`. All other fields identical to base. Usage: `RUNNER_AGENT_CARD_PATH=test-vectors/conformance-card-low-budget/agent-card.json`, drive one decision with `input_tokens+projected > 1000`, observe `SessionEnd.stop_reason=BudgetExhausted`.
+
+2. **`test-vectors/conformance-card-memory-project/` (NEW)** — `agent-card.json` + `README.md`. Delta from base: `name`, `memory.enabled=true`, `memory.mcp_endpoint=mcp://127.0.0.1:8001/`, `tokenBudget.billingTag`. `memory.sharing_policy` stays `"project"` (already non-default relative to impl's hardcoded `"session"`). Usage: pair with memory-mcp-mock running on :8001 seeded from `corpus-seed.json`; observe outgoing `search_memories` call carries `sharing_scope="project"`.
+
+**Must-map updates:**
+- `SV-BUD-02` assertion sharpened to reference the low-budget fixture path + single-decision threshold arithmetic.
+- `SV-MEM-06` assertion sharpened to reference the project-scope fixture path + sharing_scope observation against mock outgoing request.
+
+**Also noted (no spec change):**
+- **Finding X retracted.** Validator's SV-STR-07 probe asserted wrong required-resource-attr set ({service.name, service.version, session_id}) vs spec §14.4 default ({service.name, soa.agent.name, soa.agent.version, soa.billing.tag}). Impl had service.version correctly all along. L-36 + Finding W were the real fixes. Finding X was a validator false-positive chased after Finding W's bounce; harmless because impl didn't ship against it.
+
+**Field-naming clarification:** spec uses `memory.sharing_policy` (§7 line 318 + enum). Validator conversations used `sharing_scope` and `default_sharing_scope`. These are the same field — `sharing_policy` is the normative Agent Card field name; `sharing_scope` is the matching parameter name on `search_memories()` calls (§8.1 line 541–545). If future conversation mixes the two terms, they refer to the same policy value.
+
+**Milestone tally:** unchanged. 136 M3 · 11 M4 · 60 M5 · 22 M2 · 1 M1.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "83991f07d79722c09d3ad54fe994823b989820df5361b33b6a81a03656d2c01a",
+        "sha256": "3ed8d696beb934fb07152b419b727966f0e52dd977c86ce0e21777752ffb73d5",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -269,6 +269,30 @@
         "name": "agent-card.json",
         "path": "test-vectors/conformance-card/agent-card.json",
         "sha256": "d29be9897b1faa7a8bebda10adda5d01f9243529dcb0f30de68f59c0248741ab",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/conformance-card-low-budget/README.md",
+        "sha256": "2e0e970d73a9087e6292980c25578cd1a60ac4a44671ddf4a710c8c46517501d",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "agent-card.json",
+        "path": "test-vectors/conformance-card-low-budget/agent-card.json",
+        "sha256": "ce5af90878b75f35c83a0fc81e3fed14c1d792e8d918b0ff1e132100caba8f1d",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/conformance-card-memory-project/README.md",
+        "sha256": "78f7d36bdeb158c90b1a8f37bc7a17aa6f5bd92a7f916ac779f2f92dd9cfa9be",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "agent-card.json",
+        "path": "test-vectors/conformance-card-memory-project/agent-card.json",
+        "sha256": "fc552c43d860dc063015f3bf6bbb36e333a2e665db723b25914589086bb4b7b7",
         "canonicalization": "JCS-RFC-8785"
       },
       {

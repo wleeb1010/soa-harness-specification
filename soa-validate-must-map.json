@@ -773,7 +773,7 @@
       "section_title": "Sharing Policy and Isolation",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Cross-session memory query honors sharing_policy server-side.",
+      "assertion": "Runner started with RUNNER_AGENT_CARD_PATH=test-vectors/conformance-card-memory-project/agent-card.json (memory.enabled=true, memory.sharing_policy=\"project\") + memory-mcp-mock on :8001 seeded from corpus-seed.json. Drive a session that triggers search_memories. Assert the outgoing request carries sharing_scope=\"project\" (card-driven, per §8.5), not \"session\" (historical impl default).",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — SV-MEM category (Memory/Budget/Stream/Hooks/Registry/etc.)."
     },
@@ -1563,7 +1563,7 @@
       "section_title": "Projection Algorithm",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Over-budget projection → no API call issued.",
+      "assertion": "Runner started with RUNNER_AGENT_CARD_PATH=test-vectors/conformance-card-low-budget/agent-card.json (tokenBudget.maxTokensPerRun=1000). Drive a single decision with input_tokens + projected_output_tokens > 1000. Assert: no API call issued (projection-over fail-closed per §13.1), SessionEnd event with payload.stop_reason=\"BudgetExhausted\" observable via /events/recent.",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — SV-BUD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
     },
