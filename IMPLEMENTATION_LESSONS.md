@@ -654,6 +654,24 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Pattern note:** Three consecutive spec bundles (L-40 §8.4.1, L-42 deterministic generator, L-43 bootstrap hooks) all ship test-only env hooks following the identical production-guard shape. That consistency is intentional — once impl implements one such hook correctly, subsequent hooks reuse the same guard enforcement code. Any deviation in future test hooks from this pattern should be flagged as a spec-design concern.
 
+### L-44 — JWT clock-skew fixture set `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-22 · validator V-10 landed +15 flips (all 7 SV-ENC except 06, all 5 SV-PRIN, both SV-STACK, both SV-OPS). Board at 119 — one test from ≥120. One finding routed.
+- **What:** `SV-ENC-06` asserts the §1 `±30s` JWT iat/exp clock-skew window. No pinned fixtures existed; validator couldn't exercise the assertion deterministically.
+- **Fixture:** `test-vectors/jwt-clock-skew/` — four JWT files (`iat-in-window`, `iat-past`, `iat-future`, `exp-expired`) + `generate.mjs` + `README.md`. Signed with the existing `handler-keypair` (same pattern as L-42 `program-md` fixture). Reference clock `T_REF = 2026-04-22T12:00:00Z`. Validators inject the same clock via `RUNNER_TEST_CLOCK` (§10.6.1) so assertions are deterministic.
+
+**Must-map update:** `SV-ENC-06` assertion sharpened with fixture paths + reference-clock setup + distinct reject `reason` codes (`iat-past-skew`, `iat-future-skew`, `exp-expired`).
+
+**Also noted from V-10 landing (no spec change):**
+- **SV-ENC-04 validator self-correction:** first pass scanned raw filesystem bytes; Windows `core.autocrlf=true` rewrites LF→CRLF on checkout so ALL schema files looked non-compliant. Validator switched to `git show HEAD:<path>` — canonical bytes drive the assertion. Manifest digest at pin-bump already proves the stored form; the runtime probe reads git-canonical.
+- **SV-ENC-07 validator self-correction:** probe first tried signed PDA-pair fixture (handler-kid + capability + control focus, no window fields). Switched to unsigned `permission-prompt/canonical-decision.json` which has the `not_before`/`not_after` 4m25s window. No spec change; fixture was already correct, probe selected wrong one initially.
+
+**Milestone tally:** unchanged. 135 M3 · 12 M4 · 60 M5 · 22 M2 · 1 M1.
+
+**Version impact:** §19.4 minor errata. 1.0.8 → 1.0.9. Additive fixture + must-map sharpening. No breaking changes.
+
+**Pattern note:** L-44 is the third fixture bundle using the same deterministic-generator pattern (L-42 program-md, L-43 dnssec-bootstrap, L-44 jwt-clock-skew). Handler-keypair signs; Ed25519 PureEdDSA canonicality means regeneration produces byte-identical output. The pin is the generator + reference-clock constant, not a potentially-drifting signed blob.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

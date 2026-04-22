@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "cd84554633b5a233f313fe8af142638b390250f5bdbd91c038cea3d37e5fb2cc",
+        "sha256": "8b94a461f348f1d44182c9295f2f1da812cd3355429a2061538099517837f0bb",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -612,6 +612,42 @@
         "path": "test-vectors/jcs-parity/package.json",
         "sha256": "960c20cbe10938b8304a1dbeaef113d469b2129b5d55eb72969b178bd5332bef",
         "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/jwt-clock-skew/README.md",
+        "sha256": "aec8d05f8972ecaa50e4ee4b29f28d0687ea3bc4868be5620af74508121cc294",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "exp-expired.jwt",
+        "path": "test-vectors/jwt-clock-skew/exp-expired.jwt",
+        "sha256": "041c1fff36ff20a1c9d8501df2888985160da1523e92eb1bb5329c8f42033656",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "generate.mjs",
+        "path": "test-vectors/jwt-clock-skew/generate.mjs",
+        "sha256": "60e7a18337351703ed4768dd45bc21045240e24d8e9e2923523a5b71745e51ec",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "iat-future.jwt",
+        "path": "test-vectors/jwt-clock-skew/iat-future.jwt",
+        "sha256": "31413650a9d2fd046760aefc756212b100c0e2b9936e0cc594170dd6a5ddcdf3",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "iat-in-window.jwt",
+        "path": "test-vectors/jwt-clock-skew/iat-in-window.jwt",
+        "sha256": "822c015ac72dc2b03fd25acb506c82d59c06af9188bd7f6d20ac86bce2755193",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "iat-past.jwt",
+        "path": "test-vectors/jwt-clock-skew/iat-past.jwt",
+        "sha256": "1a92e7b5bca6c5e8122435f39ea78be7a7d8bf41040096bedb9137eb4f77a114",
+        "canonicalization": "raw-utf8"
       },
       {
         "name": "README.md",
