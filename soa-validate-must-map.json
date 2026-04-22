@@ -1243,7 +1243,7 @@
       "section_title": "Handler Key Management + Handler Enrollment Endpoint",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "POST /handlers/enroll (§10.6.3) with fresh body → 201 Created. Repeat with same kid → 409 Conflict + {error:HandlerKidConflict}. Body with algo=RS256 → 400 + {error:AlgorithmRejected}.",
+      "assertion": "POST /handlers/enroll (§10.6.3) with fresh body {kid,spki,algo,issued_at,role} → 201 Created + role echoed. Repeat with same kid → 409 Conflict + {error:HandlerKidConflict}. Body with algo=RS256 → 400 + {error:AlgorithmRejected}. Body with unknown role → 400 + {error:RoleRejected}.",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
     },

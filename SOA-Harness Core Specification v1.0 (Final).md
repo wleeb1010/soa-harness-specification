@@ -1519,17 +1519,20 @@ The CRL served at `<trust-anchor-uri>/crl.json` MUST validate against the schema
   "kid": "<unique identifier>",
   "spki": "<base64url-encoded DER SPKI>",
   "algo": "EdDSA | ES256 | RS3072 | RS4096",
-  "issued_at": "<RFC 3339>"
+  "issued_at": "<RFC 3339>",
+  "role": "Interactive | Coordinator | Autonomous"
 }
 ```
 
+`role` REQUIRED — binds this kid to a handler role per §10.4 taxonomy. The role governs §10.4.1 escalation: a `Prompt` decision signed by an `Autonomous`-role kid on a `risk_class ∈ {Mutating, DangerFullAccess}` tool triggers the escalation state-machine. `role` values unknown to the §10.4 enum reject with `400 {error:"RoleRejected", detail:"role not in {Interactive,Coordinator,Autonomous}"}`.
+
 **Responses:**
-- `201 Created` — `{"enrolled": true, "kid": "...", "issued_at": "..."}`.
-- `400 Bad Request` — `{"error": "AlgorithmRejected", "detail": "<reason>"}` when `algo` outside §10.6 accepted set (e.g., `RS256` rejected; RSA < 3072 rejected).
+- `201 Created` — `{"enrolled": true, "kid": "...", "issued_at": "...", "role": "..."}`.
+- `400 Bad Request` — `{"error": "AlgorithmRejected", "detail": "<reason>"}` when `algo` outside §10.6 accepted set (e.g., `RS256` rejected; RSA < 3072 rejected). OR `{"error": "RoleRejected"}` when `role` outside §10.4 enum.
 - `409 Conflict` — `{"error": "HandlerKidConflict", "detail": "kid already enrolled"}` when `kid` matches an existing enrolled handler.
 - `401` / `403` — auth failures.
 
-**Conformance linkage.** `SV-PERM-12` asserts (a) first enroll succeeds, (b) duplicate kid rejects with `HandlerKidConflict`, (c) `RS256` body rejects with `AlgorithmRejected`.
+**Conformance linkage.** `SV-PERM-12` asserts (a) first enroll succeeds, (b) duplicate kid rejects with `HandlerKidConflict`, (c) `RS256` body rejects with `AlgorithmRejected`. `SV-PERM-03/04` enroll an `Autonomous`-role kid and sign the triggering PDA with it to drive §10.4.1 escalation.
 
 #### 10.6.4 Key-Storage Introspection (Normative — L-48)
 

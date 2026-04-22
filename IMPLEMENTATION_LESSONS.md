@@ -869,6 +869,42 @@ Total impl-pending after L-48 + L-49 ships: +18 flips from current 134 → 152 c
 
 **Ops issue reminder:** impl still running wrong tools fixture on `:7700` (agents-md-denylist/tools-with-denied.json instead of conformance tools fixture). Rebind is pending from the L-48 paste. 9 tests stuck in 404 "unknown-tool" until rebind completes; they're not real regressions.
 
+### L-50 — Post-L-48/L-49 wire-up findings: role field on enrollment + impl asks `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-22 · validator wrote the real probe bodies against live L-47/L-48/L-49 surfaces and polled :7700. 🎯 **134 → 147 (+13 clean flips)**. Three remaining impl-gap findings during wire-up:
+  - **BB-ext (spec+impl):** the conformance handler default kid is hardcoded `role:"Interactive"`; validator has no way to submit an Autonomous-signed PDA to trigger §10.4.1 escalation. Needs either `role` field on POST /handlers/enroll OR a `SOA_HANDLER_DEFAULT_ROLE` env hook.
+  - **BE-ext (pure impl):** §10.6.2 CRL refresh observability normatively requires `/logs/system/recent` records with `code=crl-refresh-complete` + `data.last_crl_refresh_at`. Impl shipped poll tick + revocation watcher but not the observability emission.
+  - **BI-impl (pure impl):** §10.5.6 retention_class derivation clause shipped spec-side, but impl's audit-row builder isn't populating the field from session's granted activeMode.
+
+**Spec addition (BB-ext):**
+
+1. **§10.6.3 extended — `role` field on POST /handlers/enroll** — REQUIRED field carrying one of `{Interactive, Coordinator, Autonomous}` per §10.4 handler-role taxonomy. Binds the kid to the role that governs §10.4.1 escalation triggers. Unknown role → `400 {error:"RoleRejected", detail:"role not in {...}"}`. Response body echoes `role` on 201.
+
+**Routed to impl (no spec change):**
+- **BE-ext (SV-PERM-14):** wire `/logs/system/recent` emission on each CRL refresh tick. Record shape: `category=Config, level=info, code=crl-refresh-complete, data.last_crl_refresh_at=<RFC 3339>`. Already specified in §10.6.2; impl just needs to thread the emission into the poll loop.
+- **BI-impl (SV-PERM-16):** wire audit-row builder to derive `retention_class` from session's granted `activeMode` per §10.5.6: `DangerFullAccess → "dfa-365d"`, else `→ "standard-90d"`.
+
+**Impl picks one for BB-ext:** the spec extension to §10.6.3 makes `role` part of the normative enrollment surface. Validator enrolls an Autonomous handler via `POST /handlers/enroll {kid, spki, algo, issued_at, role:"Autonomous"}` and uses that kid to sign the triggering PDA for SV-PERM-03/04. Cleaner than an env-var workaround — role is a first-class handler property.
+
+**Must-map updates:**
+- `SV-PERM-12` assertion extended: fresh enroll body includes `role`; response echoes `role`; unknown role → `RoleRejected`.
+
+**Milestone tally:** unchanged. 135 M3 · 12 M4 · 60 M5 · 22 M2 · 1 M1.
+
+**M3 exit projection refined:**
+- Current: 147/0/11/0
+- + BB-ext impl: +2 (SV-PERM-03/04)
+- + BE-ext impl: +1 (SV-PERM-14)
+- + BI-impl: +1 (SV-PERM-16)
+- + AE (SV-STR-10) full crash harness: +1
+- = **152/0/6/0 projected exit**
+
+Remaining 6 skips are legit deferrals (4 M4 retags + 1 pre-budgeted + 1 platform-gated). M3 closes cleanly well above the ≥120 target.
+
+**Version impact:** §19.4 minor errata. 1.0.14 → 1.0.15. Additive `role` REQUIRED on /handlers/enroll. Strictly speaking this adds a required field which MIGHT appear to be a breaking change — but /handlers/enroll is brand-new in L-48 (1.0.13), shipped this same day, no deployed consumers yet. Safe to extend its shape before any consumer lands. Could alternatively have made `role` OPTIONAL with default `Interactive`; chose REQUIRED for safety (operators MUST explicitly declare role, not get Interactive by default which could hide Autonomous misuse).
+
+**Pattern note:** L-50 captures the pattern where impl ships the shape of a spec clause but misses a side-effect the clause implies. §10.5.6 retention_class "derivation rule" is the schema contract; impl shipped the schema but not the population. §10.6.2 CRL refresh is the schedule + semantic; impl shipped the scheduler but not the observability emission. Both are caught cleanly by validator's real probes hitting live endpoints — the "skip → fail → finding" transition only works when probes actually execute against live impl.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
