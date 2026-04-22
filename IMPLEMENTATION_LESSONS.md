@@ -477,6 +477,34 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Pattern note:** validator wrote the punch list before pulling L-36, so their list conflates "spec gaps I need" (SV-STR-06/07/08 + SV-STR-11/16) with impl asks. After pulling e77dba2, the first three spec gaps + two retags are already resolved. Only SV-BUD-03 was genuinely new.
 
+### L-38 — System Event Log observation channel + memory-mcp-mock protocol completion `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · validator V-9c — +2 of expected +7 SV-MEM flips. Two genuine spec gaps identified.
+- **What:**
+  - **Gap A (SV-MEM-04):** §14.2 System Event Log is file-only (`/logs/system.log` JSON Lines); no HTTP observation surface. `SV-MEM-04` observes a NON-terminal `MemoryDegraded` category record on the System Event Log (per-timeout, pre-threshold). Without an HTTP endpoint, validator cannot deterministically read the log without shared filesystem access to impl.
+  - **Gap B (SV-MEM-07):** L-34 `test-vectors/memory-mcp-mock/README.md` documented three tools (`search_memories`, `write_memory`, `consolidate_memories`). §8.1 lines 541–563 define five tools with different names (no `write_memory`; uses `add_memory_note` concept via `delete_memory_note` idempotent-tombstone semantics). Mock README was incomplete and used a non-spec tool name; conformance mock could not support `SV-MEM-07` delete-idempotency assertion.
+
+**Spec additions:**
+
+1. **§14.5.4 System Event Log Observation Channel (NEW normative — M3 addition)** — `GET /logs/system/recent?session_id=<sid>&category=<cat1,cat2>&after=<record_id>&limit=<n>`. Returns records from the same buffer backing `/logs/system.log` with identical `ts` + `record_id`. Session-scoped bearer, 120 rpm. Not-a-side-effect on reads. Schema: `schemas/system-log-recent-response.schema.json`. Resolves SV-MEM-04 observation gap.
+
+2. **`schemas/system-log-recent-response.schema.json` (NEW)** — wire schema with closed 12-category enum matching §14.2, record_id pattern `^slog_[A-Za-z0-9]{8,}$`, level enum `{info, warn, error}`.
+
+3. **`test-vectors/memory-mcp-mock/README.md` (UPDATED)** — protocol table replaced to match §8.1 exactly: `search_memories`, `search_memories_by_time`, `read_memory_note`, `consolidate_memories`, `delete_memory_note`. Removed non-spec `write_memory`. Added idempotency + tombstone semantics for `delete_memory_note` per §8.1 line 566. Corpus-seed.json unchanged (20 notes still valid for search-weighting tests).
+
+**Must-map updates:**
+- `SV-MEM-04`: `§8.3` → `§8.3 + §14.5.4`. Assertion sharpened to specify observation via `/logs/system/recent` with category filter + exactly-one-record + session-continues invariant.
+
+**Routed to impl (no spec change, feature/wiring work only):**
+- **Finding S (SV-MEM-03):** `MemoryMcpClient` lacks a startup-time probe surfacing `MemoryUnavailableStartup` before `/ready` flips 200. §8.3 line 581 already MANDATES fail-startup on timeout-or-connection-failure during bootstrap. Impl must wire a startup probe.
+- **Finding T (SV-MEM-04 gating):** impl emits `SessionEnd{MemoryDegraded}` on EVERY timeout, bypassing the 3-consecutive threshold gate. §8.3 line 582 is clear: per-timeout is non-terminal (System Event Log only); 3-consecutive terminates session. Impl must add `MemoryDegradationTracker.isDegraded()` gate.
+- **Finding U (SV-MEM-05):** consolidation trigger not wired. §8.4 mandates 24h timer OR per-session note-count ≥ 100. Impl must ship background scheduler + note-count tracker.
+- **Finding V (SV-MEM-06):** `sharing_scope` hard-coded to `"session"` in impl. §8.5 + Agent Card `memory.default_sharing_scope` field define the source. Impl must thread from Agent Card through to `search_memories` calls.
+
+**Version impact:** §19.4 minor errata. 1.0.2 → 1.0.3 at publication. Additive endpoint + schema + fixture protocol clarification. No breaking changes.
+
+**Milestone tally:** unchanged at 136 M3 · 11 M4 · 60 M5 · 22 M2 · 1 M1.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

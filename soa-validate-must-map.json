@@ -749,11 +749,11 @@
     },
     "SV-MEM-04": {
       "name": "Mid-loop degrade",
-      "section": "§8.3",
-      "section_title": "Unavailability and Timeout",
+      "section": "§8.3 + §14.5.4",
+      "section_title": "Unavailability and Timeout + System Event Log Observation Channel",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Single mid-loop timeout → MemoryDegraded event, continue with stale slice.",
+      "assertion": "Single mid-loop timeout → MemoryDegraded System Event Log record emitted (non-terminal, not a §14.1 StreamEvent per §8.3.1 L-34). Observable via GET /logs/system/recent?session_id=<sid>&category=MemoryDegraded (§14.5.4): exactly one record with level=warn + code=MemoryDegraded + session continues (no corresponding SessionEnd).",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — SV-MEM category (Memory/Budget/Stream/Hooks/Registry/etc.)."
     },

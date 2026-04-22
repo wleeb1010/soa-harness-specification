@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "f52f55ad805a01fdb167956fb687610099550ecd8ae9acb71e02f0b9b26fc246",
+        "sha256": "d0085a6d0b1feb13e9c9a4f98728fceffdd876e366db1ab7dfeacbdb826e5177",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "5f50aaf7753369585f2dd4704545579fb76e76da7c88d46cbc72177fb18e6643",
+        "sha256": "83991f07d79722c09d3ad54fe994823b989820df5361b33b6a81a03656d2c01a",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -191,6 +191,12 @@
         "name": "stream-event.schema.json",
         "path": "schemas/stream-event.schema.json",
         "sha256": "47c7bfcb405453c5a9772bd4da9cf1c7f75c848c67a59e41e9ef6caf83838a07",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "system-log-recent-response.schema.json",
+        "path": "schemas/system-log-recent-response.schema.json",
+        "sha256": "07a6eaf8c3856ab07617f5dda01d662be8b1cde9d4fe976cdf88f7f0b5ce6c27",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -538,7 +544,7 @@
       {
         "name": "README.md",
         "path": "test-vectors/memory-mcp-mock/README.md",
-        "sha256": "00470a533a66c840d01c4a46a5729955ef1f1c0056f3e140b53bccd86cfe7cc9",
+        "sha256": "36015cbb19ed5916851fe0ec5a919ab56b923d8b93f3a43bb9ec3d870d3b35c4",
         "canonicalization": "raw-utf8"
       },
       {

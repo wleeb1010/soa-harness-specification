@@ -2176,6 +2176,54 @@ GET /observability/backpressure
 
 **Conformance linkage.** `SV-STR-08` floods the OTLP exporter (or drives a pinned scenario that forces backpressure with the collector unavailable), polls `/observability/backpressure`, asserts `dropped_since_boot` > 0 AND `last_backpressure_applied_at` > test-start wall-clock.
 
+### 14.5.4 System Event Log Observation Channel (Normative — M3 addition, L-38)
+
+**Rationale.** §14.2 defines the System Event Log at `/logs/system.log` (JSON Lines) with closed-set categories `ContextLoad, MemoryLoad, MemoryDegraded, Permission, Routing, Config, Card, SelfImprovement, Audit, Budget, Handoff, Error` and record shape `{ ts, session_id, category, level, code, message, data }`. The file-path surface is the production persistence channel; conformance tests cannot assume shared filesystem access to impl's log file. `SV-MEM-04` observes non-terminal `MemoryDegraded` (per-timeout, pre-threshold) via this log — a pure HTTP observation surface is required.
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+GET /logs/system/recent?session_id=<session_id>&category=<cat1,cat2,...>&after=<record_id>&limit=<n>
+```
+
+- **Transport, auth, rate-limit:** `sessions:read:<session_id>` scope; 120 rpm per bearer; TLS 1.3 / loopback plain.
+- **Query params:**
+  - `session_id` REQUIRED (scope-bound to bearer).
+  - `category` OPTIONAL comma-separated list of §14.2 categories; omit to return all categories; unknown category → `400 BadRequest`.
+  - `after` OPTIONAL opaque record_id; omit to return from buffer start.
+  - `limit` OPTIONAL 1–1000, default 100.
+- **Response schema:** `schemas/system-log-recent-response.schema.json`.
+- **Response body (200):**
+
+```json
+{
+  "records": [
+    {
+      "record_id": "slog_...",
+      "ts": "<RFC 3339>",
+      "session_id": "ses_...",
+      "category": "ContextLoad | MemoryLoad | MemoryDegraded | Permission | Routing | Config | Card | SelfImprovement | Audit | Budget | Handoff | Error",
+      "level": "info | warn | error",
+      "code": "<§24 error code or category-specific code>",
+      "message": "<human-readable, ≤ 1024 chars>",
+      "data": { /* category-specific payload; optional */ }
+    }
+  ],
+  "next_after": "slog_...",
+  "has_more": false,
+  "runner_version": "1.0",
+  "generated_at": "<RFC 3339>"
+}
+```
+
+**Byte-identity.** Excludes `generated_at`. The `ts` value IS part of byte-identity (recorded at emission time, stored).
+
+**Not-a-side-effect (MUST).** Reading `/logs/system/recent` MUST NOT advance state, rotate the log, or write audit rows.
+
+**Relationship to `/logs/system.log` file.** Both channels expose identical content. The HTTP endpoint is a view over the same in-process buffer; production operators MAY tail the file, validators MUST use the HTTP endpoint. Records MUST carry matching `ts` + `record_id` across both channels.
+
+**Conformance linkage.** `SV-MEM-04` asserts mid-loop timeout emits a non-terminal `MemoryDegraded` record: Validator drives one timeout (mock configured to time out once), polls `/logs/system/recent?session_id=<sid>&category=MemoryDegraded`, asserts exactly one record with `level=warn` + `code=MemoryDegraded` + session continues (no `SessionEnd` with this `session_id`). Same endpoint subsumes observation of other §14.2 categories for future conformance tests.
+
 ---
 
 ## 15. Verification & Hooks

@@ -13,13 +13,19 @@ Real MCP memory servers (graph databases, vector stores) are out of scope for M3
 
 ## Protocol (normative for conformance mocks)
 
-The mock MUST implement the three Memory MCP tools from §8.1:
+The mock MUST implement the Memory MCP tool contract from Core §8.1 lines 541–563 (L-38 alignment — prior 3-tool protocol was incomplete and used non-spec names):
 
 | Tool | Request | Response |
 |---|---|---|
-| `search_memories` | `{query, limit, sharing_scope}` | `{notes: [{note_id, summary, data_class, composite_score}]}` |
-| `write_memory` | `{summary, data_class, session_id}` | `{note_id}` |
-| `consolidate_memories` | `{consolidation_threshold}` | `{consolidated_count, pending_count}` |
+| `search_memories` | `{query, limit, time_range?}` | `{hits: [{id, score, snippet, created_at, tags, importance}], truncated}` |
+| `search_memories_by_time` | `{start, end}` | `{hits: [{id, created_at, tags}], truncated}` |
+| `read_memory_note` | `{id}` | `{id, note, tags, importance, created_at, graph_edges: [{peer, weight}]}` |
+| `consolidate_memories` | `{threshold}` | `{merged, strengthened_edges, summary_ids}` |
+| `delete_memory_note` | `{id, reason}` | `{deleted, tombstone_id, deleted_at}` |
+
+`delete_memory_note` MUST be idempotent on `id` per §8.1 line 566 — repeated calls with the same `id` return the same `tombstone_id` + `deleted_at`. Deleted IDs MUST NOT appear in subsequent `search_memories` responses. The mock MUST preserve tombstone records (retaining `id`, `created_at`, `tags`, `deleted_at`, `reason` but not the note body).
+
+Errors per §8.1: `MemoryUnavailable`, `MemoryTimeout`, `MemoryNotFound`, `MemoryDeletionForbidden`.
 
 The mock MUST accept the following env-var controlled behaviors:
 
