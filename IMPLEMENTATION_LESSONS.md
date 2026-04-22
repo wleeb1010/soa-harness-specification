@@ -455,6 +455,28 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Impl action:** implement `/observability/otel-spans/recent` endpoint — store emitted spans in-process ring buffer, serve from there. Byte-equivalence to OTLP export is the key invariant. Implement `/observability/backpressure` — surface the existing 10k buffer state + drop counter. `admin:read` scope (process-global, not session-scoped). Same production-guard pattern as other observability endpoints (loopback + TLS 1.3). Bounce :7700 after each lands so validator probes flip on next poll.
 
+### L-37 — V-9b budget-batch execution findings: 1 retag + 4 impl asks `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · validator Week 3 V-9b — budget batch delivered 0 of 5 expected flips
+- **What:** V-9b ran while validator was still on pre-L-36 spec pin. Confusion overlapping but distinct from L-36:
+  - **1 new retag:** SV-BUD-03 (mid-stream cancel on ContentBlockDelta boundary) — same class as SV-STR-11, needs real LLM streaming. M3 → M4.
+  - **4 pure impl asks** (spec already covers these, no spec change needed — validator's punch list documents what impl hasn't wired):
+    - SV-BUD-02: impl hardcodes `maxTokensPerRun=200_000` instead of reading `card.tokenBudget.maxTokensPerRun` (line 375/379 of spec mandates card-driven). Impl bug; fix is reading from card, not adding env override.
+    - SV-BUD-04: `TurnRecord` missing `prompt_tokens_cached` + `completion_tokens_cached` fields. Spec already has these in session-state-response (line 1863-1864). Impl gap.
+    - SV-BUD-05: `billing_tag` end-to-end (bootstrap → audit → events → OTel) entirely absent (zero grep matches). Spec mandates: Agent Card field (line 375/379), session-state match (line 1821), OTel attribute `soa.billing.tag` (line 2046), audit linkage. Pure impl feature gap.
+    - SV-BUD-07: `BillingTagMismatch` gate at POST /sessions depends on SV-BUD-05 landing. Error code already in §24 (line 2595). Impl gap.
+
+**Must-map updates:**
+- `SV-BUD-03`: `implementation_milestone` M3 → M4 (mid-stream cancel needs LLM streaming).
+
+**Milestone tally delta:** M3: 137 → **136** · M4: 10 → 11. Total still 230.
+
+**M3 skip budget impact:** 136 tagged; target ≥120 green → 16-test skip budget. Retaining 4 pre-budgeted → 12 real-slip headroom. SV-BUD-03 already skipping — counts as pre-budgeted from now.
+
+**No new spec-normative text this L-entry** other than the retag. Four impl asks are straightforward feature-completion against already-normative spec clauses. Routed directly to impl as Findings O/P/Q/R with line-number citations.
+
+**Pattern note:** validator wrote the punch list before pulling L-36, so their list conflates "spec gaps I need" (SV-STR-06/07/08 + SV-STR-11/16) with impl asks. After pulling e77dba2, the first three spec gaps + two retags are already resolved. Only SV-BUD-03 was genuinely new.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

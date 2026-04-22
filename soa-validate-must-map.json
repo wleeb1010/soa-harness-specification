@@ -1574,8 +1574,8 @@
       "profile": "core",
       "severity": "critical",
       "assertion": "Overage observed mid-stream → cancel on next ContentBlockDelta boundary.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-BUD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — cancellation on next ContentBlockDelta boundary requires real LLM streaming with delta-boundary arithmetic; beyond M3 impl scope (L-37 retag, same class as SV-STR-11)."
     },
     "SV-BUD-04": {
       "name": "Cache accounting",
