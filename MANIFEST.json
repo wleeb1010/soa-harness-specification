@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "c952bdf0934a8ef71e96b8edd4da74ab9d8ae47eb153a74c44b042d163de4fba",
+        "sha256": "f52f55ad805a01fdb167956fb687610099550ecd8ae9acb71e02f0b9b26fc246",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "000839eba3914fbe89a3255d136e814f16c6d371715667bdfe43b795608cd7ef",
+        "sha256": "757acff0361267d64a258325ab2cbb7e0387db64f76a0d54a846ce38763fb381",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -71,6 +71,12 @@
         "name": "audit-tail-response.schema.json",
         "path": "schemas/audit-tail-response.schema.json",
         "sha256": "02af7a77d0e1f7ff6bb7bc83309e6d2e402153d617cdcc67f8a205c6e25fb13a",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "backpressure-status-response.schema.json",
+        "path": "schemas/backpressure-status-response.schema.json",
+        "sha256": "13c2e56b0d31c3421f9d5d09b34552ecf93c5bb1eba88f4ee4bb8b67928ce400",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -125,6 +131,12 @@
         "name": "memory-state-response.schema.json",
         "path": "schemas/memory-state-response.schema.json",
         "sha256": "bfd7cb51852a6fa8c73e82469c2869a3c6d2dc46e305a029b7fba773c6d4e929",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "otel-spans-recent-response.schema.json",
+        "path": "schemas/otel-spans-recent-response.schema.json",
+        "sha256": "a4e6523d182a09e779fabfb20b9e82e3fb69ad9401c9142be3df832e7e5a027b",
         "canonicalization": "JCS-RFC-8785"
       },
       {

@@ -2092,6 +2092,90 @@ Pagination same pattern as `/audit/records` (§10.5.3). Byte-identity excludes `
 
 **Conformance linkage.** `SV-STR-OBS-01` (new) — schema + pagination + not-a-side-effect + full-enum coverage. SV-STR-01/02/03/04/09/10/11/15 consume this endpoint for their assertions. SV-STR-12/13/14 remain M4 (require §14.3 full SSE transport with Last-Event-ID / terminal SSE semantics).
 
+### 14.5.2 OTel Span Observability Channel (Normative — M3 addition, L-36)
+
+**Rationale.** §14.4 normatively MUSTs OTel span emission (`soa.turn` + `soa.tool.<name>` with required attributes, `StreamEvent.event_id` as span event) but defines no validator-observable surface. In production, impls export spans to operator-configured OTLP collectors; conformance tests can't assume a collector is reachable or inspectable. `SV-STR-06/07` need an in-process surface that mirrors what was (or would have been) exported, independent of collector availability.
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+GET /observability/otel-spans/recent?session_id=<session_id>&after=<span_id>&limit=<n>
+```
+
+- **Transport, auth, rate-limit:** `sessions:read:<session_id>` scope; 120 rpm per bearer; TLS 1.3 / loopback plain.
+- **Response schema:** `schemas/otel-spans-recent-response.schema.json`.
+- **Response body (200):**
+
+```json
+{
+  "spans": [
+    {
+      "span_id": "<16-hex>",
+      "trace_id": "<32-hex>",
+      "parent_span_id": "<16-hex or null>",
+      "name": "soa.turn | soa.tool.<tool_name>",
+      "start_time": "<RFC 3339 nanos>",
+      "end_time": "<RFC 3339 nanos>",
+      "attributes": { "soa.session.id": "...", "soa.turn.id": "...", "soa.billing.tag": "...", "soa.agent.name": "...", "soa.agent.version": "...", "soa.tool.risk_class": "...", "soa.permission.decision": "..." },
+      "events": [ { "name": "StreamEvent", "time": "<RFC 3339 nanos>", "attributes": { "event_id": "evt_..." } } ],
+      "status_code": "OK | ERROR | UNSET",
+      "resource_attributes": { /* all observability.requiredResourceAttrs per §14.4 */ }
+    }
+  ],
+  "next_after": "<span_id>",
+  "has_more": false,
+  "runner_version": "1.0",
+  "generated_at": "<RFC 3339>"
+}
+```
+
+Span content MUST be byte-equivalent to what the Runner exports (or would have exported) to a configured OTLP collector per §14.4. If no collector is configured, spans MUST still be emitted to this endpoint — the channel is a conformance observation surface, not an alternative export.
+
+**Byte-identity.** Excludes `generated_at`. The `start_time` / `end_time` values ARE part of byte-identity (they're not Runner-wall-clock synthesized at read; they were recorded at span-emission time and stored).
+
+**Not-a-side-effect (MUST).** Reading `/observability/otel-spans/recent` MUST NOT advance state, emit new spans, or write audit rows.
+
+**Relationship to §14.4 OTLP export.** Both channels coexist: impls MAY export to a configured OTLP collector per §14.4 AND serve this endpoint. The validator reads from this endpoint for deterministic conformance; operators rely on OTLP for production observability. A span appears on both channels with identical `span_id`.
+
+**Conformance linkage.** `SV-STR-06` validates `soa.turn` + `soa.tool.<name>` span presence with required attributes. `SV-STR-07` validates `observability.requiredResourceAttrs` completeness (missing → refuse start, observable via Runner failing `/ready` probe — existing conformance coverage in §5.4; the span endpoint itself asserts non-empty `resource_attributes`).
+
+### 14.5.3 Observability Backpressure Status Endpoint (Normative — M3 addition, L-36)
+
+**Rationale.** §14.4 line 2050 specifies "buffer up to 10,000 spans then drop with `ObservabilityBackpressure`" as the exporter-unavailable behavior. §24 defines `ObservabilityBackpressure` as an error-code identifier, but the spec did not define WHERE a validator observes that backpressure has been applied. `SV-STR-08` needs a deterministic surface to assert drop-oldest + named signal happened.
+
+**Endpoint.** Every conformant Runner MUST expose:
+
+```
+GET /observability/backpressure
+```
+
+- **Transport, auth, rate-limit:** `admin:read` scope (process-global observability, not session-scoped); 60 rpm per bearer; TLS 1.3 / loopback plain.
+- **Response schema:** `schemas/backpressure-status-response.schema.json`.
+- **Response body (200):**
+
+```json
+{
+  "buffer_capacity": 10000,
+  "buffer_size_current": 0,
+  "dropped_since_boot": 0,
+  "last_backpressure_applied_at": null,
+  "last_backpressure_dropped_count": 0,
+  "runner_version": "1.0",
+  "generated_at": "<RFC 3339>"
+}
+```
+
+- `buffer_capacity` MUST be `10000` per §14.4.
+- `dropped_since_boot` is a monotonically non-decreasing counter of spans dropped due to backpressure since Runner startup. Reset only on process restart.
+- `last_backpressure_applied_at` is the RFC 3339 timestamp of the most recent drop-oldest event; `null` if no backpressure has occurred since boot.
+- `last_backpressure_dropped_count` is the drop-count of the most recent backpressure event (one backpressure event MAY drop multiple spans).
+
+**Byte-identity.** Excludes `generated_at`.
+
+**Not-a-side-effect (MUST).** Reading `/observability/backpressure` MUST NOT advance state, emit new spans, reset counters, or write audit rows.
+
+**Conformance linkage.** `SV-STR-08` floods the OTLP exporter (or drives a pinned scenario that forces backpressure with the collector unavailable), polls `/observability/backpressure`, asserts `dropped_since_boot` > 0 AND `last_backpressure_applied_at` > test-start wall-clock.
+
 ---
 
 ## 15. Verification & Hooks

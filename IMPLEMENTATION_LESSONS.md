@@ -418,6 +418,43 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Impl action:** emit `PreToolUseOutcome` + `PostToolUseOutcome` at the hook-pipeline boundaries per §14.1.1 payload schemas. Wire `outcome.replace_args` / `outcome.replace_result` into decision pipeline (Findings L + M root-cause fix). Ship `HookReentrancy` detection per-session PID tracking (Finding N). Implement `SOA_RUNNER_AGENTS_MD_PATH` loader per §11.2.1.
 
+### L-36 — OTel + backpressure observability channels + 2 M4 retags `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · validator Week 3 V-9a — 5 of the 7 "stayed-skip" SV-STR tests came back with precise routing diagnostics
+- **What:** Two genuine spec gaps + two milestone retags + one "already fine" classification:
+  - **Gap A (SV-STR-06/07):** §14.4 MUSTs OTel span emission but no validator-observable surface. In production, spans export to operator OTLP collectors; conformance can't assume collector reachability. Spec needed an in-process OTel observability endpoint.
+  - **Gap B (SV-STR-08):** §14.4 specifies "10k buffer, drop-oldest with `ObservabilityBackpressure`" and §24 has the error-code, but nowhere could a validator observe that backpressure was applied. Spec needed a backpressure status endpoint.
+  - **Retag 1 (SV-STR-11):** CompactionDeferred mid-ContentBlockDelta requires real LLM dispatcher streaming — beyond M3 scope; M4.
+  - **Retag 2 (SV-STR-16):** Trust-class enforcement observation requires Gateway surface; §14.1.2 is Runner-side static mapping. M4.
+  - **No-op (SV-STR-10):** Composable with SV-SESS-06 crash-marker harness once impl ships those fixtures. Not a spec gap.
+
+**Spec additions:**
+
+1. **§14.5.2 OTel Span Observability Channel (NEW normative — M3 addition)** — `GET /observability/otel-spans/recent?session_id=<sid>&after=<span_id>&limit=<n>`. Returns array of spans byte-equivalent to what the Runner exports (or would export) to an OTLP collector per §14.4. Session-scoped bearer (`sessions:read:<session_id>`), 120 rpm. Not-a-side-effect. Byte-identity excludes `generated_at`. Resolves SV-STR-06/07 observation gap.
+
+2. **§14.5.3 Observability Backpressure Status Endpoint (NEW normative — M3 addition)** — `GET /observability/backpressure`. Returns process-global buffer capacity (MUST be 10000 per §14.4), current size, monotonic `dropped_since_boot` counter, `last_backpressure_applied_at` + `last_backpressure_dropped_count`. Admin-scoped bearer (`admin:read`), 60 rpm. Not-a-side-effect. Resolves SV-STR-08 observation gap without extending the §14.1 closed enum.
+
+3. **`schemas/otel-spans-recent-response.schema.json` (NEW)** — wire schema for §14.5.2 responses. Spans array with `span_id` (16-hex), `trace_id` (32-hex), `name` (soa.turn / soa.tool.<name>), `attributes`, `events` (StreamEvent events), `resource_attributes`.
+
+4. **`schemas/backpressure-status-response.schema.json` (NEW)** — wire schema for §14.5.3 responses. `buffer_capacity` locked to const 10000 per §14.4.
+
+**Must-map updates:**
+- `SV-STR-06`: `§14.4` → `§14.4 + §14.5.2`; assertion specifies `/observability/otel-spans/recent` probe + required attributes.
+- `SV-STR-07`: `§14.4` → `§14.4 + §14.5.2`; assertion is two-part: `/ready` 503 on missing attrs + `resource_attributes` completeness on the span endpoint.
+- `SV-STR-08`: `§14.4` → `§14.4 + §14.5.3`; assertion specifies `/observability/backpressure` flood-and-poll.
+- `SV-STR-11`: `implementation_milestone` M3 → M4 (CompactionDeferred needs real LLM dispatcher).
+- `SV-STR-16`: `implementation_milestone` M3 → M4 (trust_class enforcement is Gateway-scope).
+
+**Milestone tally delta:** M3: 139 → **137** · M4: 8 → 10. Total still 230.
+
+**M3 skip budget impact:** 137 tagged; target ≥120 green → 17-test skip budget. Retaining 4 pre-budgeted skips (SV-STR-04, SV-GOV-09, SV-MEM-08, HR-13) → 13 real-slip headroom.
+
+**Version impact:** §19.4 minor errata bump (1.0.1 → 1.0.2 at publication of L-35+L-36 errata). Additive endpoints + schemas — no breaking changes.
+
+**Validator action:** pin-bump to this commit. Load two new schemas in registry. Write two new probes: `/observability/otel-spans/recent` flood-safe polling for SV-STR-06/07, `/observability/backpressure` before-and-after flood assertion for SV-STR-08. Retag SV-STR-11/16 handlers as M4-pending (skip with "M4 scope" diagnostic until M4 runtime lands).
+
+**Impl action:** implement `/observability/otel-spans/recent` endpoint — store emitted spans in-process ring buffer, serve from there. Byte-equivalence to OTLP export is the key invariant. Implement `/observability/backpressure` — surface the existing 10k buffer state + drop counter. `admin:read` scope (process-global, not session-scoped). Same production-guard pattern as other observability endpoints (loopback + TLS 1.3). Bounce :7700 after each lands so validator probes flip on next poll.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
