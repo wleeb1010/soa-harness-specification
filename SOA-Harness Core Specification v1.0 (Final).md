@@ -2271,6 +2271,23 @@ GET /logs/system/recent?session_id=<session_id>&category=<cat1,cat2,...>&after=<
 
 **Conformance linkage.** `SV-MEM-04` asserts mid-loop timeout emits a non-terminal `MemoryDegraded` record: Validator drives one timeout (mock configured to time out once), polls `/logs/system/recent?session_id=<sid>&category=MemoryDegraded`, asserts exactly one record with `level=warn` + `code=MemoryDegraded` + session continues (no `SessionEnd` with this `session_id`). Same endpoint subsumes observation of other §14.2 categories for future conformance tests.
 
+### 14.5.5 Post-Crash Observation via Admin Scope (Normative — M3 addition, L-47)
+
+**Rationale.** `/events/recent` (§14.5) requires `sessions:read:<session_id>` scope. Bearers are in-memory (§5.4), so a pre-crash session's bearer does NOT survive a process restart. When the Runner's boot-scan (§12) resumes a session with an open bracket, it MUST emit a `CrashEvent` for that session per §14.1. Without an auth path that survives the restart, conformance validators cannot observe the emission — `SV-STR-10` becomes untestable.
+
+**Admin-scope extension to `/events/recent`.** A bearer carrying `admin:read` scope MAY read `/events/recent` with the following extended semantics:
+
+- `session_id` query parameter is OPTIONAL. When omitted, the response returns events across ALL sessions in the current process boot, including sessions that existed only in pre-crash persistence and whose original bearers are no longer valid.
+- `type` query parameter MAY filter the result to specific `StreamEvent.type` values (e.g., `?type=CrashEvent`). Unknown types → `400 BadRequest`.
+- Rate limit: **60 rpm per bearer** (lower than session-scoped 120 rpm; matches §14.5.3 backpressure + §10.5.3 audit-records pattern).
+- All other semantics from §14.5 unchanged: byte-identity excludes `generated_at`; not-a-side-effect; pagination via `next_after` / `has_more`.
+
+**Scope hierarchy clarification.** `/events/recent` accepts EITHER `sessions:read:<session_id>` OR `admin:read`. A request carrying both is treated as admin-scope (broader read access). A request carrying neither returns `401 Unauthenticated`.
+
+**Conformance linkage.** `SV-STR-10` (`HR-04` / crash-event observation): validator (1) drives a session with an open bracket, (2) kills the Runner process mid-turn (§12 simulated-crash pattern), (3) restarts the Runner, (4) polls `/events/recent?type=CrashEvent` with `admin:read` bearer (OR with optional `session_id=<pre-crash session>`), (5) asserts exactly one `CrashEvent` record whose `payload` carries the required fields per §14.1.1 `CrashEvent` schema.
+
+**Privacy note.** `admin:read` scope holders receive broad read access across all sessions in the current process boot. This is consistent with the existing admin-scope surfaces (§14.5.3 `/observability/backpressure`, §10.5.2 `/audit/tail`, §10.5.3 `/audit/records`). Operators MUST ensure `admin:read` is granted only to principals authorized to read audit-class data.
+
 ---
 
 ## 15. Verification & Hooks

@@ -736,6 +736,37 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Pattern note:** L-46 is the first "fixture drift after new normative behavior" bundle. The cascade (L-35 fixture → L-45 parser → L-46 fixture realignment) is expected when test fixtures predate the parser behavior they're meant to exercise. Going forward, any spec change that adds a new parser rule should trigger a sweep of existing fixtures to check §7.2-style compliance.
 
+### L-47 — §14.5.5 admin-scope extension to `/events/recent` for post-crash observation `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-22 · validator V-9b landed; board at 134/0/24/0 (HR-09/10 also flipped validator-side via internal diff-validator package). SV-STR-10 / Finding AE sharpened diagnostic inline — impl needs crash-event emission + post-relaunch observability surface.
+- **What:** §14.1 defines `CrashEvent` as a closed-enum type; §14.5 `/events/recent` serves all 27 types under `sessions:read:<session_id>` scope. Bearers are in-memory per §5.4; a pre-crash session's bearer does NOT survive a process restart. When boot-scan resumes a session with an open bracket (§12), the new process emits `CrashEvent` — but no external observer can read it, because the validating bearer is gone with the old process.
+- **Validator's two options:** (a) persist bearers across restarts (heavier ops change), (b) admin-bearer path on `/events/recent` (lighter; matches §14.5.3 backpressure + §10.5.3 audit-records admin pattern). Spec-side decision: Option (b).
+
+**Spec addition:**
+
+1. **§14.5.5 Post-Crash Observation via Admin Scope (NEW normative — M3 addition)** — `/events/recent` accepts EITHER `sessions:read:<session_id>` OR `admin:read` scope:
+   - With `sessions:read:<session_id>`: unchanged from §14.5. 120 rpm.
+   - With `admin:read`: `session_id` query param OPTIONAL. Returns events across ALL sessions in current process boot, including pre-crash-resumed sessions. Type-filter via `?type=CrashEvent`. 60 rpm.
+   - Scope hierarchy: both scopes on same request → treated as admin (broader). Neither → `401 Unauthenticated`.
+   - All other §14.5 semantics unchanged: byte-identity excludes `generated_at`; not-a-side-effect; pagination unchanged.
+
+**Must-map updates:**
+- `SV-STR-10` section `§14.1` → `§14.1 + §14.5.5`; assertion specifies the kill/restart/poll choreography + admin:read bearer + type=CrashEvent filter.
+
+**Routed to impl (Finding AE):**
+- Emit `CrashEvent` StreamEvent from boot-scan's resume-with-open-bracket path (§12 persistence).
+- Honor `admin:read` scope on `/events/recent` with the extended semantics (`session_id` optional, 60 rpm cap).
+
+**Validator-side HR-09 + HR-10:** flipped via new `internal/sidiff` pure-function package — no impl or spec dependency. Those are validator-local wins already counted in the 134 board.
+
+**Milestone tally:** unchanged. 135 M3 · 12 M4 · 60 M5 · 22 M2 · 1 M1.
+
+**Version impact:** §19.4 minor errata. 1.0.11 → 1.0.12. Additive scope path on existing endpoint + must-map sharpening. No breaking changes (existing sessions:read clients continue to work).
+
+**Pattern note:** §14.5.5 is the third "admin:read extends session:read" observation path (§14.5.3 backpressure is admin-only; §10.5.2/.3 audit is audit:read). The admin-scope pattern is crystallizing as the canonical mechanism for process-global post-crash queries. Future post-crash observation needs should extend along this same axis rather than introducing new endpoints.
+
+**Outstanding:** validator surfaced 14 SV-PERM findings labeled BB..BJ (9 findings across 14 tests — env-hook pattern for BB/BD/BE/BF, endpoint/schema additions for BC/BG/BH/BI/BJ). Full diagnostic sheet pending; routing decisions (impl vs spec env-hook vs spec endpoint) will follow once per-test details arrive.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

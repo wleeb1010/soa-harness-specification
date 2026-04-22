@@ -1709,11 +1709,11 @@
     },
     "SV-STR-10": {
       "name": "CrashEvent payload shape",
-      "section": "§14.1",
-      "section_title": "StreamEvent",
+      "section": "§14.1 + §14.5.5",
+      "section_title": "StreamEvent + Post-Crash Observation via Admin Scope",
       "profile": "core",
       "severity": "critical",
-      "assertion": "CrashEvent.payload contains required fields reason, workflow_state_id, last_committed_event_id, stack_hint.",
+      "assertion": "Validator (1) drives a session with open bracket, (2) kills Runner process mid-turn, (3) restarts Runner, (4) polls GET /events/recent?type=CrashEvent with admin:read bearer (§14.5.5 admin-scope extension), (5) asserts exactly one CrashEvent record whose payload carries required fields reason, workflow_state_id, last_committed_event_id, stack_hint per §14.1.1 CrashEvent $defs.",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
     },
