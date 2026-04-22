@@ -523,7 +523,7 @@
       "section_title": "Conventions",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Validator runs Runner with RUNNER_TEST_CLOCK=2026-04-22T12:00:00Z (T_REF per §10.6.1). Submits each of test-vectors/jwt-clock-skew/{iat-in-window,iat-past,iat-future,exp-expired}.jwt as a bearer. Expected: iat-in-window accepts; iat-past/iat-future/exp-expired each reject with 401 AuthFailed carrying distinct reason codes (iat-past-skew / iat-future-skew / exp-expired).",
+      "assertion": "Validator runs Runner with RUNNER_TEST_CLOCK=2026-04-23T12:40:00Z (T_REF=1776948000 per §10.6.1). Submits each of test-vectors/jwt-clock-skew/{iat-in-window,iat-past,iat-future,exp-expired}.jwt as a bearer. Expected: iat-in-window accepts; iat-past/iat-future/exp-expired each reject with 401 AuthFailed carrying distinct reason codes (iat-past-skew / iat-future-skew / exp-expired).",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — SV-ENC category (Memory/Budget/Stream/Hooks/Registry/etc.)."
     },

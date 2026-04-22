@@ -3,7 +3,7 @@
 // Signed with the pinned handler-keypair; Ed25519 PureEdDSA so output is
 // reproducible byte-for-byte.
 //
-// Reference clock: T_REF = 2026-04-22T12:00:00Z (1776948000 UNIX seconds).
+// Reference clock: T_REF = 2026-04-23T12:40:00Z (1776948000 UNIX seconds).
 // Validators consume these fixtures with that same T_REF injected so the
 // assertions are deterministic regardless of wall-clock time at test execution.
 //
@@ -19,7 +19,7 @@ const priv = crypto.createPrivateKey(fs.readFileSync(PRIV_PATH, "utf8"));
 const b64url = (buf) =>
   Buffer.from(buf).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
-const T_REF = 1776948000; // 2026-04-22T12:00:00Z
+const T_REF = 1776948000; // 2026-04-23T12:40:00Z
 const HEADER = { alg: "EdDSA", kid: "soa-conformance-test-handler-v1.0", typ: "JWT" };
 const HB = b64url(JSON.stringify(HEADER));
 
@@ -63,4 +63,4 @@ for (const s of scenarios) {
   fs.writeFileSync(out, jwt + "\n");
   console.log(`Wrote ${out}  (${s.expect})`);
 }
-console.log(`T_REF = ${T_REF} (2026-04-22T12:00:00Z)`);
+console.log(`T_REF = ${T_REF} (2026-04-23T12:40:00Z)`);

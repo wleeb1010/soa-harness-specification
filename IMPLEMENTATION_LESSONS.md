@@ -672,6 +672,42 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Pattern note:** L-44 is the third fixture bundle using the same deterministic-generator pattern (L-42 program-md, L-43 dnssec-bootstrap, L-44 jwt-clock-skew). Handler-keypair signs; Ed25519 PureEdDSA canonicality means regeneration produces byte-identical output. The pin is the generator + reference-clock constant, not a potentially-drifting signed blob.
 
+### L-45 — AGENTS.md grammar fixture set + L-44 T_REF correction `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-22 · **🎯 M3 ≥120 TARGET CROSSED** at 120/0/17/0. V-11 landed +1 flip (SV-ENC-06 via L-44 fixtures); V-11 SV-AGENTS surfaced one impl finding + one fixture ask.
+- **What:**
+  - **Finding AT (impl):** §7.2/§7.3 AGENTS.md parser only handles the `### Deny` denylist subset. Full parser (required H2s in order, `@import` depth + cycle, entrypoint-match, reload rules) not yet shipped.
+  - **Finding AU (spec):** validator probes for AT need pinned fixture set covering 7 scenarios — missing-h2, duplicate-h2, out-of-order-h2, import-depth-9, import-cycle, mid-turn-reload, entrypoint-mismatch.
+  - **L-44 cosmetic typo:** UNIX epoch 1776948000 actually resolves to `2026-04-23T12:40:00Z`, not the label `2026-04-22T12:00:00Z` in the original README. Fixtures are self-consistent (validator verified); fix is label-only.
+
+**Spec additions:**
+
+1. **`test-vectors/agents-md-grammar/` (NEW)** — seven subdirectories + top-level README. Each scenario is a self-contained fixture ready for subprocess-isolated Runner probe with `SOA_RUNNER_AGENTS_MD_PATH=<scenario-path>/AGENTS.md`.
+   - `missing-h2/` — `## Immutables` removed
+   - `duplicate-h2/` — `## Memory Policy` appears twice
+   - `out-of-order-h2/` — Agent Persona before Project Rules
+   - `import-depth-9/` — 9-deep `@import` chain (AGENTS.md → level-1.md → … → level-9.md) exceeding the §7.3 depth-8 maximum
+   - `import-cycle/` — A imports B, B imports A (3-file cycle including AGENTS.md)
+   - `mid-turn-reload/` — valid AGENTS.md; validator mutates mid-turn and asserts §7.4 reload-deferred semantics
+   - `entrypoint-mismatch/` — declares `entrypoint: wrong-entrypoint.py` conflicting with Card's `self_improvement.entrypoint_file: agent.py`
+
+2. **L-44 README + must-map correction** — all references to the mislabeled `2026-04-22T12:00:00Z` updated to the correct `2026-04-23T12:40:00Z`. UNIX epoch 1776948000 is authoritative; the fixtures + signatures remain unchanged (validator confirmed they verify).
+
+**Must-map updates:**
+- `SV-ENC-06` assertion now references the correct `RUNNER_TEST_CLOCK=2026-04-23T12:40:00Z` + UNIX-epoch `T_REF=1776948000`.
+- SV-AGENTS assertions (existing — impl-dependent) are unblocked once impl ships AT. No normative prose change needed since §7.2/§7.3/§7.4 already define the grammar.
+
+**Routed to impl:**
+- **Finding AT:** implement the full §7.2/§7.3/§7.4 parser. Error paths: `AgentsMdInvalid` with `data.reason ∈ {missing-h2, duplicate-h2, out-of-order-h2, entrypoint-mismatch}`, `AgentsMdImportDepthExceeded`, `AgentsMdImportCycle`. Reload semantics: mid-turn file mutations ignored until turn-end. Validator's 7 probe bodies are ready to wire once AT ships.
+
+**Milestone tally:** unchanged. 135 M3 · 12 M4 · 60 M5 · 22 M2 · 1 M1.
+
+**M3 target achievement:** 120 pass at this commit. Target ≥120 MET with 11 real-slip budget remaining (skip count 17 is under the 15+2-new-fixture-deps limit once AT/AE/AU resolve).
+
+**Version impact:** §19.4 minor errata. 1.0.9 → 1.0.10. Additive fixtures + cosmetic correction. No breaking changes.
+
+**Pattern note:** AGENTS.md grammar fixtures are the first multi-scenario fixture bundle that doesn't need crypto signing (unlike L-42 program-md, L-43 dnssec, L-44 jwt-clock-skew). Validator wires all 7 scenarios from pinned Markdown files + an Agent Card base fixture; no generator.mjs required. Reload semantics test is validator-driven (subprocess mutation of the file on disk between turns); spec-side ships only the initial valid state.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

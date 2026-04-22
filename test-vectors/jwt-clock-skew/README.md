@@ -4,7 +4,7 @@ Pinned JWT fixtures exercising the §1 `±30s` clock-skew window for bearer-toke
 
 ## Reference clock
 
-**`T_REF = 2026-04-22T12:00:00Z`** (UNIX epoch seconds: `1776948000`).
+**`T_REF = 2026-04-23T12:40:00Z`** (UNIX epoch seconds: `1776948000`).
 
 All fixtures are built against this constant. Validators inject the same `T_REF` as the Runner's verification clock (via `RUNNER_TEST_CLOCK` per §10.6.1 testability note) so assertions are deterministic regardless of wall-clock time at test execution.
 
@@ -39,7 +39,7 @@ Output is deterministic — Ed25519 PureEdDSA is canonical. Any byte difference 
 
 For each fixture:
 
-1. Start Runner with `RUNNER_TEST_CLOCK=2026-04-22T12:00:00Z` (injects `T_REF`).
+1. Start Runner with `RUNNER_TEST_CLOCK=2026-04-23T12:40:00Z` (injects `T_REF`).
 2. Submit the JWT as a bearer on any `sessions:read:<session_id>`-scoped endpoint.
 3. Assert response matches the expected verdict column.
 

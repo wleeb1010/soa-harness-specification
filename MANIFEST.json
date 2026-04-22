@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "8b94a461f348f1d44182c9295f2f1da812cd3355429a2061538099517837f0bb",
+        "sha256": "82298434f053d26e8dc388668baac7344bd2e53caa816e486562a52a072df526",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -258,6 +258,120 @@
         "path": "test-vectors/agents-md-denylist/tools-with-denied.json",
         "sha256": "df96c732fdb56fd493a5755a6e5d004c73bbc0949bf3099fe72af4a41f8145b8",
         "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/agents-md-grammar/README.md",
+        "sha256": "5d6b5e69c30427003b1303e0198a8b82ab90892899a726ec64eeca0c3a40d16a",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "AGENTS.md",
+        "path": "test-vectors/agents-md-grammar/duplicate-h2/AGENTS.md",
+        "sha256": "453e6b283d1fe6d9e93b80fa51e4e0553a17ae7b3315cebcdc63be8e516abfb4",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "AGENTS.md",
+        "path": "test-vectors/agents-md-grammar/entrypoint-mismatch/AGENTS.md",
+        "sha256": "a355d6b90c06939dc58f4c30558a78aae7c97663e84b4114fce738a95bd0b153",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "AGENTS.md",
+        "path": "test-vectors/agents-md-grammar/import-cycle/AGENTS.md",
+        "sha256": "305af62817fc2aabaf40b976fb72f7fc0d132739b003cd22f338a2f5e60a7945",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "cycle-a.md",
+        "path": "test-vectors/agents-md-grammar/import-cycle/cycle-a.md",
+        "sha256": "7dca149059734c22b7ceccdfe676e6aabbcc779ebef6af0ede73402881b70ee4",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "cycle-b.md",
+        "path": "test-vectors/agents-md-grammar/import-cycle/cycle-b.md",
+        "sha256": "acc5df43ceabd02543608c9105bfa06ad1defd44d3275e2b15cff3ec6fc83d57",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "AGENTS.md",
+        "path": "test-vectors/agents-md-grammar/import-depth-9/AGENTS.md",
+        "sha256": "dc83b64a95d596ea9174a5c9c93c3b043dae99e7e07127574d8c8eaa4b84094c",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "level-1.md",
+        "path": "test-vectors/agents-md-grammar/import-depth-9/level-1.md",
+        "sha256": "c7c23e92cf2cc1f63e6819df66e66494d1c46a910f7d851077dcc59f84a66f9b",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "level-2.md",
+        "path": "test-vectors/agents-md-grammar/import-depth-9/level-2.md",
+        "sha256": "890cc804620a98782f7838e1486064fa78f2c7ea9878b042fd64a12e28dcb565",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "level-3.md",
+        "path": "test-vectors/agents-md-grammar/import-depth-9/level-3.md",
+        "sha256": "afab5588bfdb2a64ab2466f9e6bedd0e13f9e96b78094741314bededd83dde6c",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "level-4.md",
+        "path": "test-vectors/agents-md-grammar/import-depth-9/level-4.md",
+        "sha256": "3f09c585eb16d052654eadb1d33397154683d7673390d5e376cedca47959072e",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "level-5.md",
+        "path": "test-vectors/agents-md-grammar/import-depth-9/level-5.md",
+        "sha256": "e2a371498a42fa50d36cd0bd515cdf38cdeb2f44e2b16a93eec2c974d0f66a2a",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "level-6.md",
+        "path": "test-vectors/agents-md-grammar/import-depth-9/level-6.md",
+        "sha256": "1205ac1b1f4fd4b8e540b60f8be7927150f19f0bbb747ab4287ab137cd29dda4",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "level-7.md",
+        "path": "test-vectors/agents-md-grammar/import-depth-9/level-7.md",
+        "sha256": "dc9736d3ecc58b8546f5a2432bb507093c6602ce249f90dea75c3fc9fd565ae9",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "level-8.md",
+        "path": "test-vectors/agents-md-grammar/import-depth-9/level-8.md",
+        "sha256": "9b49523eaf5e3af38323d72eb531168ccf534b81d6634cfe5208d74c298cee4a",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "level-9.md",
+        "path": "test-vectors/agents-md-grammar/import-depth-9/level-9.md",
+        "sha256": "6a9078e3d7b9f459c463edbcba8d155383c9da8187d1c6829de5293991ad6a23",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "AGENTS.md",
+        "path": "test-vectors/agents-md-grammar/mid-turn-reload/AGENTS.md",
+        "sha256": "d90988055aa94d424049fa4693902c9ddcf96271b7b07fc4e3540e14d5775d06",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "AGENTS.md",
+        "path": "test-vectors/agents-md-grammar/missing-h2/AGENTS.md",
+        "sha256": "dc75ca251ec660d5d83f1931b5179b422219234b9e4e9318c2642d2d2e6777bc",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "AGENTS.md",
+        "path": "test-vectors/agents-md-grammar/out-of-order-h2/AGENTS.md",
+        "sha256": "cd28144403f597204ee26a66e9dfadf2edbcb8ba0fd5160c5fdaa1229fe0cb8c",
+        "canonicalization": "raw-utf8"
       },
       {
         "name": "README.md",
@@ -616,7 +730,7 @@
       {
         "name": "README.md",
         "path": "test-vectors/jwt-clock-skew/README.md",
-        "sha256": "aec8d05f8972ecaa50e4ee4b29f28d0687ea3bc4868be5620af74508121cc294",
+        "sha256": "7c46734cc7d8747e3626745fe974b0a98f2439476305c518af3601eeabdb50c7",
         "canonicalization": "raw-utf8"
       },
       {
@@ -628,7 +742,7 @@
       {
         "name": "generate.mjs",
         "path": "test-vectors/jwt-clock-skew/generate.mjs",
-        "sha256": "60e7a18337351703ed4768dd45bc21045240e24d8e9e2923523a5b71745e51ec",
+        "sha256": "22cdcec7fe9e79ce312c724249b8c5569584958ec866e02c3d21d3f0c1c3e3bc",
         "canonicalization": "raw-utf8"
       },
       {
