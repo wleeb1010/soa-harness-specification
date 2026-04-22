@@ -1429,11 +1429,11 @@
     },
     "SV-REG-04": {
       "name": "Deny list from AGENTS.md",
-      "section": "§11.2",
-      "section_title": "Per-Session Tool Pool",
+      "section": "§11.2 + §11.2.1",
+      "section_title": "Per-Session Tool Pool + AGENTS.md Source Path Test Hook",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Deny-listed tool absent from Pool regardless of activeMode.",
+      "assertion": "Runner started with SOA_RUNNER_AGENTS_MD_PATH=test-vectors/agents-md-denylist/AGENTS.md (§11.2.1 hook). GET /tools/registered.tools[] excludes the denied name (fs_write_dangerous from the fixture's ### Deny section) regardless of activeMode.",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — SV-REG category (Memory/Budget/Stream/Hooks/Registry/etc.)."
     },
@@ -1623,7 +1623,7 @@
       "section_title": "StreamEvent",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Every emitted event validates; type ∈ closed enum of 25.",
+      "assertion": "Every emitted event validates; type ∈ closed enum of 27 (§14.1 + §19.4 errata adding PreToolUseOutcome + PostToolUseOutcome).",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
     },
@@ -1823,7 +1823,7 @@
       "section_title": "Stdout and Exit Codes",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "PreToolUse replace_args modifies tool invocation.",
+      "assertion": "PreToolUse replace_args modifies tool invocation; observable via PreToolUseOutcome StreamEvent (§14.1 + §19.4 errata) with outcome=replace_args and args_digest_before ≠ args_digest_after. Resolver re-invocation MUST substitute replaced args before fingerprinting.",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — SV-HOOK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
     },
@@ -1833,7 +1833,7 @@
       "section_title": "Stdout and Exit Codes",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "PostToolUse replace_result modifies recorded tool result.",
+      "assertion": "PostToolUse replace_result modifies recorded tool result; observable via PostToolUseOutcome StreamEvent (§14.1 + §19.4 errata) with outcome=replace_result and output_digest_before ≠ output_digest_after.",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — SV-HOOK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
     },
@@ -1843,7 +1843,7 @@
       "section_title": "Ordering Within §16 Step 5",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Perm → Pre → Tool → Post → Audit/Stream/Persist.",
+      "assertion": "GET /events/recent shows lifecycle ordering: PermissionDecision → PreToolUseOutcome → ToolResult → PostToolUseOutcome → Audit/Persist, observable via sequence monotonicity on the 27-value §14.1 closed enum (PreToolUseOutcome + PostToolUseOutcome added per §19.4 errata).",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — SV-HOOK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
     },
@@ -2343,7 +2343,7 @@
       "section_title": "Minimum StreamEvent Observability Channel",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /events/recent?session_id=<sid>&after=<id>&limit=<n> returns 200 with body conforming to schemas/events-recent-response.schema.json. Events carry event_id + sequence + type (∈ 25-value enum) + session_id + emitted_at. Pagination via next_after/has_more. Byte-identity excludes generated_at. Not-a-side-effect on reads.",
+      "assertion": "GET /events/recent?session_id=<sid>&after=<id>&limit=<n> returns 200 with body conforming to schemas/events-recent-response.schema.json. Events carry event_id + sequence + type (∈ 27-value enum incl. PreToolUseOutcome/PostToolUseOutcome per §19.4 errata) + session_id + emitted_at. Pagination via next_after/has_more. Byte-identity excludes generated_at. Not-a-side-effect on reads.",
       "implementation_milestone": "M3"
     }
   },

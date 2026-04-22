@@ -51,7 +51,9 @@
         "SelfImprovementAccepted",
         "SelfImprovementRejected",
         "SelfImprovementOrphaned",
-        "CrashEvent"
+        "CrashEvent",
+        "PreToolUseOutcome",
+        "PostToolUseOutcome"
       ]
     },
     "payload": {

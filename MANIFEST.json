@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "621b62b2050780e3ba7450085586db6b29ed681271016bad6a84614e954feb22",
+        "sha256": "c952bdf0934a8ef71e96b8edd4da74ab9d8ae47eb153a74c44b042d163de4fba",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "a473a5aeca4d6a3d58321d31d5c83ebc2c3283aa59ad8507b56457d2a3f81bf6",
+        "sha256": "000839eba3914fbe89a3255d136e814f16c6d371715667bdfe43b795608cd7ef",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -172,13 +172,13 @@
       {
         "name": "stream-event-payloads.schema.json",
         "path": "schemas/stream-event-payloads.schema.json",
-        "sha256": "69839041d83b4148b15668c2b46d4f0b699689eeeebeaa60e4a8f9072624df7f",
+        "sha256": "06c18a037ef2e14dbf3f897e7c067240a4b42c008c966a1eaa46a179ff57574f",
         "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": "stream-event.schema.json",
         "path": "schemas/stream-event.schema.json",
-        "sha256": "1da3c8bb74cfef487ea308ff24714ca9fc3be2314f12cebbf6cc818898597933",
+        "sha256": "47c7bfcb405453c5a9772bd4da9cf1c7f75c848c67a59e41e9ef6caf83838a07",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -222,6 +222,24 @@
         "path": "test-vectors/agent-card.json.jws",
         "sha256": "12ef8c089337399e719b307ba70a855de00f13363836091eba5c19bdb6dc1341",
         "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "AGENTS.md",
+        "path": "test-vectors/agents-md-denylist/AGENTS.md",
+        "sha256": "bc951091bb9ecff219cca9a365c7ff64d6005af99b862487080247597cbdeeab",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/agents-md-denylist/README.md",
+        "sha256": "c38ee56947cd2dae9670cac9e7931eb3ebd02fb58469b0157a22bf8c47bdb3c5",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "tools-with-denied.json",
+        "path": "test-vectors/agents-md-denylist/tools-with-denied.json",
+        "sha256": "df96c732fdb56fd493a5755a6e5d004c73bbc0949bf3099fe72af4a41f8145b8",
+        "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": "README.md",

@@ -1,0 +1,42 @@
+{
+  "schema": "https://soa-harness.org/schemas/v1.0/tools-with-denied.json",
+  "description": "Five-tool registry fixture for SV-REG-04. Runner ingests this as its static Tool Registry; AGENTS.md deny-list subtraction MUST remove fs_write_dangerous before /tools/registered surfaces the pool.",
+  "version": "1.0",
+  "tools": [
+    {
+      "name": "fs_read",
+      "risk_class": "ReadOnly",
+      "default_control": "AutoAllow",
+      "idempotency_retention_seconds": 3600,
+      "description": "Read a file from the agent workspace."
+    },
+    {
+      "name": "fs_write_safe",
+      "risk_class": "Mutating",
+      "default_control": "Prompt",
+      "idempotency_retention_seconds": 3600,
+      "description": "Write a file inside the agent workspace."
+    },
+    {
+      "name": "fs_write_dangerous",
+      "risk_class": "Destructive",
+      "default_control": "Prompt",
+      "idempotency_retention_seconds": 3600,
+      "description": "Write a file anywhere on the host. Denied by fixture AGENTS.md."
+    },
+    {
+      "name": "http_get",
+      "risk_class": "ReadOnly",
+      "default_control": "AutoAllow",
+      "idempotency_retention_seconds": 3600,
+      "description": "HTTP GET a URL."
+    },
+    {
+      "name": "shell_exec",
+      "risk_class": "Destructive",
+      "default_control": "Prompt",
+      "idempotency_retention_seconds": 3600,
+      "description": "Execute a shell command."
+    }
+  ]
+}

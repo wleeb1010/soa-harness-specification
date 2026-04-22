@@ -256,6 +256,26 @@
           "$ref": "#/$defs/CrashEvent"
         }
       }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "PreToolUseOutcome"
+        },
+        "payload": {
+          "$ref": "#/$defs/PreToolUseOutcome"
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "PostToolUseOutcome"
+        },
+        "payload": {
+          "$ref": "#/$defs/PostToolUseOutcome"
+        }
+      }
     }
   ],
   "$defs": {
@@ -903,6 +923,81 @@
         "stack_hint": {
           "type": "string",
           "maxLength": 4096
+        }
+      },
+      "additionalProperties": false
+    },
+    "PreToolUseOutcome": {
+      "type": "object",
+      "required": [
+        "tool_call_id",
+        "tool_name",
+        "outcome"
+      ],
+      "properties": {
+        "tool_call_id": {
+          "type": "string"
+        },
+        "tool_name": {
+          "type": "string"
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "deny",
+            "replace_args"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "args_digest_before": {
+          "type": "string",
+          "pattern": "^sha256:[A-Fa-f0-9]{64}$"
+        },
+        "args_digest_after": {
+          "type": "string",
+          "pattern": "^sha256:[A-Fa-f0-9]{64}$",
+          "description": "Present when outcome=replace_args; equals fingerprint over hook-substituted args"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PostToolUseOutcome": {
+      "type": "object",
+      "required": [
+        "tool_call_id",
+        "tool_name",
+        "outcome"
+      ],
+      "properties": {
+        "tool_call_id": {
+          "type": "string"
+        },
+        "tool_name": {
+          "type": "string"
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "replace_result"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "output_digest_before": {
+          "type": "string",
+          "pattern": "^sha256:[A-Fa-f0-9]{64}$"
+        },
+        "output_digest_after": {
+          "type": "string",
+          "pattern": "^sha256:[A-Fa-f0-9]{64}$",
+          "description": "Present when outcome=replace_result; equals digest of hook-substituted result"
         }
       },
       "additionalProperties": false

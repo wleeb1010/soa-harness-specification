@@ -385,6 +385,39 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Citation graph stale vs M3 kickoff additions (F-15):** `graphify-out/citations.json` indexes no HR tests and no OBS-category test nodes (SV-MEM-STATE-*, SV-BUD-PROJ-*, SV-REG-OBS-*, SV-STR-OBS-*). Not a plan-validity blocker; spec-repo graph-maintenance item. `refresh-graph.py` re-runs at this commit should reduce the drift.
 
+### L-35 — M3 execution findings: hook-lifecycle observability + AGENTS.md denylist fixture `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · validator Week 3 execution — four findings (L/M/N + SV-REG-04 dual gap)
+- **What:** Validator's SV-HOOK probe harness hit root causes the spec could articulate more directly. Four distinct execution findings routed; three to impl as wiring gaps, one (SV-HOOK-07) required a spec-design decision routed via user (Option A chosen: extend §14.1 enum). Dual impl+spec gap on SV-REG-04: no AGENTS.md fixture in `test-vectors/` AND no loader env var.
+- **Findings summary:**
+  - **L (SV-HOOK-05 replace_args):** `outcome.replace_args` typed in impl but never consumed. Pure impl wiring.
+  - **M (SV-HOOK-06 replace_result):** `outcome.replace_result` typed but never consumed. Pure impl wiring.
+  - **N (SV-HOOK-08 reentrancy):** zero impl for `StopReason::HookReentrancy`. Pure impl feature gap.
+  - **SV-HOOK-07 (step-5 ordering):** no observable surface for PreToolUse/PostToolUse lifecycle outcomes. Required spec decision.
+  - **SV-REG-04 (AGENTS.md denylist):** no pinned fixture + no loader env var.
+
+**Spec additions:**
+
+1. **§14.1 closed enum grows 25 → 27 `[§19.4 errata, minor bump]`** — adds `PreToolUseOutcome` and `PostToolUseOutcome`. These are emitted when §15 hook pipeline stages produce an outcome and are the observation surface for `SV-HOOK-05/06/07`. Payload schemas added to §14.1.1 `$defs` (includes `outcome` enum, `args_digest_before/after` for replace_args, `output_digest_before/after` for replace_result). Trust class: `system` (Runner chrome, like other hook-lifecycle markers). Affects `schemas/stream-event.schema.json` + `schemas/stream-event-payloads.schema.json`.
+
+2. **§11.2.1 AGENTS.md Source Path Test Hook (NEW, normative testability)** — `SOA_RUNNER_AGENTS_MD_PATH=<file-path>` env var. Same production-guard pattern as §11.3.1 (loopback-only, refuses non-loopback interface). Fail-startup with `AgentsMdUnavailableStartup` on missing/unreadable path. Resolves SV-REG-04 impl-half gap.
+
+3. **`test-vectors/agents-md-denylist/` (NEW fixture directory)** — pinned `AGENTS.md` with `## Agent Type Constraints → ### Deny` naming `fs_write_dangerous`, companion `tools-with-denied.json` five-tool registry, `README.md` documenting the SV-REG-04 choreography. Resolves SV-REG-04 spec-half gap.
+
+**Must-map updates:**
+- `SV-REG-04.section`: `§11.2` → `§11.2 + §11.2.1`; assertion specifies env-var usage + fixture path.
+- `SV-HOOK-05/06` assertions updated to reference new StreamEvent types + digest-before/after observation.
+- `SV-HOOK-07` assertion specifies ordering via sequence monotonicity across the 27-value enum.
+- `SV-STR-02` + `SV-STR-OBS-01` enum-count references updated 25 → 27.
+
+**Other 25-enum references updated:** §8.3.1 MemoryDegraded rationale ("not in the 25-value closed enum" → 27), §14.5 structural reference to §12.5.4 ("full 25-type enum" → 27).
+
+**Version impact:** §19.4 minor bump (1.0.0 → 1.0.1 at publication of this errata; closed-enum additions are wire-format extensions, not breaking changes — consumers of the §14.1 enum see two new types they can ignore per existing unknown-type rejection rules).
+
+**Validator action:** bump `soa-validate.lock` to this commit. Rewrite SV-HOOK-07 probe to poll `/events/recent` for `PreToolUseOutcome` + `PostToolUseOutcome` with expected sequence order. SV-REG-04 handler launches impl with `SOA_RUNNER_AGENTS_MD_PATH=test-vectors/agents-md-denylist/AGENTS.md`.
+
+**Impl action:** emit `PreToolUseOutcome` + `PostToolUseOutcome` at the hook-pipeline boundaries per §14.1.1 payload schemas. Wire `outcome.replace_args` / `outcome.replace_result` into decision pipeline (Findings L + M root-cause fix). Ship `HookReentrancy` detection per-session PID tracking (Finding N). Implement `SOA_RUNNER_AGENTS_MD_PATH` loader per §11.2.1.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

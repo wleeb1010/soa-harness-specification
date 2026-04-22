@@ -583,7 +583,7 @@ On each Runner loop iteration (defined as one execution of §16 state 1 → stat
 
 ### 8.3.1 MemoryDegraded Observability (Normative — clarification for L-34)
 
-**Rationale.** `MemoryDegraded` is a `StopReason` (§13.4 enum) emitted when the Memory MCP server fails three consecutive calls. It is NOT a bare `StreamEvent` type in the §14.1 25-value closed enum. For external observation:
+**Rationale.** `MemoryDegraded` is a `StopReason` (§13.4 enum) emitted when the Memory MCP server fails three consecutive calls. It is NOT a bare `StreamEvent` type in the §14.1 27-value closed enum. For external observation:
 
 1. **Via SessionEnd event:** when `MemoryDegraded` terminates a session, the `SessionEnd` StreamEvent (a §14.1 type) carries `payload.stop_reason: "MemoryDegraded"`. Validators assert `HR-17` (Memory MCP timeouts → MemoryDegraded) by polling `GET /events/recent` for a `SessionEnd` event with this stop_reason.
 2. **Via System Event Log:** the `/logs/system.log` entry per §14.2 carries the `MemoryDegraded` category.
@@ -1410,6 +1410,16 @@ Assembled at session start (and after any self-improvement acceptance; see §11.
 
 Deny lists live in `AGENTS.md`; the syntax is one tool name per line under `### Deny` within Agent Type Constraints.
 
+#### 11.2.1 AGENTS.md Source Path Test Hook (Normative — Testability)
+
+**Rationale.** `SV-REG-04` asserts the deny-list subtraction behavior: tools named under `### Deny` in `AGENTS.md :: ## Agent Type Constraints` MUST NOT appear in the per-session Tool Pool (§11.2) and MUST NOT surface in the `/tools/registered` response (§11.4) for sessions in that Agent Type. Conformant Runners locate `AGENTS.md` via operator configuration in production deployments. For conformance testing, validators need a deterministic way to point the Runner at a pinned fixture without mutating the project root.
+
+**Env var `SOA_RUNNER_AGENTS_MD_PATH=<file-path>`** — when set, conformant Runners MUST read `AGENTS.md` from the named path instead of the default project-root location. The path MUST resolve to a readable file on startup or the Runner MUST fail startup with `AgentsMdUnavailableStartup` (no fail-open). The file's `## Agent Type Constraints → ### Deny` section MUST be parsed per the grammar in §11.2: one tool name per line, leading/trailing whitespace stripped, blank lines and `#`-prefixed comments ignored. Denied names subtract from the per-session Tool Pool.
+
+**Production guard:** same rule as `RUNNER_TEST_CLOCK` / `RUNNER_CRASH_TEST_MARKERS` / `SOA_RUNNER_DYNAMIC_TOOL_REGISTRATION` — MUST NOT be reachable by untrusted principals, MUST refuse startup with the env set on a non-loopback interface. The env var is test-only; production deployments resolve `AGENTS.md` via operator configuration.
+
+**Conformance linkage.** `SV-REG-04` validator starts Runner with `SOA_RUNNER_AGENTS_MD_PATH=test-vectors/agents-md-denylist/AGENTS.md` and `RUNNER_TOOLS_FIXTURE=test-vectors/agents-md-denylist/tools-with-denied.json`; asserts `/tools/registered.tools[]` excludes the names listed under `### Deny`.
+
 ### 11.3 Re-Registration Timing
 
 - On self-improvement iteration acceptance (§9.5 step 12e), the Runner MUST pin the **new** Tool Pool for **new** sessions.
@@ -1892,7 +1902,8 @@ GET /budget/projection?session_id=<session_id>
         "MemoryLoad",
         "HandoffStart", "HandoffComplete", "HandoffFailed",
         "SelfImprovementStart", "SelfImprovementAccepted", "SelfImprovementRejected", "SelfImprovementOrphaned",
-        "CrashEvent"
+        "CrashEvent",
+        "PreToolUseOutcome", "PostToolUseOutcome"
       ]
     },
     "payload": { "type": "object" },
@@ -1900,6 +1911,8 @@ GET /budget/projection?session_id=<session_id>
   }
 }
 ```
+
+The enum is a **closed 27-type set** (25 baseline + 2 hook-lifecycle types added per §19.4 errata). `PreToolUseOutcome` and `PostToolUseOutcome` are emitted when §15 hook pipeline stages produce an outcome (allow/deny/replace_args/replace_result); they are the observation surface for `SV-HOOK-07` step-5 ordering assertions. See §14.1.1 payload schemas and §14.1.2 trust-class mapping.
 
 ### 14.1.1 Per-Type Payload Schemas (Normative)
 
@@ -1936,7 +1949,9 @@ The inlined schemas below constitute `stream-event-payloads.schema.json`. Every 
     { "properties": { "type": { "const": "SelfImprovementAccepted" }, "payload": { "$ref": "#/$defs/SelfImprovementAccepted" } } },
     { "properties": { "type": { "const": "SelfImprovementRejected" }, "payload": { "$ref": "#/$defs/SelfImprovementRejected" } } },
     { "properties": { "type": { "const": "SelfImprovementOrphaned" }, "payload": { "$ref": "#/$defs/SelfImprovementOrphaned" } } },
-    { "properties": { "type": { "const": "CrashEvent"      }, "payload": { "$ref": "#/$defs/CrashEvent"      } } }
+    { "properties": { "type": { "const": "CrashEvent"      }, "payload": { "$ref": "#/$defs/CrashEvent"      } } },
+    { "properties": { "type": { "const": "PreToolUseOutcome"  }, "payload": { "$ref": "#/$defs/PreToolUseOutcome"  } } },
+    { "properties": { "type": { "const": "PostToolUseOutcome" }, "payload": { "$ref": "#/$defs/PostToolUseOutcome" } } }
   ],
   "$defs": {
     "SessionStart":   { "type": "object", "required": ["agent_name","agent_version","card_version"], "properties": { "agent_name":{"type":"string"},"agent_version":{"type":"string"},"card_version":{"type":"string"},"resumed":{"type":"boolean","default":false} }, "additionalProperties": false },
@@ -1963,7 +1978,9 @@ The inlined schemas below constitute `stream-event-payloads.schema.json`. Every 
     "SelfImprovementAccepted": { "type": "object", "required": ["iteration_id","training_score","holdout_score","commit_sha","memory_note_id"], "properties": { "iteration_id":{"type":"string"},"training_score":{"type":"number"},"holdout_score":{"type":"number"},"commit_sha":{"type":"string"},"memory_note_id":{"type":"string"} }, "additionalProperties": false },
     "SelfImprovementRejected": { "type": "object", "required": ["iteration_id","reason"], "properties": { "iteration_id":{"type":"string"},"reason":{"type":"string"},"training_delta":{"type":"number"},"holdout_delta":{"type":"number"} }, "additionalProperties": false },
     "SelfImprovementOrphaned": { "type": "object", "required": ["iteration_id","staging_sha","reason"], "properties": { "iteration_id":{"type":"string"},"staging_sha":{"type":"string"},"reason":{"type":"string"} }, "additionalProperties": false },
-    "CrashEvent":        { "type": "object", "required": ["reason","workflow_state_id","last_committed_event_id"], "properties": { "reason":{"type":"string"},"workflow_state_id":{"type":"string"},"last_committed_event_id":{"type":"string"},"stack_hint":{"type":"string","maxLength":4096} }, "additionalProperties": false }
+    "CrashEvent":        { "type": "object", "required": ["reason","workflow_state_id","last_committed_event_id"], "properties": { "reason":{"type":"string"},"workflow_state_id":{"type":"string"},"last_committed_event_id":{"type":"string"},"stack_hint":{"type":"string","maxLength":4096} }, "additionalProperties": false },
+    "PreToolUseOutcome":  { "type": "object", "required": ["tool_call_id","tool_name","outcome"], "properties": { "tool_call_id":{"type":"string"},"tool_name":{"type":"string"},"outcome":{"type":"string","enum":["allow","deny","replace_args"]},"reason":{"type":"string","maxLength":1024},"args_digest_before":{"type":"string","pattern":"^sha256:[A-Fa-f0-9]{64}$"},"args_digest_after":{"type":"string","pattern":"^sha256:[A-Fa-f0-9]{64}$","description":"Present when outcome=replace_args; equals fingerprint over hook-substituted args"} }, "additionalProperties": false },
+    "PostToolUseOutcome": { "type": "object", "required": ["tool_call_id","tool_name","outcome"], "properties": { "tool_call_id":{"type":"string"},"tool_name":{"type":"string"},"outcome":{"type":"string","enum":["pass","replace_result"]},"reason":{"type":"string","maxLength":1024},"output_digest_before":{"type":"string","pattern":"^sha256:[A-Fa-f0-9]{64}$"},"output_digest_after":{"type":"string","pattern":"^sha256:[A-Fa-f0-9]{64}$","description":"Present when outcome=replace_result; equals digest of hook-substituted result"} }, "additionalProperties": false }
   }
 }
 ```
@@ -1986,6 +2003,7 @@ This table normatively binds each `StreamEvent.type` to its rendering trust clas
 | `HandoffStart`, `HandoffComplete`, `HandoffFailed`         | `system`                      | Handoff chrome  |
 | `SelfImprovementStart`/`Accepted`/`Rejected`/`Orphaned`    | `system`                      | Runner chrome   |
 | `CrashEvent`                                               | `system`                      | Terminal chrome |
+| `PreToolUseOutcome`, `PostToolUseOutcome`                  | `system`                      | Runner chrome (hook §15) |
 
 Notes on the table:
 
@@ -2050,7 +2068,7 @@ GET /events/recent?session_id=<session_id>&after=<event_id>&limit=<n>
   "events": [
     { "event_id": "evt_...",
       "sequence": 42,
-      "type": "<one of 25 §14.1 closed enum>",
+      "type": "<one of 27 §14.1 closed enum>",
       "session_id": "ses_...",
       "emitted_at": "<RFC 3339>",
       "workflow_state_id": "...",
@@ -2068,7 +2086,7 @@ Pagination same pattern as `/audit/records` (§10.5.3). Byte-identity excludes `
 
 **Relationship to §14.3 SSE transport.** When §14.3 SSE ships (M4), both channels coexist. Clients preferring push use `/stream/v1/{session_id}`; polling-friendly clients (including `soa-validate`) use `/events/recent`. Events emitted to either channel carry identical `event_id` + `sequence`; cross-channel ordering MUST be deterministic (a sequence value appears at most once in either channel for a session).
 
-**Relationship to §12.5.4 audit-sink-events channel.** §12.5.4 is narrower — returns only the three `AuditSink*` state-transition events, not the full 25-type enum. §14.5 subsumes §12.5.4 for conformance purposes (a validator polling `/events/recent?type=AuditSinkDegraded,...` gets the same data as `/audit/sink-events`). §12.5.4 is retained for compatibility with M2-era validators that bound to it before §14.5 shipped.
+**Relationship to §12.5.4 audit-sink-events channel.** §12.5.4 is narrower — returns only the three `AuditSink*` state-transition events, not the full 27-type enum. §14.5 subsumes §12.5.4 for conformance purposes (a validator polling `/events/recent?type=AuditSinkDegraded,...` gets the same data as `/audit/sink-events`). §12.5.4 is retained for compatibility with M2-era validators that bound to it before §14.5 shipped.
 
 **Not-a-side-effect (MUST).** Reading `/events/recent` MUST NOT advance state, emit new events, or write audit rows.
 
