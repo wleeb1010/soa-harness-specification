@@ -767,6 +767,59 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Outstanding:** validator surfaced 14 SV-PERM findings labeled BB..BJ (9 findings across 14 tests — env-hook pattern for BB/BD/BE/BF, endpoint/schema additions for BC/BG/BH/BI/BJ). Full diagnostic sheet pending; routing decisions (impl vs spec env-hook vs spec endpoint) will follow once per-test details arrive.
 
+### L-48 — SV-PERM spec bundle: WORM modeling, handler lifecycle hooks, enrollment + introspection endpoints, retention class, reader tokens `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-22 · validator delivered 8 of 9 SV-PERM diagnostics (BC/BD/BE/BF/BG/BH/BI/BJ). BB diagnostic still missing — category hint was "escalation-timeout"; inferred to cover SV-PERM-02/03/04 but awaiting validator resurface. AE shipped earlier in same session at eec6ae1 (+15 impl tests).
+- **What:** Validator's V-9b SV-PERM bulk wiring surfaced a cluster of spec gaps spanning two major sections (§10.5 audit, §10.6 handler-key management). All routing decisions: ship spec bundle; impl then ships the test-hook + endpoint behaviors against the new spec clauses.
+
+**Spec additions (8 SV-PERM findings covered):**
+
+1. **§10.5.5 WORM Sink Modeling Test Hook (BC — SV-PERM-06/07)** — `RUNNER_AUDIT_SINK_MODE=worm-in-memory` env hook (loopback-guarded per §5.3.3 / §8.4.1 pattern). Model rejects mutation/deletion (`405 ImmutableAuditSink`) and stamps each record with `sink_timestamp` distinct from Runner-internal `timestamp` (|Δ| ≤ 1s normal). Schema extension adds optional `sink_timestamp` field on decision-rows; hash-chain participation matches L-40 `billing_tag`.
+
+2. **§10.5.6 Retention Class Tagging (BI — SV-PERM-16)** — `dfa-365d` vs `standard-90d` enum derived from granted `activeMode` at append time. Schema adds optional `retention_class` enum field. Immutable post-append (WORM).
+
+3. **§10.5.7 Audit-Reader Token Endpoint (BJ — SV-PERM-17)** — `POST /audit/reader-tokens` operator-minted scope-limited bearer carrying only `audit:read:*`. Reader bearer accepted on `/audit/*`; rejected on any write with `{error:bearer-lacks-audit-write-scope}`. Parallels L-47's admin:read scope-hierarchy pattern.
+
+4. **§10.6.2 Handler Key Lifecycle Test Hooks (BD + BE + BF — SV-PERM-08/09/10/14)** — three env hooks following the established loopback-guarded pattern:
+   - `SOA_HANDLER_ENROLLED_AT=<RFC 3339>` — paired with `RUNNER_TEST_CLOCK` exercises 90-day rotation boundary (SV-PERM-08).
+   - `SOA_HANDLER_KEYPAIR_OVERLAP_DIR=<dir>` — multi-kid directory with per-key manifests for 24h rotation overlap (SV-PERM-10).
+   - `RUNNER_HANDLER_CRL_POLL_TICK_MS=<ms>` — extends existing §5.3.3 revocation-file watcher to accept `{handler_kid, ...}` entries in addition to `{publisher_kid, ...}` (SV-PERM-09). CRL refresh emits `/logs/system/recent` code=`crl-refresh-complete` with `data.last_crl_refresh_at` (SV-PERM-14 observability).
+
+5. **§10.6.3 Handler Enrollment Endpoint (BG — SV-PERM-12)** — `POST /handlers/enroll` normative operator-bearer endpoint. 201 on clean enroll, 409 `HandlerKidConflict` on duplicate, 400 `AlgorithmRejected` for forbidden algos (RS256, RSA<3072).
+
+6. **§10.6.4 Key-Storage Introspection (BH — SV-PERM-13)** — `GET /security/key-storage` operator-bearer OR admin:read. Returns `{storage_mode, private_keys_on_disk, provider, attestation_format}`. Conformance requires `private_keys_on_disk === false` + `storage_mode != "ephemeral"`.
+
+7. **§10.6.5 Retroactive SuspectDecision Flagging (BE — SV-PERM-15)** — WORM-compatible mechanism: on kid revocation, Runner appends new admin-rows with `decision: SuspectDecision`, `referenced_audit_id: <original>`, `reason: kid-revoked-24h-window`. Schema adds `SuspectDecision` to the `decision` enum + a third `oneOf` branch requiring `referenced_audit_id`.
+
+8. **`test-vectors/handler-keypair-overlap/` (NEW fixture)** — two Ed25519 keypairs with pinned overlap window (`2026-04-22T00:00:00Z → 2026-04-23T00:00:00Z`, 24h). Deterministic `generate.mjs` derives keys from 32-byte seeds via PKCS#8 wrapping; PureEdDSA canonicality → byte-identical regeneration. Fixture powers SV-PERM-10.
+
+**Must-map updates:** all 8 assertions (SV-PERM-06/07/08/09/10/12/13/14/15/16/17) sharpened to reference new sections + env hooks + fixture paths.
+
+**Schema additions (`audit-records-response.schema.json`):**
+- `decision` enum grows 9 → 10 (adds `SuspectDecision`).
+- Third `oneOf` branch for `SuspectDecision` admin-row requiring `referenced_audit_id`.
+- Optional `sink_timestamp`, `retention_class`, `referenced_audit_id` fields.
+- All additions backwards-compatible with existing records.
+
+**Impl routing:** after pin-bump, impl ships:
+- `RUNNER_AUDIT_SINK_MODE=worm-in-memory` + `PUT`/`DELETE /audit/records/<id>` 405 paths + `sink_timestamp` stamping
+- `retention_class` derivation at append-time from session's granted activeMode
+- `POST /audit/reader-tokens` + reader bearer scope enforcement
+- Three §10.6.2 env hooks + watcher extension to handler_kid
+- `POST /handlers/enroll` + conflict/algo rejection
+- `GET /security/key-storage`
+- §10.6.5 SuspectDecision append-on-revocation
+
+**Outstanding:**
+- **Finding BB:** category labeled "escalation-timeout"; diagnostic text missing from paste. Likely covers SV-PERM-02/03/04. Awaiting validator resurface before routing.
+- **Ops issue:** validator flagged `:7700` is running `agents-md-denylist/tools-with-denied.json` fixture instead of the conformance tools fixture, causing 9 tests to 404 on "unknown-tool" (SV-REG-02, SV-PERM-01, SV-BUD-05, SV-STR-06/07, SV-SESS-BOOT-01, SV-PERM-20/21/22). Not a validator regression; impl-operator needs to rebind `:7700` with the conformance fixture to restore the 134 baseline before counting L-48 flips.
+
+**Milestone tally:** unchanged. 135 M3 · 12 M4 · 60 M5 · 22 M2 · 1 M1.
+
+**Version impact:** §19.4 minor errata. 1.0.12 → 1.0.13. Largest single spec bundle of M3 — three new §10.5 subsections + four new §10.6 subsections + 4 schema extensions + 1 new fixture set. All additive (backwards-compatible).
+
+**Pattern note:** L-48 is the first bundle adding first-class runtime endpoints (not just env hooks + schemas). `/audit/reader-tokens`, `/handlers/enroll`, `/security/key-storage` are all new operator-bearer surfaces following the existing `/docs/*`, `/release-gate.json`, `/errata/v1.0.json` pattern from T-12. Operator-bearer is crystallizing as the canonical "runtime enrollment / administrative mint" scope alongside session-scope (read-write), admin:read (read-only cross-session), and audit:read (read-only audit). Future §10.x runtime surfaces should adopt the same scope taxonomy.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

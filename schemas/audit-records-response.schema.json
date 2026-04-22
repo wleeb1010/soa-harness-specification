@@ -16,7 +16,7 @@
       "type": "array",
       "minItems": 0,
       "maxItems": 1000,
-      "description": "Audit records in chain order (earliest first). Two record shapes, discriminated on `decision`: (1) decision-audit rows (existing §10.5 required-field set) when decision ∈ {AutoAllow, Prompt, Deny, CapabilityDenied, ConfigPrecedenceViolation}; (2) admin-audit rows (SubjectSuppression, SubjectExport, ResidencyCheck) with a reduced required set — these carry no tool/args_digest/capability/control/handler because no permission decision was evaluated. Both shapes participate in the same hash-chain (prev_hash/this_hash).",
+      "description": "Audit records in chain order (earliest first). Three record shapes, discriminated on `decision`: (1) decision-audit rows (full §10.5 field set) when decision ∈ {AutoAllow, Prompt, Deny, CapabilityDenied, ConfigPrecedenceViolation}; (2) admin-audit rows (SubjectSuppression, SubjectExport, ResidencyCheck per L-41) with reduced required set; (3) SuspectDecision admin-rows per §10.6.5 (L-48) that additionally require referenced_audit_id pointing at the flagged original row. All shapes participate in the same hash-chain (prev_hash/this_hash).",
       "items": {
         "type": "object",
         "oneOf": [
@@ -27,6 +27,10 @@
           {
             "properties": { "decision": { "enum": ["SubjectSuppression", "SubjectExport", "ResidencyCheck"] } },
             "required": ["id", "timestamp", "session_id", "subject_id", "decision", "reason", "prev_hash", "this_hash"]
+          },
+          {
+            "properties": { "decision": { "enum": ["SuspectDecision"] } },
+            "required": ["id", "timestamp", "session_id", "subject_id", "decision", "reason", "prev_hash", "this_hash", "referenced_audit_id"]
           }
         ],
         "additionalProperties": false,
@@ -70,7 +74,7 @@
           },
           "decision": {
             "type": "string",
-            "enum": ["AutoAllow", "Prompt", "Deny", "CapabilityDenied", "ConfigPrecedenceViolation", "SubjectSuppression", "SubjectExport", "ResidencyCheck"]
+            "enum": ["AutoAllow", "Prompt", "Deny", "CapabilityDenied", "ConfigPrecedenceViolation", "SubjectSuppression", "SubjectExport", "ResidencyCheck", "SuspectDecision"]
           },
           "reason": {
             "type": "string"
@@ -93,6 +97,21 @@
             "type": "string",
             "pattern": "^[A-Za-z0-9_:.-]{1,64}$",
             "description": "OPTIONAL billing_tag from the Agent Card's tokenBudget.billingTag (§7 line 379) propagated to audit rows per §13.3 + §10.5. When present, MUST be part of the hash-chain content (covered by canonical JCS serialization of the record before computing this_hash). When absent, hash-chain computation excludes the field — impls MUST NOT emit billing_tag=\"\" as a placeholder. Added in §19.4 errata 1.0.5 (L-40)."
+          },
+          "sink_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "OPTIONAL external timestamp stamped by the WORM sink per §10.5.5 (L-48). Distinct from Runner-internal timestamp. Under normal operation |sink_timestamp − timestamp| ≤ 1s. Hash-chain participation semantics match billing_tag: when present, canonical-JCS-serialized into this_hash; when absent, excluded (not emitted as empty string)."
+          },
+          "retention_class": {
+            "type": "string",
+            "enum": ["dfa-365d", "standard-90d"],
+            "description": "OPTIONAL per-record retention class per §10.5.6 (L-48). Derived from session's granted activeMode at append time: DangerFullAccess → dfa-365d (≥365d retention), others → standard-90d (≥90d). Immutable post-append (WORM)."
+          },
+          "referenced_audit_id": {
+            "type": "string",
+            "pattern": "^aud_[A-Za-z0-9_-]{8,}$",
+            "description": "REQUIRED on admin-row subtype SuspectDecision per §10.6.5 (L-48). Points at the id of the original audit row being retroactively flagged as suspect due to handler-kid revocation within the 24h window."
           }
         }
       }

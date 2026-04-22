@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "8e905cb901d7ecf1ccf66bc0e733b50f7ae40d8b52381dc8ef186a23c3fcea9e",
+        "sha256": "ccee2f4db27b1d1fabb0ec0224daf110fa569dd9993e41a573815e985e93d440",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "9ecce356396fcf296a7e69e3a05f486f20b16143457d8040299588c411813773",
+        "sha256": "0bc46b2eea46096657b8470c32c3b0dada722cbe50bc500152a98a70d4b12993",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -58,7 +58,7 @@
       {
         "name": "audit-records-response.schema.json",
         "path": "schemas/audit-records-response.schema.json",
-        "sha256": "54e6353ec73a40ca26e2887ee1380f183db72f6ecd66915704c32806bbebe292",
+        "sha256": "f7a625690c98f04fe6b10670b9a9e8e0d57518b35054b54428ff45ffa1a47013",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -521,6 +521,66 @@
         "name": "spki_sha256.txt",
         "path": "test-vectors/handler-keypair/spki_sha256.txt",
         "sha256": "6cfa4b2187878c2450f10b0c5d3145b4c36eb721250fcf61fe736f3a668cb975",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/handler-keypair-overlap/README.md",
+        "sha256": "1caa05798cfb5a960399d80cd46cf1cf966046cf82d64eb2b0e02952f9ca4382",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "generate.mjs",
+        "path": "test-vectors/handler-keypair-overlap/generate.mjs",
+        "sha256": "f37887c36727d00b22d6a4fd68445c1717a82f26fff1f0025dd082c7db8fbec0",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "manifest.json",
+        "path": "test-vectors/handler-keypair-overlap/key-1/manifest.json",
+        "sha256": "94cd8ec1f52ce0f02be11ccea5cf57c4f7ec182c74b6fc276d1b1ac2ad6bf9ca",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "private.pem",
+        "path": "test-vectors/handler-keypair-overlap/key-1/private.pem",
+        "sha256": "a964ee7d3891cacbe664170063c572fbf5a3b58526286624a54b8aa9411320b5",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "public.pem",
+        "path": "test-vectors/handler-keypair-overlap/key-1/public.pem",
+        "sha256": "616d34a411fc63cac969beb9e615e1cef9571ed037b4eef7bb3c8ef36e9e2db5",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "spki_sha256.txt",
+        "path": "test-vectors/handler-keypair-overlap/key-1/spki_sha256.txt",
+        "sha256": "667975aa9a61c49751c018d1c3be775641036dcc0b287d244d295134ab81ff1c",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "manifest.json",
+        "path": "test-vectors/handler-keypair-overlap/key-2/manifest.json",
+        "sha256": "928262c29ab1e9efe58fbb3ab8b37e8993f7658d632d32ef7351264861ed0677",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "private.pem",
+        "path": "test-vectors/handler-keypair-overlap/key-2/private.pem",
+        "sha256": "05b2363875a09d26c60a4c1872b8fce9edc0c7607ef4543752816565539618ae",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "public.pem",
+        "path": "test-vectors/handler-keypair-overlap/key-2/public.pem",
+        "sha256": "3061bfccd680cf158d0b4e26dc910861a98902a56f5c9348ae816cc08bf2fe69",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "spki_sha256.txt",
+        "path": "test-vectors/handler-keypair-overlap/key-2/spki_sha256.txt",
+        "sha256": "efac445f11afd1864129caa829f2d038d0c36cb4ec97db28a9fb5dee21226024",
         "canonicalization": "raw-utf8"
       },
       {

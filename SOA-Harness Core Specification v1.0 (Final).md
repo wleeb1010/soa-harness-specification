@@ -1346,6 +1346,61 @@ GET /audit/records?after=<record_id>&limit=<n>
 
 **Conformance linkage.** `SV-AUDIT-RECORDS-01/02` validate BOTH subtypes roundtrip through `/audit/records`. `SV-PRIV-03` asserts `SubjectSuppression` + `SubjectExport` emission on the privacy endpoints. `SV-PRIV-05` asserts `ResidencyCheck` emission on residency-gated decisions.
 
+#### 10.5.5 WORM Sink Modeling Test Hook (Normative — L-48, testability)
+
+**Rationale.** Production deployments back the audit chain with operator-chosen WORM storage (S3 Object Lock, Azure Immutable Blob, on-prem WORM appliance). Conformance tests cannot assume access to real WORM infrastructure. This section defines a test-only env hook that models WORM semantics in-memory so `SV-PERM-06` / `SV-PERM-07` deterministically exercise append-only + external-timestamp properties.
+
+**Env var `RUNNER_AUDIT_SINK_MODE=worm-in-memory`** — when set, the Runner backs the audit chain with an in-memory WORM model:
+
+- Accepts append via the existing audit-append path.
+- Rejects mutation (`PUT /audit/records/<id>`) and deletion (`DELETE /audit/records/<id>`) with `405 Method Not Allowed`, body `{error:"ImmutableAuditSink", reason:"worm-sink-forbids-mutation"}`, and emits a `/logs/system/recent` record (category `Audit`, level `error`, code `ImmutableAuditSink`).
+- Stamps each appended record with `sink_timestamp` (RFC 3339) set by the WORM model, distinct from Runner-internal `timestamp`. Under normal operation `|sink_timestamp − timestamp| ≤ 1s`.
+
+Schema: `audit-records-response.schema.json` gains OPTIONAL `sink_timestamp` field. Hash-chain participation matches L-40 `billing_tag` (canonical-JCS-serialized when present; excluded when absent).
+
+**Production guard:** same pattern as §5.3.3 / §8.4.1 / §11.2.1 — MUST refuse startup with this env var set on a non-loopback interface.
+
+**Conformance linkage.** `SV-PERM-06` asserts `PUT` / `DELETE /audit/records/<id>` return `405 ImmutableAuditSink`. `SV-PERM-07` asserts `|sink_timestamp − timestamp| ≤ 1s` on a driven decision.
+
+#### 10.5.6 Retention Class Tagging (Normative — L-48)
+
+**Rationale.** §10.7 defines retention ceilings per record category but does not normatively attach a retention class to individual audit records. `SV-PERM-16` requires per-record introspection so deployments with heterogeneous session classes verify correct propagation.
+
+**Classes:**
+- `dfa-365d` — sessions whose granted `activeMode` is `DangerFullAccess`. Retention ≥ 365 days.
+- `standard-90d` — all other sessions. Retention ≥ 90 days.
+
+**Derivation:** at audit-record append, the Runner reads the session's granted `activeMode` (from session-state after §12.6 bootstrap tightening) and stamps the record. Immutable post-append per WORM semantics.
+
+Schema: `audit-records-response.schema.json` gains OPTIONAL `retention_class` enum field `{dfa-365d, standard-90d}`. When present, retention-sweep schedulers honor the per-record class.
+
+**Conformance linkage.** `SV-PERM-16` asserts records from a DFA-granted session carry `retention_class:"dfa-365d"` and records from a ReadOnly-granted session carry `retention_class:"standard-90d"`.
+
+#### 10.5.7 Audit-Reader Token Endpoint (Normative — L-48)
+
+**Rationale.** Operators requiring audit-read access without any write authority MAY issue scoped reader bearers. `SV-PERM-17` asserts a reader bearer reads `/audit/*` but rejects any write.
+
+**Endpoint `POST /audit/reader-tokens`** — operator-bearer scope. Mints a short-lived bearer with ONLY `audit:read:*` scope.
+
+**Request body:** `{"ttl_seconds": 900}` — OPTIONAL, range `60..3600`, default `900`. Out-of-range → `400 BadRequest`.
+
+**Response (`201 Created`):**
+
+```json
+{
+  "reader_bearer": "<opaque-token>",
+  "expires_at": "<RFC 3339>",
+  "scope": "audit:read:*"
+}
+```
+
+**Reader bearer semantics:**
+- `GET /audit/tail`, `GET /audit/records` → `200` if other preconditions met.
+- Any `POST` / `PUT` / `DELETE` on any endpoint → `403 Forbidden`, body `{error:"bearer-lacks-audit-write-scope"}`.
+- `admin:read` or `sessions:read:*` endpoints → `403` (reader scope is audit-only).
+
+**Conformance linkage.** `SV-PERM-17` asserts reader bearer (a) succeeds on audit reads, (b) rejects any non-audit write with `bearer-lacks-audit-write-scope`.
+
 ### 10.6 Handler Key Management
 
 Every prompt decision of type `Prompt` MUST be signed by the handler that produced it.
@@ -1395,6 +1450,88 @@ The CRL served at `<trust-anchor-uri>/crl.json` MUST validate against the schema
 **Failure-mode MUSTs:** Runner MUST fetch the CRL every ≤ 60 min. On fetch failure, Runner MAY serve the stale CRL until `not_after`; past `not_after`, Runner MUST reject all new high-risk decisions with `HandlerKeyRevoked` (reason `crl-stale`) until refresh succeeds. Covered by `SV-PERM-18`.
 
 **Testability — clock injectability (SHOULD):** implementations SHOULD expose an injectable time source to the CRL verification path (and to all other time-dependent checks in §5.3, §6.1, and §10.6) so that conformance test vectors can deterministically exercise the three freshness states (`fresh` | `stale-but-valid` | `expired`) regardless of wall-clock time at test execution. `soa-validate` consumes `test-vectors/crl/` under a reference clock `T_ref = 2026-04-20T12:00:00Z`; a Runner that reads only `system wall-clock now()` at verify time cannot be tested against the `stale-but-valid` vector past the short window where wall-clock happens to land 60–120 minutes after the fixture's `issued_at`. Production Runners MAY fall back to wall-clock; conformance-tested Runners MUST accept a reference clock from the validator's test harness through an implementation-defined hook (environment variable, config flag, or test-only HTTP endpoint). This is a testability requirement, not a trust-boundary weakening — the injectable clock MUST NOT be reachable by untrusted principals in production deployments.
+
+#### 10.6.2 Handler Key Lifecycle Test Hooks (Normative — L-48, testability)
+
+**Rationale.** §10.6 defines handler-key rotation cadence (90-day max), compromise response (60-minute revocation + 24h retroactive flagging), and a 24h rotation overlap during which both old + new kids verify. Calendar time makes these untestable in conformance runs. Three env hooks inject time + kid state deterministically. All three follow the existing test-only env-hook pattern per §5.3.3 / §8.4.1 / §11.2.1 — MUST refuse startup with any set on a non-loopback interface.
+
+**`SOA_HANDLER_ENROLLED_AT=<RFC 3339>`** — when set, the Runner treats the default handler key's enrollment timestamp as this value (overriding any on-disk manifest). Paired with `RUNNER_TEST_CLOCK`, validators compute `age_days = clock − enrolled_at` and exercise the 90-day rotation boundary. `SV-PERM-08` uses `RUNNER_TEST_CLOCK=T_ref` + `SOA_HANDLER_ENROLLED_AT=(T_ref − 91d)` → high-risk decision signed by aged handler returns `403 {error:"HandlerKeyExpired", reason:"key-age-exceeded", age_days:91}`.
+
+**`SOA_HANDLER_KEYPAIR_OVERLAP_DIR=<directory-path>`** — when set, the Runner loads multiple handler keys from the pinned directory, each with per-key manifest `{kid, issued_at, rotation_overlap_end}`. During the overlap window, both kids verify; outside it, only the current kid verifies. `SV-PERM-10` uses this with `test-vectors/handler-keypair-overlap/` and `RUNNER_TEST_CLOCK` inside the overlap window.
+
+**`RUNNER_HANDLER_CRL_POLL_TICK_MS=<milliseconds>`** — CRL refresh interval for handler-kid revocation detection. Default `3600000` (60 minutes per §10.6). Validators set a small value (e.g., 100ms) so `SV-PERM-09` observes revocation propagation within a test window. Uses the same revocation-file watcher as §5.3.3 `SOA_BOOTSTRAP_REVOCATION_FILE`; the watched file accepts either `{"publisher_kid":...}` (bootstrap per AQ) OR `{"handler_kid":...}` (handler-kid per L-48).
+
+**CRL refresh observability.** On each successful refresh (whether triggered by the test hook or the production 60-minute ceiling), the Runner MUST emit a `/logs/system/recent` record with category `Config`, level `info`, code `crl-refresh-complete`, and `data.last_crl_refresh_at: <RFC 3339>`. `SV-PERM-14` polls this and asserts the interval between records ≤ `RUNNER_HANDLER_CRL_POLL_TICK_MS` (or the 60-minute ceiling in production).
+
+**Conformance linkage:**
+- `SV-PERM-08` (90d rotation boundary) — `SOA_HANDLER_ENROLLED_AT` + `RUNNER_TEST_CLOCK`.
+- `SV-PERM-09` (handler-kid revocation within 1 poll tick) — `RUNNER_HANDLER_CRL_POLL_TICK_MS` + revocation-file watcher with `handler_kid` entry.
+- `SV-PERM-10` (24h rotation overlap) — `SOA_HANDLER_KEYPAIR_OVERLAP_DIR`.
+- `SV-PERM-14` (CRL refresh interval observability) — `/logs/system/recent` `crl-refresh-complete` records.
+- `SV-PERM-15` (retroactive SuspectDecision flagging) — see §10.6.5.
+
+#### 10.6.3 Handler Enrollment Endpoint (Normative — L-48)
+
+**Rationale.** §10.6 requires handler keys to be issued by a trust anchor with unique `kid`s. Deployments that enroll handlers at runtime (vs. bootstrapping a fixed set via Card) need a normative enrollment endpoint. `SV-PERM-12` asserts kid-uniqueness + algorithm rejection at enrollment time.
+
+**Endpoint `POST /handlers/enroll`** — operator-bearer scope.
+
+**Request body:**
+```json
+{
+  "kid": "<unique identifier>",
+  "spki": "<base64url-encoded DER SPKI>",
+  "algo": "EdDSA | ES256 | RS3072 | RS4096",
+  "issued_at": "<RFC 3339>"
+}
+```
+
+**Responses:**
+- `201 Created` — `{"enrolled": true, "kid": "...", "issued_at": "..."}`.
+- `400 Bad Request` — `{"error": "AlgorithmRejected", "detail": "<reason>"}` when `algo` outside §10.6 accepted set (e.g., `RS256` rejected; RSA < 3072 rejected).
+- `409 Conflict` — `{"error": "HandlerKidConflict", "detail": "kid already enrolled"}` when `kid` matches an existing enrolled handler.
+- `401` / `403` — auth failures.
+
+**Conformance linkage.** `SV-PERM-12` asserts (a) first enroll succeeds, (b) duplicate kid rejects with `HandlerKidConflict`, (c) `RS256` body rejects with `AlgorithmRejected`.
+
+#### 10.6.4 Key-Storage Introspection (Normative — L-48)
+
+**Rationale.** §10.6 mandates handler private keys MUST NOT be stored on disk unencrypted. Validators cannot prove the negative via filesystem inspection. This endpoint exposes storage metadata for external verification.
+
+**Endpoint `GET /security/key-storage`** — operator-bearer scope; `admin:read` also accepted. Rate limit 60 rpm. Not-a-side-effect.
+
+**Response (`200 OK`):**
+```json
+{
+  "storage_mode": "hsm | software-keystore | ephemeral",
+  "private_keys_on_disk": false,
+  "provider": "aws-kms | windows-dpapi | macos-keychain | linux-keyring | <vendor-string>",
+  "attestation_format": "tpm-ak | pkcs11 | platform-attestation | <vendor-string>"
+}
+```
+
+- `storage_mode` REQUIRED. `ephemeral` is test-only; production Runners MUST report `hsm` or `software-keystore`.
+- `private_keys_on_disk` REQUIRED boolean. MUST be `false` for conformance.
+- `provider` and `attestation_format` OPTIONAL, informative.
+
+**Conformance linkage.** `SV-PERM-13` asserts `private_keys_on_disk === false`.
+
+#### 10.6.5 Retroactive SuspectDecision Flagging (Normative — L-48)
+
+**Rationale.** §10.6 requires flagging audit records signed by a compromised `kid` in the 24 hours preceding revocation. WORM semantics (§10.5) forbid mutating the original records. `SV-PERM-15` asserts the retroactive-flagging property via the same admin-row pattern as §10.5.4 subject-suppression.
+
+**Flagging mechanism.** When handler-kid `k` is revoked (via `RUNNER_HANDLER_CRL_POLL_TICK_MS` watcher OR production CRL refresh), the Runner MUST scan its audit chain back 24 hours and, for every record whose `signer_key_id == k`, append a NEW admin-row to the chain with:
+
+- `decision: "SuspectDecision"`
+- `referenced_audit_id: <original-row-id>`
+- `reason: "kid-revoked-24h-window"`
+- remaining required fields per admin-row shape (`id, timestamp, session_id, subject_id, prev_hash, this_hash`)
+
+The original decision-rows remain immutable. Validators reconstruct the "this decision is flagged as suspect" view by joining `SuspectDecision` admin-rows to the rows they reference.
+
+**Schema.** `audit-records-response.schema.json` adds `SuspectDecision` to the `decision` enum and adds a third `oneOf` branch requiring `referenced_audit_id`.
+
+**Conformance linkage.** `SV-PERM-15` revokes a handler-kid via the watcher, reads `/audit/records`, and asserts that every decision-row from the 24h preceding revocation with matching `signer_key_id` has a corresponding `SuspectDecision` admin-row whose `referenced_audit_id` points at it.
 
 ### 10.7 Privacy and Data-Governance Controls (Normative)
 
