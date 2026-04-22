@@ -1,5 +1,5 @@
 # SOA-Harness Core Specification
-**Self-Optimizing Agentic Harness — Production Standard**
+**Secure Operating Agents Harness — Production Standard**
 **Version:** 1.0
 **Status:** Production Standard — Conformance-Grade
 **Date:** 2026-04-18

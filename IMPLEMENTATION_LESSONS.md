@@ -905,6 +905,27 @@ Remaining 6 skips are legit deferrals (4 M4 retags + 1 pre-budgeted + 1 platform
 
 **Pattern note:** L-50 captures the pattern where impl ships the shape of a spec clause but misses a side-effect the clause implies. §10.5.6 retention_class "derivation rule" is the schema contract; impl shipped the schema but not the population. §10.6.2 CRL refresh is the schedule + semantic; impl shipped the scheduler but not the observability emission. Both are caught cleanly by validator's real probes hitting live endpoints — the "skip → fail → finding" transition only works when probes actually execute against live impl.
 
+### L-51 — Acronym rename: SOA = Secure Operating Agents `[normative docs, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-22 · post-M3-exit branding alignment decision. Acronym "SOA" preserved; expansion revised from aspirational "Self-Operating Agents" / "Self-Optimizing Agentic Harness" to "Secure Operating Agents" — the expansion that actually describes what the spec delivers on every page (cryptographic integrity, permission gating, hash-chained audit, signed-artifact provenance).
+- **Why:** Two external reviewers (OpenAI, Grok) plus an internal retrospective flagged that "self-operating" is aspirational (§9 self-improvement is M5 scope, small surface) while "secure operating" is load-bearing on every page of the spec. Every chapter leans on signed artifacts, trust anchors, JWS, JCS, mTLS, CRL, WORM audit. The rebranding aligns the acronym's expansion with the spec's actual posture.
+- **Scope:** pure prose. Zero wire-format change. All `SOA_*` env vars, `soa.*` OTel attributes, `soa-*+jws` typ values, schema `$id` paths (`soa-harness.org/schemas/v1.0/*`), test-ID prefixes, package names, and `SOA-Harness` compound brand retained identically. The acronym being preserved means no deployed consumer breaks.
+- **Hits found by Grep sweep:** only TWO prose hits in the entire spec corpus:
+  - `README.md:12` — "Self-Operating Agents (SOA)" → "Secure Operating Agents (SOA)" + a tightened description emphasizing the security posture
+  - `Core spec:2` — "Self-Optimizing Agentic Harness — Production Standard" → "Secure Operating Agents Harness — Production Standard"
+
+**Spec change:** 2 prose edits, 0 normative-clause edits, 0 schema edits, 0 test-ID edits, 0 fixture edits, 0 must-map edits. MANIFEST regenerated (spec.md digest changes → supplementary_artifacts entry updates).
+
+**Graphify verification:** before/after graph_stats confirmed — node count, test-ID count, section-reference edges all identical between pre-edit and post-edit graphs. Delta concentrated on the two prose hits. Infrastructure's first real exercise of cross-repo coordination via the graph did what it was designed for: proved the rename is bounded to prose.
+
+**Siblings:** impl + validator get sibling paste blocks to sweep their own docs for "Self-Operating" / "Self-Optimizing" expansions + pin-bump to this commit. CGC MCP confirms zero code-symbol changes on either sibling (identifiers preserved).
+
+**Milestone tally:** unchanged. 135 M3 · 12 M4 · 60 M5 · 22 M2 · 1 M1.
+
+**Version impact:** §19.4 editorial erratum (NOT a minor bump — no normative semantics change, no wire-format change). 1.0.15 (L-50) remains current normative version; the rebrand is purely presentation. Could alternatively be recorded as a v1.0 editorial revision with no version bump at all; went with "editorial" to keep the L-entry trail intact.
+
+**Pattern note:** This is the first rebrand of the project. Timing chosen deliberately — pre-v1.0-final-signing, post-M3-exit, graphify-across-three-repos freshly installed. The window for zero-cost rebranding closes at v1.0 final; doing it now costs one commit + two sibling pin-bumps. Doing it post-release would be a re-release event with external-adopter churn. Lesson: identity choices worth getting right BEFORE the first signed release, even if the acronym happens to survive.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

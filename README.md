@@ -9,7 +9,7 @@
 >
 > Implementers may use the spec as a design contract today. Third-party claims of "SOA-Harness v1.0 conformant" are premature until the release-signing key is distributed and the reference implementations ship.
 
-Normative specification bundle for **Self-Operating Agents (SOA)** — a conformance-testable harness for agentic runtimes and their UI gateways.
+Normative specification bundle for **Secure Operating Agents (SOA)** — a conformance-testable harness for agentic runtimes and their UI gateways, centering cryptographic integrity, permission gating, hash-chained audit, and signed-artifact provenance as the core guarantees on every page.
 
 The bundle is self-contained: every MUST in the spec has a corresponding test ID in one of the two `*-validate` must-maps, every referenced JSON Schema is published as a standalone `.schema.json` under [`schemas/`](./schemas/), and every enumerated artifact is digest-pinned in [`MANIFEST.json`](./MANIFEST.json) (JCS-RFC-8785 for JSON, raw-utf8 for Markdown). `MANIFEST.json` itself is the root of the digest chain — per Core §19.1 it is not self-listed; its integrity is established by the detached JWS [`MANIFEST.json.jws`](./MANIFEST.json.jws) verified against the §5.3 bootstrap anchor.
 
