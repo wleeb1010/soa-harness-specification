@@ -667,6 +667,11 @@
         },
         "reason": {
           "type": "string"
+        },
+        "billing_tag": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_:.-]{1,64}$",
+          "description": "OPTIONAL billing_tag propagated from Agent Card tokenBudget.billingTag per §13.3. When present, observable on /events/recent for budget-correlation probes. Does not affect signature or canonical_decision bytes (signed PDA doesn't carry billing_tag; Runner attaches at StreamEvent emit time)."
         }
       },
       "additionalProperties": false

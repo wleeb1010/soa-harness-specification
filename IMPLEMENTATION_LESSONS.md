@@ -529,6 +529,44 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Milestone tally:** unchanged. 136 M3 · 11 M4 · 60 M5 · 22 M2 · 1 M1.
 
+### L-40 — billing_tag audit+stream schema extensions + consolidation test hooks + HR-06 retag `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-21 · validator cleanup after Q+R landed — +1 flip (SV-BUD-07 clean) but Q's audit/stream embed blocked on schema `additionalProperties:false` + hash-chain desync constraint; HR-06 confirmed M4 scope; SV-MEM-05 blocked on 24h timer arm being the only testable path after L-38 removed write_memory from the mock
+- **What:** Three distinct spec items + two route-backs to impl:
+  - **Gap A (SV-BUD-05 impl-blocker):** impl can't add `billing_tag` to audit records without schema permitting it (existing `additionalProperties:false`). Also can't add to `PermissionDecision` payload. Impl noted the hash-chain desync risk at `decisions-route.ts:710` — if schema adds billing_tag as required, existing audit records without it break validation; if added without hash-chain inclusion, the field becomes a side channel.
+  - **Gap B (SV-MEM-05 testability):** §8.4 consolidation trigger is 24h-or-100-notes. 24h infeasible in test runs; 100-notes arm blocked because §8.1 tool contract doesn't include write/add (note-creation is §9.5, M5). Validator needs deterministic elapsed-time injection.
+  - **Retag (HR-06 M3→M4):** Compaction integrity requires real LLM dispatch with ContentBlockDelta streaming to produce the pre/post-compaction conversation slices. Q's billing_tag wiring doesn't unlock it. Same class as SV-STR-11, SV-BUD-03.
+  - **Route-back (SV-MEM-06):** impl reads `card.memory.default_sharing_scope`; spec canonical key is `memory.sharing_policy` (§7.318). One-line field rename.
+  - **Route-back (SV-MEM-05 follow-up):** after §8.4.1 env hook lands, impl must honor `RUNNER_CONSOLIDATION_TICK_MS` + `RUNNER_CONSOLIDATION_ELAPSED_MS`.
+
+**Spec additions:**
+
+1. **`schemas/audit-records-response.schema.json` (EXTENDED)** — added optional `billing_tag` field with pattern `^[A-Za-z0-9_:.-]{1,64}$` matching Agent Card `tokenBudget.billingTag` (§7 line 379). Hash-chain semantics: when present, the field is canonical-JCS-serialized and contributes to `this_hash`. When absent, hash-chain computation excludes the field (not "" placeholder). Backwards-compatible — existing audit records without the field still validate.
+
+2. **`schemas/stream-event-payloads.schema.json` + §14.1.1 inline (EXTENDED)** — `PermissionDecision` payload `$defs` adds optional `billing_tag` field with matching pattern. Does NOT affect signed PDA bytes (signed canonical_decision doesn't carry billing_tag; Runner attaches at StreamEvent emit time per §13.3 propagation path).
+
+3. **§8.4.1 Consolidation Trigger Test Hooks (NEW normative — Testability, M3 addition)** — two env vars:
+   - `RUNNER_CONSOLIDATION_TICK_MS` (poll interval; default 60000)
+   - `RUNNER_CONSOLIDATION_ELAPSED_MS` (injected elapsed-time offset; default 0)
+   
+   Same production-guard pattern as `RUNNER_TEST_CLOCK` + `SOA_RUNNER_DYNAMIC_TOOL_REGISTRATION`. Makes the 24h arm deterministically testable; 100-notes arm remains M5-dependent on write/add primitive landing (§9.5).
+
+**Must-map updates:**
+- `SV-BUD-05` assertion sharpened: billing_tag observed on all three surfaces (OTel span, audit record, PermissionDecision StreamEvent) with identical value matching Agent Card.
+- `HR-06` retagged M3 → M4 with milestone_reason citing ContentBlockDelta streaming dependency.
+
+**Milestone tally:** M3: 136 → **135** · M4: 11 → 12. Total unchanged at 230.
+
+**M3 skip budget:** 135 tagged; target ≥120 green → **15-test skip budget**. 4 pre-budgeted + 11 real-slip headroom.
+
+**Impl action (after pin-bump):**
+- Embed `billing_tag` in audit records + PermissionDecision StreamEvent per new optional schema fields. Hash-chain inclusion via canonical JCS on the record's serialized form.
+- Honor `RUNNER_CONSOLIDATION_TICK_MS` + `RUNNER_CONSOLIDATION_ELAPSED_MS` per §8.4.1. Production guard: refuse startup on non-loopback.
+- SV-MEM-06 one-line rename: `card.memory.default_sharing_scope` → `card.memory.sharing_policy` in start-runner.ts.
+- **STOP work on HR-06** — retagged M4. Don't attempt compaction-integrity wiring in M3.
+
+**Version impact:** §19.4 minor errata. 1.0.4 → 1.0.5. Additive schema fields (backwards-compatible) + new test-hook env vars + one retag. No breaking changes.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

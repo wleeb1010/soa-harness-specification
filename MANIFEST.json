@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "d0085a6d0b1feb13e9c9a4f98728fceffdd876e366db1ab7dfeacbdb826e5177",
+        "sha256": "1367d95043d4aa662b3e08f93385e6c71689f43f91da5bea6664c631f6701ce3",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "3ed8d696beb934fb07152b419b727966f0e52dd977c86ce0e21777752ffb73d5",
+        "sha256": "5211406122009a8759aecaee987075ee2fe679e08380730b69a69357b7704868",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -58,7 +58,7 @@
       {
         "name": "audit-records-response.schema.json",
         "path": "schemas/audit-records-response.schema.json",
-        "sha256": "3c4a1b68127cf202ff8cfdd0e3bbd0af5345404287a347e3e68264cf68bc176d",
+        "sha256": "bf10e40bd366fcc7dd1c4202bb03402e547ea2b8be707fa3832b515fb76014b2",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -184,7 +184,7 @@
       {
         "name": "stream-event-payloads.schema.json",
         "path": "schemas/stream-event-payloads.schema.json",
-        "sha256": "06c18a037ef2e14dbf3f897e7c067240a4b42c008c966a1eaa46a179ff57574f",
+        "sha256": "aaa2f0652acd67bd8c87ae7eee0619888ffeea2ba9f8720118ea9d0706afeb74",
         "canonicalization": "JCS-RFC-8785"
       },
       {

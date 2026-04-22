@@ -94,6 +94,11 @@
           "this_hash": {
             "type": "string",
             "pattern": "^[a-f0-9]{64}$"
+          },
+          "billing_tag": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_:.-]{1,64}$",
+            "description": "OPTIONAL billing_tag from the Agent Card's tokenBudget.billingTag (§7 line 379) propagated to audit rows per §13.3 + §10.5. When present, MUST be part of the hash-chain content (covered by canonical JCS serialization of the record before computing this_hash). When absent, hash-chain computation excludes the field — impls MUST NOT emit billing_tag=\"\" as a placeholder. Added in §19.4 errata 1.0.5 (L-40)."
           }
         }
       }

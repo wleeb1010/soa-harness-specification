@@ -114,8 +114,8 @@
       "profile": "core",
       "severity": "moderate",
       "summary": "Post-compaction conversation is prefix-equivalent and memory push occurred.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — harness regression suite for M3-shipped subsystems (Memory/Budget/Stream/Hooks/Gateway)."
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — compaction integrity assertion requires real LLM dispatch with ContentBlockDelta streaming to produce the pre/post-compaction conversation slices. Same class as SV-STR-11, SV-BUD-03 (L-40 retag)."
     },
     "HR-07": {
       "name": "Agent-type enforcement",
@@ -1593,7 +1593,7 @@
       "section_title": "Cache Accounting",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "billingTag present on OTel resource, audit record, events.",
+      "assertion": "billing_tag propagated end-to-end per §13.3: (a) OTel span attribute soa.billing.tag observable via /observability/otel-spans/recent, (b) audit record optional billing_tag field observable via /audit/records (schema extended per L-40 to allow the field; hash-chain includes it via canonical JCS when present), (c) PermissionDecision StreamEvent optional billing_tag field observable via /events/recent. All three surfaces MUST carry identical value matching Agent Card tokenBudget.billingTag.",
       "implementation_milestone": "M3",
       "milestone_reason": "M3 — SV-BUD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
     },
