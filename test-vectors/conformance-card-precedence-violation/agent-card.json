@@ -11,6 +11,7 @@
   "self_improvement": {
     "enabled": false,
     "directive_file": "program.md",
+    "entrypoint_file": "agent.py",
     "editable_surfaces": [],
     "benchmark_mcp_endpoint": "mcp://unused.conformance.test/",
     "min_score_threshold": 0.85,

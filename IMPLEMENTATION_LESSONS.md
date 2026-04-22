@@ -708,6 +708,34 @@ Plan-evaluator subagent ran against both sibling M3 plans (impl `ad4e99d` + vali
 
 **Pattern note:** AGENTS.md grammar fixtures are the first multi-scenario fixture bundle that doesn't need crypto signing (unlike L-42 program-md, L-43 dnssec, L-44 jwt-clock-skew). Validator wires all 7 scenarios from pinned Markdown files + an Agent Card base fixture; no generator.mjs required. Reload semantics test is validator-driven (subprocess mutation of the file on disk between turns); spec-side ships only the initial valid state.
 
+### L-46 — Finding AT ship-time fixture alignment: denylist §7.2 compliance + card entrypoint field `[normative, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-22 · validator V-11 wave +8 flips (128/1/12/0 after AT+AP+AQ+AR). Two spec fixtures need alignment with the now-live full §7.2 parser.
+- **What:**
+  - **Finding AY (spec):** `test-vectors/agents-md-denylist/AGENTS.md` was authored in L-35 before the full §7.2 parser shipped. Its structure had free-form H2s (`## Summary`, `## Inputs`, etc.) that impl's new parser correctly rejects. Cascaded: `SV-REG-04` regressed to FAIL — the new 1-fail on the scoreboard.
+  - **Finding AZ (spec):** `test-vectors/conformance-card/agent-card.json` lacks `self_improvement.entrypoint_file`. AT's entrypoint-mismatch check compares `AGENTS.md :: Self-Improvement Policy :: entrypoint:` against Card's `entrypoint_file`; absence silently skips the check (defeats `SV-AGENTS-08`).
+
+**Spec additions:**
+
+1. **`test-vectors/agents-md-denylist/AGENTS.md` (REWRITTEN)** — now §7.2-compliant: `# AGENTS` H1 + 7 required H2s in declared order + `entrypoint: agent.py` under Self-Improvement Policy + existing `## Agent Type Constraints → ### Deny → fs_write_dangerous` preserved. Unblocks SV-REG-04 regression.
+
+2. **`test-vectors/conformance-card/agent-card.json` + three card variants (UPDATED)** — all four cards (base, low-budget, memory-project, precedence-violation) now declare `self_improvement.entrypoint_file: "agent.py"`. Activates AT's entrypoint-mismatch check. The `entrypoint-mismatch` AGENTS.md fixture declares `entrypoint: wrong-entrypoint.py` → real mismatch → `AgentsMdInvalid(entrypoint-mismatch)` fires.
+
+**Must-map:** no assertion changes — existing SV-REG-04 and SV-AGENTS-08 assertions already describe the correct behavior; the fixtures just needed alignment with the live parser.
+
+**Also acknowledged (validator-side calibrations, no spec change):**
+- `SV-BOOT-04` revocation payload shape: validator's first pass used `{"revoked_publisher_kid": ...}` + wrong kid (`soa-conformance-test-release-v1.0`); impl reads `.publisher_kid` with the trust-store's actual kid (`soa-test-release-v1.0`). Validator recalibrated.
+- `SV-BOOT-04` log code: validator expected nested `code=HostHardeningInsufficient + data`; impl emits `code=bootstrap-revoked` directly. Validator recalibrated. Both are interpretation differences; impl behavior is spec-conformant.
+
+**Outstanding impl findings (V-12 HR routing — specifics pending from validator):**
+- `HR-07 / HR-09 / HR-10 / HR-11` all skipped pending impl surface. Validator labeled "agentType runtime enforcement, SI edit pipeline, precedence-guard axis 3". The SI edit pipeline is §9 → M5 scope; may warrant M3→M5 retag on HR-09/HR-10. Awaiting validator's per-test diagnostics before routing vs retagging.
+
+**Milestone tally:** unchanged. 135 M3 · 12 M4 · 60 M5 · 22 M2 · 1 M1.
+
+**Version impact:** §19.4 minor errata. 1.0.10 → 1.0.11. Fixture alignment with post-L-45 parser. No breaking changes.
+
+**Pattern note:** L-46 is the first "fixture drift after new normative behavior" bundle. The cascade (L-35 fixture → L-45 parser → L-46 fixture realignment) is expected when test fixtures predate the parser behavior they're meant to exercise. Going forward, any spec change that adds a new parser rule should trigger a sweep of existing fixtures to check §7.2-style compliance.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

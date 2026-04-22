@@ -244,7 +244,7 @@
       {
         "name": "AGENTS.md",
         "path": "test-vectors/agents-md-denylist/AGENTS.md",
-        "sha256": "bc951091bb9ecff219cca9a365c7ff64d6005af99b862487080247597cbdeeab",
+        "sha256": "343842ff449ac098225be61f5539f12a33dd65b1202922f72a761a4b7115c858",
         "canonicalization": "raw-utf8"
       },
       {
@@ -394,7 +394,7 @@
       {
         "name": "agent-card.json",
         "path": "test-vectors/conformance-card/agent-card.json",
-        "sha256": "d29be9897b1faa7a8bebda10adda5d01f9243529dcb0f30de68f59c0248741ab",
+        "sha256": "d13375450a36b1ca762cac64800a0cf419523631e296066a5086e3ed29dc2275",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -406,7 +406,7 @@
       {
         "name": "agent-card.json",
         "path": "test-vectors/conformance-card-low-budget/agent-card.json",
-        "sha256": "ce5af90878b75f35c83a0fc81e3fed14c1d792e8d918b0ff1e132100caba8f1d",
+        "sha256": "37fc6b3d65b01e9e095915b55ddf55de15f6972e0435fb5778f2a6454d4f59e8",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -418,7 +418,7 @@
       {
         "name": "agent-card.json",
         "path": "test-vectors/conformance-card-memory-project/agent-card.json",
-        "sha256": "fc552c43d860dc063015f3bf6bbb36e333a2e665db723b25914589086bb4b7b7",
+        "sha256": "696faeee2beafcfb83210832d53f1689bd5014829db16bf2f542458c033dec1b",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -430,7 +430,7 @@
       {
         "name": "agent-card.json",
         "path": "test-vectors/conformance-card-precedence-violation/agent-card.json",
-        "sha256": "5d1cbcc39437bf9ccf67aeffed77201ba49b450855b3bf1845a073c053672d39",
+        "sha256": "dccf188e199062eb59d8fcbe0e828504eb3f6c1e01ba24a83e0a79a45cf5b8ef",
         "canonicalization": "JCS-RFC-8785"
       },
       {

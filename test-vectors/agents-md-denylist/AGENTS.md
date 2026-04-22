@@ -1,33 +1,28 @@
-# AGENTS.md — Denylist Fixture
+# AGENTS
 
-Pinned fixture for SV-REG-04 conformance test. Do not edit without bumping the `test-vectors/` MANIFEST digest.
+## Project Rules
 
-## Summary
+Pinned fixture for SV-REG-04 conformance test. Do not edit without bumping the `test-vectors/` MANIFEST digest. §7.2-compliant AGENTS.md; the denylist lives in the `## Agent Type Constraints` H2 below.
 
-Fixture agent for conformance testing of AGENTS.md denylist subtraction behavior per Core §11.2 + §11.2.1.
+## Agent Persona
 
-## Inputs
+Conformance test agent for deny-list subtraction behavior (Core §11.2).
 
-Validator-driven. No runtime inputs required.
+## Immutables
 
-## Outputs
+None — test-only fixture.
 
-None; fixture used by SV-REG-04 to verify /tools/registered response excludes denied tools.
+## Self-Improvement Policy
 
-## Safety & Permissions
+entrypoint: agent.py
 
-Test-only; production deployments resolve AGENTS.md via operator configuration.
+## Memory Policy
 
-## Workflow
+No persistent memory for this fixture; `memory.enabled: false` on the companion card.
 
-1. Runner starts with SOA_RUNNER_AGENTS_MD_PATH pointing here.
-2. Runner parses ## Agent Type Constraints → ### Deny section below.
-3. Denied tool names subtract from per-session Tool Pool.
-4. Validator asserts /tools/registered.tools[] excludes denied names.
+## Human-in-the-Loop Gates
 
-## Testing & CI
-
-Consumed by SV-REG-04 in soa-validate M3 conformance suite.
+Interactive handler required for any Mutating tool.
 
 ## Agent Type Constraints
 
