@@ -1502,6 +1502,108 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 
 **Pattern note:** L-59 closes the M5 L-entry cadence (L-56 kickoff → L-57 Phase 0 progress → L-58 Phase 0+1 closure + errata → L-59 closure). Unique M5 signature: **three consecutive drift layers in Phase 0 alone** (tool count, response field names, request signature) — each caught at a successively deeper level of probing. And the fresh-install surface-bug pattern repeated four times across M4 + M5 (rc.1→rc.2 symlink, rc.0→rc.1 session-store export, rc.2→rc.3 memory-state-store export, rc.3→rc.4 scaffold wiring). Combined lesson for M6 and future milestones: the definitive gate for any RC publish is a scripted scaffold-install-boot-probe cycle against ONLY the registry artifacts (no local hot-swap, no workspace linkage, no cached deps). Every bug in the fresh-install-surface pattern would have taken weeks of adopter confusion if shipped; all were caught at the last integration-test stage before tag, which is exactly the right place for them.
 
+### L-60 — M6 kickoff: greenfield refactor + synchronized v1.0.0 release `[milestone plan + scope freeze]`
+
+- **Surfaced:** 2026-04-23 · M5 sealed at v1.0.0-rc.2 across impl + validate. M6 begins — final milestone, strips patch markers accumulated through M1-M5, ships v1.0.0 cohesively as a synchronized release across 3 repos + 8 npm packages. Planned via plan-ultimate flow (3-agent inventory/file/risk exploration + first-principles critic → 10 critic findings incorporated).
+
+**Calendar**: 4-5 weeks (revised from 3-4 per critic — staging publish test + release-key buffer + credential-tooling upgrade add ~1 week).
+
+**Inventory baseline (from Agent 1 sweep):**
+- Section-title `(M\d addition, L-XX)` annotations: **2** (§8.7, §14.6 only — M1-M3 era didn't use the pattern)
+- L-XX references in normative prose: **31** (concentrated in §10.3.1, §10.5.2, §14.5+, §18.5)
+- `implementation_milestone` + `milestone_reason` fields in must-maps: **234 entries** (all in `soa-validate-must-map.json`; `ui-validate-must-map.json` has zero)
+- Section-numbering gaps: **zero detected**
+- Placeholder JWS signatures: **1** (MANIFEST.json.jws)
+- Test-vector placeholders: **~8** (intentional fixtures, stay)
+
+**Phase structure:**
+
+**Phase 0 — Pre-release gates (days 1-5, parallelized):**
+- 0a (day 2 HARD DEADLINE): Release-key governance decision. Recommended: Ed25519 in YubiKey with PIN. ~$50 hardware, 1-day setup. Alternative: HSM + 1Password Vault. One-way decision.
+- 0a.5 (day 1): Inventory verification sweep — automated regex across spec + must-maps. Halt Phase 1 if count ≠ agent baseline.
+- 0b (days 1-2): npm org 2FA + ownership audit. Archive snapshot.
+- 0c (days 1-3): Test-ID stability audit + pre-commit hook across all 3 repos validating `test_id → §X.Y anchor` mapping.
+- 0d (days 1-3): Credential sweep via truffleHog (upgrade from manual grep) across full git history.
+- 0e (day 3): IMPLEMENTATION_LESSONS retention — **LOCKED**: archive to GitHub, footnote in §19.1, NOT in release MANIFEST.
+- 0f (day 4): `docs/errata-policy.md` — v1.0.1 editorial / v1.1.0 minor / v2.0.0 breaking decision tree + 3-5 plausible scenarios pre-classified.
+- 0h (day 4): Dist-tag promotion strategy — `latest` advances to 1.0.0; `next` retires after 14-day observation.
+- 0i (day 4): Canonical distribution **LOCKED** — GitHub release canonical at v1.0.0; soa-harness.org deferred.
+- 0j (day 5): Automated section-anchor stability scan wired into CI.
+
+**Phase 1 — Content refactor (days 3-10, parallel with late Phase 0):**
+- 1a: Strip 2 section-title annotations (§8.7, §14.6)
+- 1b: De-inline 31 L-XX references (convert to ERRATA.md citations or inline factual statements)
+- 1c: Create CHANGELOG.md (retroactive M1-M5 summary), ERRATA.md (empty template), RELEASE-NOTES.md (v1.0.0 highlights)
+- 1d: Bulk-strip `implementation_milestone` + `milestone_reason` from must-maps (234 entries)
+- 1e: Prose pass for uniform voice — top 10 graphify-god-nodes prioritized (§25.3, §18.3, §10.5, §10.3.1, §24, UI §21.2, UI §21, UI §11.4.1, test-vectors/RESERVED, docs/deployment-environment)
+- 1f: test-vectors README sweep (prose only, zero payload changes)
+- 1g: Per-repo READMEs rewrite to v1.0 final tone
+- 1h (day 5): Pre-flight test suite green (`pnpm -r test` + `go test ./...`) — MOVED EARLIER per critic
+
+**Phase 2 — Package prep + staging test (days 11-17):**
+- 2a: 8 × `packages/*/package.json` bump `1.0.0-rc.X` → `1.0.0`
+- 2b: Impl docs archive — `docs/m4/` + `docs/m5/` → `docs/archive/`
+- 2c: Validator `main.go` prose sweep
+- 2d: License-checker clean across all 8 dep trees
+- 2e (days 13-14): MANIFEST regen with real-key JWS. Dry-run with placeholder first; then real sign. Archive ceremony artifact.
+- 2f (days 14-16): Release orchestration script + **STAGING REGISTRY TEST-RUN against Verdaccio** — full 8-package dependency-ordered publish + install verification + teardown. MANDATORY gate per critic.
+- 2g: `docs/m6/rollback-runbook.md` — phase-by-phase decision tree + commands + 72h window awareness.
+
+**Phase 3 — Release day (days 18-21):**
+- 3a (day 18): Final dry-run per package
+- 3b (day 19): Commit L-60 closure record in spec → push
+- 3c (day 19): Spec tagged v1.0.0 pointing at L-60 commit
+- 3d (day 19): Execute `release-v1.0.mjs` — 8 packages publish in order (schemas → core → runner → sqlite/mem0/zep → adapter → create-soa-agent). Pin-bump PRs land in impl + validate AFTER spec merge.
+- 3e (day 19): Impl + validate tagged v1.0.0 + pushed
+- 3f (day 19): GitHub releases per repo via `gh release create v1.0.0` with MANIFEST + CHANGELOG + signed JWS
+- 3g (days 20-21): Post-release verification — Windows 11 + WSL2 Ubuntu + Docker image + Node LTS ± 1. 72h monitoring window.
+
+**Exit criteria (9):**
+1. 8 packages at `1.0.0` on npm under `latest` dist-tag
+2. All three repos tagged `v1.0.0` on origin
+3. Signed MANIFEST.json.jws with real release key
+4. Zero `M\d addition` / `L-\d+` references in release-bundle artifacts (IMPLEMENTATION_LESSONS.md archived, not in bundle)
+5. Fresh-install verification green on 4 environments
+6. GitHub releases cut per repo
+7. L-60 closure record pointed at by spec tag
+8. `docs/errata-policy.md` documented
+9. 72h monitoring passes with zero rollback triggers
+
+**Top-5 risks + mitigations (from critic Step C):**
+- CRITICAL: MANIFEST digest chain cascade → pin-bump PRs in impl + validate land AFTER spec merge, not before (staged in release-day script)
+- CRITICAL: Test-ID stability violation → pre-commit hook across 3 repos (Phase 0c)
+- CRITICAL: Signed MANIFEST release-key one-way lock-in → Phase 0a day-2 hard-deadline decision + dry-run ceremony
+- CRITICAL: Synchronized 8-package publish cascade failure → Verdaccio staging test-run (Phase 2f) + dependency-ordered script with rollback
+- CRITICAL: npm org 2FA + ownership drift over M4+M5 weeks → Phase 0b audit + release gate
+
+**Critic's 10 findings all incorporated (changes from synthesis):**
+1. Inventory assumption fragility → Phase 0a.5 automated verification sweep
+2. Test-ID audit post-facto → pre-commit hook deployed Phases 1-3
+3. Release-key decision vague → day-2 hard deadline
+4. MANIFEST digest cascade → pin-bump ordering locked in release script
+5. Dry-run has no rollback → Verdaccio staging test (Phase 2f)
+6. Publish script untested → staging test-run mandatory
+7. Single-platform test → expanded to 4 environments
+8. L-60 circular ref → 3b commits L-60 BEFORE 3c spec tag
+9. No rollback runbook → Phase 2g creates `docs/m6/rollback-runbook.md`
+10. Credential sweep tooling → truffleHog upgrade from grep
+
+**Pre-decided answers to open questions:**
+1. IMPLEMENTATION_LESSONS: archive to GitHub, footnote in §19.1, NOT in release MANIFEST
+2. `@next` dist-tag: retire per-package after 14-day observation
+3. Canonical distribution: GitHub release at v1.0.0; soa-harness.org deferred
+4. §19.4 clarification: `spec_version: "1.0"` frozen at M6 close; internal editorial-bump counter doesn't ship
+
+**Four open decisions pending user input before Phase 0 kickoff:**
+1. Release key hardware — YubiKey (recommended) vs HSM?
+2. Verdaccio staging registry OK to spin up in Phase 2 prep? (Docker-based local npm mirror)
+3. GitHub release canonical at v1.0.0 — confirm?
+4. 4-5 week calendar acceptable, or push for 3-week aggressive path?
+
+**Version impact:** §19.4 editorial. L-60 is the M6 kickoff record. No normative spec change at L-60 commit itself; spec version stays at 1.0.17 until Phase 3's final refactor commit converges spec_version field to "1.0" for v1.0.0 tag.
+
+**Pattern note:** L-60 follows the L-52 (M4 kickoff) / L-56 (M5 kickoff) cadence. Distinctive shape: M6 is the ONLY milestone in this project where the deliverable is **presentation-layer refactor + release-ceremony orchestration** rather than new normative content or new impl code. Risk profile accordingly shifts from "did we specify correctly?" to "did we release correctly?" — signing-key governance, digest-chain preservation, synchronized-publish coordination dominate. Pattern for hypothetical future major-version work (v2.0+): repeat M6's phase structure. Ceremony discipline is not optional; it IS the product at release time.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
