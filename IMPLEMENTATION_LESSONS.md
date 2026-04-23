@@ -1162,6 +1162,82 @@ combined       -> 156 pass / 0 fail / 10 exit-criterion-skip / 0 error
 
 **Pattern note:** L-55 closes out the M4 L-entry sequence (L-52 kickoff, L-53 gate revision, L-54 exit-criteria fix, L-55 closure). Future milestones SHOULD follow the same L-entry cadence: kickoff (lock scope + derive exit criteria) → any mid-flight revisions → closure (record what actually shipped + link the commits/tags + flag surprises). The cadence provides a navigable narrative through the lesson log without requiring a reader to chase every commit. The closure entry's value is specifically in enumerating surprises caught during execution — those surprises are the most valuable content for a future maintainer who faces similar decisions.
 
+### L-56 — M5 kickoff: reference Memory MCP backends (sqlite + mem0 + Zep) + Phase 0a tool-surface lockdown `[normative spec + milestone decision, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-23 · M4 closed at `v1.0.0-rc.1` per L-55; M5 begins. Planned via plan-ultimate flow (3 parallel agents + first-principles critic → 8 findings incorporated). Scope locks Phase 0 gates BEFORE any backend implementation code is written.
+
+**M5 goal:** Three reference Memory MCP backends implementing the normative §8 Memory Layer contract. Scaffold pivots default from no-memory to sqlite. §8 gains an informative §8.7 addendum. Exit: `v1.0.0-rc.2` on impl + validate. Duration: 10-12 weeks serial, 6-8 weeks parallel.
+
+**Phase 0a — §8.1 tool-surface lockdown (result from this commit's verification pass):**
+
+Three sources of truth were inconsistent:
+
+| Source | Tool count | Tools listed |
+|---|---|---|
+| **Spec §8.1 (authority)** | **6** | `add_memory_note`, `search_memories`, `search_memories_by_time`, `read_memory_note`, `consolidate_memories`, `delete_memory_note` |
+| `soa-harness-impl/tools/memory-mcp-mock/src/server.ts` | 4 routes | `/search_memories`, `/write_memory` (non-spec rename), `/consolidate_memories`, `/delete_memory_note` |
+| `soa-harness-impl/test-vectors/memory-mcp-mock/README.md` (in spec repo) | 5 | missing `add_memory_note` |
+| `soa-validate/internal/memmock/memmock.go` | 3 | `/search_memories`, `/consolidate_memories`, `/delete_memory_note` (stale comment says "§8.1 five-tool set per L-38") |
+
+**Lockdown rule:** spec wins. The normative tool surface is 6 tools as defined in §8.1 (lines 547-584). Idempotent delete + tombstone retention rules unchanged.
+
+**Phase 0a drift-remediation work added to Phase 0 (parallel to Phase 0c gates):**
+
+1. Impl mock (`tools/memory-mcp-mock/`): add `/add_memory_note` (rename from `/write_memory`), add `/search_memories_by_time`, add `/read_memory_note`, update `test-vectors/memory-mcp-mock/README.md` tool list.
+2. Validator mock (`soa-validate/internal/memmock/`): add the same 3 missing handlers; remove stale "five-tool set" comment; extend SV-MEM-* coverage to exercise the new handlers.
+3. §8.4.1 editorial erratum: the stale note claiming "§8.1's tool contract does not include a write/add primitive" was incorrect. Corrected in this commit.
+
+Duration: ~1-2 days parallel impl + validator work. Both sides report back with commit SHAs before Phase 1 kickoff.
+
+**Phase 0b — §8.7 informative stub + conformance-report schema (this commit):**
+
+1. §8.7 "Reference Memory Backend Implementations (Informative)" — 6 subsections, ~450 words: backend comparison table, descriptive selection rubric, sqlite deployment recipe, data-portability note, conformance-gate pointer, explicit non-covered-here scope list. Enforces the ≤500-word cap per plan-evaluator finding.
+2. `schemas/backend-conformance-report.schema.json` — 24-cell matrix format (3 backends × 8 SV-MEM + HR-17 per backend), per-cell {test_id, status ∈ {pass, fail, skip, error, waived}, duration_ms, error_message | waiver_reference}, summary {all_green, failing_count, waiver_count}. Schema ships BEFORE Phase 1 so CI can consume it from day one (plan-evaluator finding #4 closed).
+
+**Phase 0c — FOUR HARD GATES (each is a 1-day feasibility spike; ALL must pass before Phase 1 kickoff):**
+
+| # | Gate | Pass criterion | Pre-decided rollback |
+|---|---|---|---|
+| 3 | mem0 deterministic mode | Seeded 20-note corpus run twice produces byte-identical output with `inference_enabled=false` (or mem0 equivalent). Validated via ajv against `memory-search-response.schema.json`. | Drop mem0 from M5. Ship 2 backends (sqlite + Zep). Letta STAYS deferred to v1.1 per L-52; not re-invited. |
+| 4 | Zep schema mapping | Reshape Zep SDK's native response to §8.1 shape in ≤300 LOC shim; ajv validates 100% of sample responses. | Defer Zep to v1.1. M5 ships 1 or 2 backends depending on Gate 3. |
+| 5 | transformers.js cold-start | At least one works on clean Windows 11 + WSL2: (a) pre-cache model in package tarball (≤25 MB add), (b) MiniLM-L3 fallback (≤10 MB) still passes SV-MEM-03..05 composite-score assertions, (c) timeout extension. Preference: (a) → (b) → (c). | Rare — if all three fail, reconsider sqlite's embedding strategy (e.g., ship without semantic search, require external embedding endpoint). |
+| 6 | License audit on candidate dep trees | `license-checker --production --summary` returns zero GPL / AGPL / BSL / SSPL entries for each backend's full dep tree. Only Apache-2.0 / MIT / BSD-2/3 / ISC permitted. | Per-backend remediation: find alternative deps OR drop that backend from M5. |
+
+Plan-evaluator finding #2 closed (explicit pass criteria per gate). Finding #7 closed (Letta pre-decided stays deferred). Finding #8 closed (license audit moved from Phase 6 to Phase 0).
+
+**Phases 1-6 summary (full plan in spec-session conversation; enumerated here as closure commitment):**
+
+- Phase 1: `memory-mcp-sqlite` (1 week) — scaffold default, zero external deps
+- Phase 2: `memory-mcp-mem0` (3-4 weeks) — includes sensitive-personal pre-LLM filter (required by §10.7)
+- Phase 3: `memory-mcp-zep` (2-3 weeks) — includes ≤300-LOC schema-mapping shim
+- Phase 4: aggregate conformance report per the new schema (1 week, parallel to Phase 5)
+- Phase 5: scaffold pivot to sqlite + `--memory=<backend>` CLI flag + 3 docker-compose deployment recipes + explicit integration test within 20m Windows / 15m POSIX budget (plan-evaluator finding #5 closed)
+- Phase 6: npm publish 3 new packages + bump `create-soa-agent` to `1.0.0-rc.3+` + tag impl + validate at `v1.0.0-rc.2`
+
+**Exit criteria (8):**
+
+1. All published backends pass SV-MEM-01..08 + HR-17 via `soa-validate --memory-backend=<name>` (2 or 3 backends depending on Gate 3/4 outcomes)
+2. `backend-conformance-report.json` shows all-green matrix OR documented waivers per failing cell
+3. Scaffold default is sqlite; `create-soa-agent@1.0.0-rc.3+` published
+4. §8.7 informative addendum committed (this commit) + L-56 kickoff + L-58 closure in IMPLEMENTATION_LESSONS.md
+5. `docker-compose.yml` per backend in `docs/deployment/`
+6. License-checker clean per backend (Gate 6 output preserved)
+7. `v1.0.0-rc.2` tagged on impl + validate; pushed to origin
+8. All backend packages (`@soa-harness/memory-mcp-*`) live on npm under `@next` + `@latest`
+
+**Pre-decided answers to "open decisions" (plan-evaluator finding #7 closed):**
+
+| # | Decision | Answer |
+|---|---|---|
+| 1 | Shared `packages/memory-mcp-contract/` | No — inline types per backend until >300 LOC duplication surfaces. M6 may consolidate during greenfield refactor. |
+| 2 | Per-backend test-vectors | No — reuse existing mock corpus; add backend-specific only if Gate 3/4 surface a real need. |
+| 3 | Letta as mem0 fallback | **Stays deferred to v1.1.** If Gate 3 fails, M5 ships with 2 backends. Scope stability > backend count. |
+| 4 | §8.7 tone | Descriptive, not prescriptive. Adopters make their own capacity calls. |
+
+**Version impact:** §19.4 editorial. 1.0.16 → **1.0.17**. Additive §8.7 informative; new supplementary artifact `schemas/backend-conformance-report.schema.json`; one §8.4.1 stale-note correction (editorial erratum). Zero impact on deployed Runners. Wire format unchanged.
+
+**Pattern note:** L-56 is the M5 kickoff entry, following the L-52 (M4 kickoff) cadence. Key pattern-reinforcement: Phase 0 GATES (hard binary pass/fail) are stricter than Phase 0 MITIGATIONS (nice-to-haves that can be deferred). Plan-evaluator explicitly called out that "CRITICAL mitigations" should be gates, not soft recommendations — that feedback shapes Phase 0c as the binary-gate structure here. Also notable: Phase 0a caught real three-way drift that would have cascaded into three backends implementing three different tool surfaces. Gate 1 paid for itself by discovering the drift before any backend code was written.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

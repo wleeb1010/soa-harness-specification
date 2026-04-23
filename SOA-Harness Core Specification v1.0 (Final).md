@@ -614,7 +614,7 @@ The Runner MUST invoke `consolidate_memories(aging_rules.consolidation_threshold
 
 #### 8.4.1 Consolidation Trigger Test Hooks (Normative — Testability, L-40)
 
-**Rationale.** `SV-MEM-05` asserts the §8.4 trigger fires within the specified window. The 24-hour arm is infeasible to exercise against real wall-clock in a conformance run; the 100-new-notes arm is blocked in M3 because §8.1's tool contract does not include a write/add primitive (note-creation is §9.5 self-improvement scope, M5). A deterministic elapsed-time injection is required to make `SV-MEM-05` testable in M3.
+**Rationale.** `SV-MEM-05` asserts the §8.4 trigger fires within the specified window. The 24-hour arm is infeasible to exercise against real wall-clock in a conformance run; the 100-new-notes arm exercises the §8.1 `add_memory_note` write primitive (available since the spec's initial §8.1 publication — an earlier version of this rationale incorrectly described `add_memory_note` as missing from §8.1; corrected in L-56 Phase 0a tool-surface lockdown). A deterministic elapsed-time injection remains required to make `SV-MEM-05` testable against the 24-hour arm.
 
 **Env vars:**
 
@@ -686,6 +686,53 @@ GET /memory/state?session_id=<session_id>
 **Not-a-side-effect (MUST).** Reading `/memory/state` MUST NOT: trigger consolidation, advance aging clocks, emit StreamEvents, or write audit rows. Byte-identity excludes `generated_at` (same rule as §12.5.1).
 
 **Conformance linkage.** `SV-MEM-STATE-01` (new) — schema + not-a-side-effect + memory-disabled 501 path. `SV-MEM-01..08` live paths use this endpoint as the observation surface for aging, consolidation, and sharing-policy assertions.
+
+### 8.7 Reference Memory Backend Implementations (Informative — M5 addition, L-56)
+
+**Status.** This subsection is **informative** (non-normative). It documents reference Memory MCP backend implementations shipped under the `@soa-harness/memory-mcp-*` namespace alongside v1.0.0. None of the specific backends are privileged by §8 — the §8.1–§8.6 contract is the sole normative surface, and any server honoring it is conformant. The three backends below exist to prove §8 is implementable by the ecosystem's leading memory layers, not to elevate them above alternatives.
+
+#### 8.7.1 Backend Comparison
+
+| Backend | External deps | Persistence | Embedding | Native graph | Best-fit deployment |
+|---|---|---|---|---|---|
+| `@soa-harness/memory-mcp-sqlite` | none (in-process) | SQLite file | `transformers.js` local (MiniLM or similar) | adjacency JSON | Single-agent deployments, local dev, conformance testing |
+| `@soa-harness/memory-mcp-mem0` | Qdrant + LLM API + optional Neo4j | Qdrant + Postgres | vector (backend-configured) | native (via optional Neo4j) | Multi-agent production; operators comfortable with Qdrant + LLM infra |
+| `@soa-harness/memory-mcp-zep` | Zep server + Postgres | Postgres | Zep-native | native temporal knowledge graph | Multi-agent deployments valuing temporal reasoning + summarization |
+
+#### 8.7.2 Selection Rubric (Descriptive)
+
+- **`sqlite` suits:** bounded-scale deployments where operational simplicity outweighs multi-agent scale. Zero external services. Ships as the scaffold default in `create-soa-agent`.
+- **`mem0` suits:** deployments that already run a vector store, have LLM-API budget for production-mode entity extraction, and value the mem0 ecosystem's tooling (hosted dashboard, SDK ergonomics).
+- **`zep` suits:** deployments where temporal reasoning matters (episodic memory with time-windowed reasoning) and Postgres is already part of the stack.
+
+Operators SHOULD choose based on workload shape and existing infrastructure, not vendor preference. All three backends are Apache-2.0 licensed.
+
+#### 8.7.3 Deployment Recipe (sqlite — exemplary)
+
+```bash
+npm install @soa-harness/memory-mcp-sqlite@next
+npx soa-memory-mcp-sqlite --port 8001 --db-path ./memory.sqlite
+# In your Agent Card:
+#   "memory": {"enabled": true, "mcp_endpoint": "http://127.0.0.1:8001"}
+```
+
+`mem0` and `zep` deployments require external services — see each package's README for docker-compose recipes.
+
+#### 8.7.4 Data Portability (Normative in spirit — informative in location)
+
+Memory MCP backends are **not interoperable by design**. Each backend owns its storage semantics. Migrating from backend A to B requires exporting notes from A using §8.1 `search_memories` + `read_memory_note` paginated over the full corpus, and re-inserting into B via `add_memory_note`. Tombstones and `deleted_at` timestamps are not guaranteed to transfer. Tooling for cross-backend migration is out of scope for v1.0.0 and left to operator-specific scripts.
+
+#### 8.7.5 Conformance Gate
+
+Each reference backend ships with an independent `soa-validate --memory-backend=<name>` pass result published in `backend-conformance-report.json` per release. v1.0.0 final ships when all published backends pass `SV-MEM-01..08 + HR-17` OR explicitly waive specific tests with documented rationale (per the `waiver_reference` field in the report schema).
+
+#### 8.7.6 Not Covered Here
+
+- Backend-specific tuning guides
+- Custom backend authoring walkthroughs
+- Backend-migration tooling
+
+These are deferred to v1.0.x or later and deliberately scope-bounded out of §8.7 to keep the informative surface small.
 
 ---
 
