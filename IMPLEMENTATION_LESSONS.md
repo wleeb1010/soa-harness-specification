@@ -1238,6 +1238,71 @@ Plan-evaluator finding #2 closed (explicit pass criteria per gate). Finding #7 c
 
 **Pattern note:** L-56 is the M5 kickoff entry, following the L-52 (M4 kickoff) cadence. Key pattern-reinforcement: Phase 0 GATES (hard binary pass/fail) are stricter than Phase 0 MITIGATIONS (nice-to-haves that can be deferred). Plan-evaluator explicitly called out that "CRITICAL mitigations" should be gates, not soft recommendations — that feedback shapes Phase 0c as the binary-gate structure here. Also notable: Phase 0a caught real three-way drift that would have cascaded into three backends implementing three different tool surfaces. Gate 1 paid for itself by discovering the drift before any backend code was written.
 
+### L-57 — M5 Phase 0 progress + `notes`→`hits` wire-shape flip scheduled + Gate routing `[revision + coordination record]`
+
+- **Surfaced:** 2026-04-23 · both impl and validator sessions reported Phase 0 deliverables back. Three things to record: (1) Phase 0a/0b/0c-Gate-6 completions, (2) new drift the validator caught while shipping its Phase 0a fix, (3) routing decisions for the three deferred gates.
+
+**Phase 0 completions (no rollbacks fired):**
+
+| Session | Commit | Deliverable | Status |
+|---|---|---|---|
+| impl | `da41773` | Phase 0a mock drift fix — 6-tool surface (rename `/write_memory` → `/add_memory_note`, add `/search_memories_by_time`, `/read_memory_note`); 870/870 tests green | ✅ |
+| impl | `6f5fb40` | Phase 0b CI scaffolding — `.github/workflows/memory-backends-ci.yml` matrix + `scripts/release-gate.mjs` consuming `backend-conformance-report.schema.json` | ✅ |
+| impl | `5448045` | Phase 0c Gate 6 baseline license audit — 25 Apache-2.0 / 20 MIT / 0 GPL-AGPL-BSL-SSPL-BUSL across 6 dep trees; clean | ✅ |
+| validator | `ea36292` | Phase 0a memmock drift fix — matching 3 new handlers; stale "five-tool set per L-38" comment replaced with "§8.1 six-tool set per L-56" | ✅ |
+| validator | `f675d4d` | Phase 0b `--memory-backend=<mock\|sqlite\|mem0\|zep\|custom>` CLI flag; closed-set validation; `memory_backend` field in release-gate JSON | ✅ |
+| spec | this commit | test-vectors/memory-mcp-mock/README.md Phase 0a sync (add `add_memory_note` to tool table; flag wire-shape drift); L-57 | ✅ |
+
+Native baseline held at `152/0/10/0` against mock throughout. No regressions.
+
+**New drift surfaced (validator caught it during Phase 0a work):**
+
+Spec §8.1 + spec test-vectors/README + §8.7 all specify `search_memories` returns `{"hits": [...], "truncated": ...}`. Current impl + validator implementations return `{"notes": [...], ...}` (non-spec field name). Discovered via validator's code review: `memmock.go` returns `notes`; impl's `MemoryMcpClient` reads `notes`; impl's `handlers_m3_t12.go:665` writes `notes` in SV-PRIV-02 fixture.
+
+This is a **second layer of tool-surface drift** beyond the tool-count drift L-56 captured. Spec is canonical (`hits`). Both code surfaces drifted together, so existing SV-MEM-* tests pass — but any backend reading the spec directly would return `hits` and fail against the validator-memmock-expecting-`notes` test harness.
+
+**Scheduled flip — Phase 0d (lock-step, ~2-3 hours across 2 sessions):**
+
+1. impl `tools/memory-mcp-mock/src/server.ts` — `search_memories` response renames `notes` → `hits`
+2. impl `tools/memory-mcp-mock/src/mock.ts` — corresponding type rename
+3. impl `packages/runner/src/memory/mcp-client.ts` — response unmarshaling reads `hits`
+4. impl runner + mock tests — assertion field name flipped
+5. impl `handlers_m3_t12.go:665` (SV-PRIV-02 residency fixture) — writes `hits`
+6. validator `internal/memmock/memmock.go` — returns `hits`
+7. validator SV-MEM-* test assertions — check `hits`
+
+Both sides commit in lock-step. Single-coordination-cycle flip. Must complete before Phase 1 sqlite backend starts because sqlite will implement spec-canonical `hits` from day one and any non-`hits` expectation would fail its conformance run.
+
+**Phase 0c gate routing (the three still-deferred):**
+
+| Gate | Status | Decision |
+|---|---|---|
+| Gate 3 (mem0 determinism) | deferred | Spike session with mem0 SDK + LLM-API-key. Outcome determines Phase 2 scope (ship mem0 or drop per L-56 pre-decided rollback). |
+| Gate 4 (Zep schema mapping) | deferred | Spike session with docker-compose (Zep + Postgres). Outcome determines Phase 3 scope. |
+| Gate 5 (transformers.js cold-start) | **LOCKED TO OPTION (a) — pre-cache MiniLM-L6-v2** | MiniLM-L6-v2 is ~22 MB on disk — fits the ≤25 MB sqlite tarball-add budget from L-56 Gate 5 pass criterion. Decision made statically (no cross-platform timing required for tarball-size question). This option was ranked preferred in L-56. Locked. |
+
+**What this unblocks:**
+
+Phase 1 sqlite backend implementation can proceed AFTER Phase 0d flip lands, without waiting for Gates 3/4. Sqlite depends on Gate 5 (now locked) + Phase 0d wire-shape flip + nothing else backend-related. Phases 2 (mem0) and 3 (Zep) remain gated on their respective spikes.
+
+Revised M5 scope-baseline after L-57:
+
+- 🟢 Phase 0 complete except Gate 3, Gate 4, Phase 0d flip
+- 🟢 Gate 5 locked (pre-cache MiniLM-L6-v2)
+- 🔜 Phase 0d wire-shape flip (~2-3 hours lock-step, this week)
+- 🔜 Phase 1 sqlite backend (after Phase 0d)
+- 🔜 Gate 3 spike session (user-driven timing) → determines Phase 2 go/no-go
+- 🔜 Gate 4 spike session (user-driven timing) → determines Phase 3 go/no-go
+- 🔜 Phase 4/5/6 per L-56
+
+**Coordination contract for Phase 0d:**
+
+Neither side flips alone. Impl commits `notes`→`hits` in mock + client + fixture in one commit; validator commits memmock + tests in one commit; both push roughly simultaneously. Validator then pin-bumps `soa-validate.lock` to the spec commit carrying L-57 (this commit); full native baseline re-poll confirms `152/0/10/0` holds with the new field name.
+
+**Version impact:** §19.4 editorial. 1.0.17 (L-56) remains current. L-57 is a milestone revision + coordination record, no normative text change. MANIFEST regen picks up the test-vectors README update.
+
+**Pattern note:** L-57 follows the M4 L-54 pattern — a mid-milestone revision entry that catches drift or scope-fix between kickoff and closure. Worth recording because the `hits` drift was invisible to L-56's Phase 0a verification (which only diffed tool names) — it took the validator implementing new handlers against spec to surface the field-name mismatch. Lesson: tool-surface diff at Phase 0a should include response-schema structural diff, not just endpoint name diff. Next milestone's Phase 0a checklist will extend to schema-level verification.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
