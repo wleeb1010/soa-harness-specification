@@ -1519,7 +1519,7 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 **Phase structure:**
 
 **Phase 0 — Pre-release gates (days 1-5, parallelized):**
-- 0a (day 2 HARD DEADLINE): Release-key governance decision. Recommended: Ed25519 in YubiKey with PIN. ~$50 hardware, 1-day setup. Alternative: HSM + 1Password Vault. One-way decision.
+- 0a (day 2 HARD DEADLINE): Release-key governance **LOCKED** — software Ed25519 with passphrase-encrypted storage (Option A, zero-cost). Generate with `openssl genpkey -algorithm ed25519`, wrap with strong passphrase, stash in password manager + encrypted offsite backup, sign from clean machine, wipe working copy after. Spec format stays JWS. Hardware upgrade (YubiKey) available as v1.0.1 editorial errata later. Phase 0a now covers: key generation ceremony, backup verification, signing-machine hygiene checklist.
 - 0a.5 (day 1): Inventory verification sweep — automated regex across spec + must-maps. Halt Phase 1 if count ≠ agent baseline.
 - 0b (days 1-2): npm org 2FA + ownership audit. Archive snapshot.
 - 0c (days 1-3): Test-ID stability audit + pre-commit hook across all 3 repos validating `test_id → §X.Y anchor` mapping.
@@ -1572,7 +1572,7 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 **Top-5 risks + mitigations (from critic Step C):**
 - CRITICAL: MANIFEST digest chain cascade → pin-bump PRs in impl + validate land AFTER spec merge, not before (staged in release-day script)
 - CRITICAL: Test-ID stability violation → pre-commit hook across 3 repos (Phase 0c)
-- CRITICAL: Signed MANIFEST release-key one-way lock-in → Phase 0a day-2 hard-deadline decision + dry-run ceremony
+- CRITICAL: Signed MANIFEST release-key compromise via signing-machine breach → Phase 0a clean-machine signing ceremony + passphrase strength gate + offsite backup verification. Hardware-boundary upgrade path preserved via v1.0.1 errata if threat profile changes.
 - CRITICAL: Synchronized 8-package publish cascade failure → Verdaccio staging test-run (Phase 2f) + dependency-ordered script with rollback
 - CRITICAL: npm org 2FA + ownership drift over M4+M5 weeks → Phase 0b audit + release gate
 
@@ -1594,11 +1594,11 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 3. Canonical distribution: GitHub release at v1.0.0; soa-harness.org deferred
 4. §19.4 clarification: `spec_version: "1.0"` frozen at M6 close; internal editorial-bump counter doesn't ship
 
-**Four open decisions pending user input before Phase 0 kickoff:**
-1. Release key hardware — YubiKey (recommended) vs HSM?
-2. Verdaccio staging registry OK to spin up in Phase 2 prep? (Docker-based local npm mirror)
-3. GitHub release canonical at v1.0.0 — confirm?
-4. 4-5 week calendar acceptable, or push for 3-week aggressive path?
+**All four decisions resolved 2026-04-23 — Phase 0 unblocked:**
+1. ~~Release key hardware — YubiKey (recommended) vs HSM?~~ **RESOLVED**: software Ed25519 with passphrase-encrypted storage (Option A, zero-cost). Hardware upgrade deferred to v1.0.1 errata if/when warranted.
+2. ~~Verdaccio staging registry OK to spin up in Phase 2 prep?~~ **RESOLVED**: yes. Mandatory per critic Finding 5; zero cost; protects against catastrophic mid-publish cascade failure with no npm rollback path.
+3. ~~GitHub release canonical at v1.0.0 — confirm?~~ **RESOLVED**: yes. Free, signed, version-tagged, built-in CDN. `soa-harness.org` deferred; can redirect to GitHub later if desired.
+4. ~~4-5 week calendar acceptable, or push for 3-week aggressive path?~~ **RESOLVED**: 4-5 weeks. 3-week aggressive cuts Verdaccio staging + credential-tooling upgrade — cutting the exact controls the critic flagged as mandatory.
 
 **Version impact:** §19.4 editorial. L-60 is the M6 kickoff record. No normative spec change at L-60 commit itself; spec version stays at 1.0.17 until Phase 3's final refactor commit converges spec_version field to "1.0" for v1.0.0 tag.
 
