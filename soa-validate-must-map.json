@@ -64,9 +64,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "Destructive tool without Prompt → denied.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — destructive-tool-without-Prompt denial is a core §10.3 capability-lattice + §15 verification regression. Testable via existing /permissions/resolve + pinned Tool Registry fixtures shipped in M1."
+      "summary": "Destructive tool without Prompt → denied."
     },
     "HR-02": {
       "name": "Budget exhaustion pre-call",
@@ -74,9 +72,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "Projection over budget → StopReason::BudgetExhausted before API call.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — §13 Token Budget shipped here. Previously deferred in L-14; now actively in scope via L-33 §13.5 budget projection endpoint."
+      "summary": "Projection over budget → StopReason::BudgetExhausted before API call."
     },
     "HR-03": {
       "name": "Budget exhaustion mid-stream",
@@ -84,9 +80,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "Mid-stream overage → cancel + StopReason::BudgetExhausted.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — harness regression suite for M3-shipped subsystems (Memory/Budget/Stream/Hooks/Gateway)."
+      "summary": "Mid-stream overage → cancel + StopReason::BudgetExhausted."
     },
     "HR-04": {
       "name": "Crash recovery (pending tool)",
@@ -94,9 +88,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "phase=pending tool replays idempotently on resume.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
+      "summary": "phase=pending tool replays idempotently on resume."
     },
     "HR-05": {
       "name": "Crash recovery (committed)",
@@ -104,9 +96,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "phase=committed tool does NOT replay on resume.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
+      "summary": "phase=committed tool does NOT replay on resume."
     },
     "HR-06": {
       "name": "Compaction integrity",
@@ -114,9 +104,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "moderate",
-      "summary": "Post-compaction conversation is prefix-equivalent and memory push occurred.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — compaction integrity assertion requires real LLM dispatch with ContentBlockDelta streaming to produce the pre/post-compaction conversation slices. Same class as SV-STR-11, SV-BUD-03 (L-40 retag)."
+      "summary": "Post-compaction conversation is prefix-equivalent and memory push occurred."
     },
     "HR-07": {
       "name": "Agent-type enforcement",
@@ -124,9 +112,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "moderate",
-      "summary": "agentType=explore cannot invoke Mutating tools.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — harness regression suite for M3-shipped subsystems (Memory/Budget/Stream/Hooks/Gateway)."
+      "summary": "agentType=explore cannot invoke Mutating tools."
     },
     "HR-08": {
       "name": "SI quality gate",
@@ -134,9 +120,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core+si",
       "severity": "critical",
-      "summary": "Reject when training delta positive but holdout delta < −0.02.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
+      "summary": "Reject when training delta positive but holdout delta < −0.02."
     },
     "HR-09": {
       "name": "SI marker escape",
@@ -144,9 +128,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core+si",
       "severity": "critical",
-      "summary": "Diff editing bytes outside EDITABLE SURFACES is rejected.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — harness regression suite for M3-shipped subsystems (Memory/Budget/Stream/Hooks/Gateway)."
+      "summary": "Diff editing bytes outside EDITABLE SURFACES is rejected."
     },
     "HR-10": {
       "name": "SI immutable task",
@@ -154,9 +136,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core+si",
       "severity": "critical",
-      "summary": "Diff touching /tasks/ is rejected with ImmutableTargetEdit.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — harness regression suite for M3-shipped subsystems (Memory/Budget/Stream/Hooks/Gateway)."
+      "summary": "Diff touching /tasks/ is rejected with ImmutableTargetEdit."
     },
     "HR-11": {
       "name": "Permission override tighten-only",
@@ -164,9 +144,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "toolRequirements attempting to loosen is rejected.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — harness regression suite for M3-shipped subsystems (Memory/Budget/Stream/Hooks/Gateway)."
+      "summary": "toolRequirements attempting to loosen is rejected."
     },
     "HR-12": {
       "name": "Card signature failure",
@@ -174,9 +152,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "Tampered Card bytes → CardInvalid; Runner fails closed.",
-      "implementation_milestone": "M1",
-      "milestone_reason": "M1 — Tampered Card JWS → CardInvalid; shipped via L-16 tampered-card fixture + validator V2-09 subprocess harness. Retroactive tag per L-33 rev 2."
+      "summary": "Tampered Card bytes → CardInvalid; Runner fails closed."
     },
     "HR-13": {
       "name": "Tool Pool stale on resume",
@@ -184,9 +160,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "moderate",
-      "summary": "Tool removed before resume → StopReason::ToolPoolStale.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — harness regression suite for M3-shipped subsystems (Memory/Budget/Stream/Hooks/Gateway)."
+      "summary": "Tool removed before resume → StopReason::ToolPoolStale."
     },
     "HR-14": {
       "name": "Audit hash chain",
@@ -194,9 +168,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "critical",
-      "summary": "Any prev_hash tamper fails chain verification.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 — Chain-tamper verification via /audit/records (L-15) + validator-side mutation check (V2-10). Retroactive tag per L-33 rev 2."
+      "summary": "Any prev_hash tamper fails chain verification."
     },
     "HR-15": {
       "name": "Handoff auth",
@@ -204,9 +176,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core+handoff",
       "severity": "critical",
-      "summary": "A2A handoff with invalid/expired JWT is rejected (-32002).",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
+      "summary": "A2A handoff with invalid/expired JWT is rejected (-32002)."
     },
     "HR-16": {
       "name": "Docker profile",
@@ -214,9 +184,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core+si",
       "severity": "critical",
-      "summary": "Task attempting seccomp-blocked syscall fails within container; HR-16 is SI-gated because §9.7 applies only to the self-improvement loop.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
+      "summary": "Task attempting seccomp-blocked syscall fails within container; HR-16 is SI-gated because §9.7 applies only to the self-improvement loop."
     },
     "HR-17": {
       "name": "Memory degradation",
@@ -224,9 +192,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "moderate",
-      "summary": "3 consecutive Memory MCP timeouts → StopReason::MemoryDegraded.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — harness regression suite for M3-shipped subsystems (Memory/Budget/Stream/Hooks/Gateway)."
+      "summary": "3 consecutive Memory MCP timeouts → StopReason::MemoryDegraded."
     },
     "HR-18": {
       "name": "Config precedence",
@@ -234,9 +200,7 @@
       "section_title": "Harness Regression Suite",
       "profile": "core",
       "severity": "moderate",
-      "summary": "self_optimize() arg loosening Card is rejected with ConfigPrecedenceViolation.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
+      "summary": "self_optimize() arg loosening Card is rejected with ConfigPrecedenceViolation."
     },
     "SV-PRIN-01": {
       "name": "Lean single-agent baseline",
@@ -244,9 +208,7 @@
       "section_title": "Core Principles",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Runner advertises a single-agent design; any multi-agent deployment carries an explicit §22 Non-Goals waiver in the Agent Card or deployment manifest.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-PRIN category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Runner advertises a single-agent design; any multi-agent deployment carries an explicit §22 Non-Goals waiver in the Agent Card or deployment manifest."
     },
     "SV-PRIN-02": {
       "name": "Failure paths defined",
@@ -254,9 +216,7 @@
       "section_title": "Core Principles",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Every failure path (crash, token exhaustion, permission denial, stream interruption, upstream unavailability, rollback failure) maps to a named outcome in §16 Cross-Interaction Matrix; absence of a defined outcome fails the test.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-PRIN category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Every failure path (crash, token exhaustion, permission denial, stream interruption, upstream unavailability, rollback failure) maps to a named outcome in §16 Cross-Interaction Matrix; absence of a defined outcome fails the test."
     },
     "SV-PRIN-03": {
       "name": "Primitives unit-testable",
@@ -264,9 +224,7 @@
       "section_title": "Core Principles",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Each primitive P1–P14 is exercised by at least one SV-* test that runs in isolation (no transitive dependency on another primitive's state).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-PRIN category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Each primitive P1–P14 is exercised by at least one SV-* test that runs in isolation (no transitive dependency on another primitive's state)."
     },
     "SV-PRIN-04": {
       "name": "File-system grounded",
@@ -274,9 +232,7 @@
       "section_title": "Core Principles",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Primary source of truth for sessions, audit trail, AGENTS.md, /tasks/, program.md resides on the file system; databases act only as secondary stores (cache, index) and MUST NOT be the sole authoritative copy.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-PRIN category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Primary source of truth for sessions, audit trail, AGENTS.md, /tasks/, program.md resides on the file system; databases act only as secondary stores (cache, index) and MUST NOT be the sole authoritative copy."
     },
     "SV-PRIN-05": {
       "name": "Composition specified",
@@ -284,9 +240,7 @@
       "section_title": "Core Principles",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "For every pair of primitives whose composition is observable (e.g., self-improvement × handoff, compaction × streaming), §16 defines the composition rule.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-PRIN category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "For every pair of primitives whose composition is observable (e.g., self-improvement × handoff, compaction × streaming), §16 defines the composition rule."
     },
     "SV-STACK-01": {
       "name": "Stack completeness",
@@ -294,9 +248,7 @@
       "section_title": "Required Stack",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Agent Card declares self_improvement, memory, permissions, compaction, tokenBudget, observability, security objects (self_improvement MAY be disabled via enabled:false).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STACK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Agent Card declares self_improvement, memory, permissions, compaction, tokenBudget, observability, security objects (self_improvement MAY be disabled via enabled:false)."
     },
     "SV-STACK-02": {
       "name": "Primitive endpoints resolve",
@@ -304,9 +256,7 @@
       "section_title": "Required Primitives",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "P1–P10 and P12–P14 each resolve to a concrete file, endpoint, or code path advertised in the Card or well-known locations; P11 required only under core+handoff.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STACK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "P1–P10 and P12–P14 each resolve to a concrete file, endpoint, or code path advertised in the Card or well-known locations; P11 required only under core+handoff."
     },
     "SV-BOOT-01": {
       "name": "SDK-pinned bootstrap",
@@ -314,9 +264,7 @@
       "section_title": "External Bootstrap Root",
       "profile": "core",
       "severity": "critical",
-      "assertion": "When the SDK-pinned channel is declared, the Runner refuses to load any Agent Card whose security.trustAnchors[].publisher_kid does not match the SDK-pinned value; HostHardeningInsufficient(reason=bootstrap-missing) emitted.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-BOOT category extends M1/M2 assertions."
+      "assertion": "When the SDK-pinned channel is declared, the Runner refuses to load any Agent Card whose security.trustAnchors[].publisher_kid does not match the SDK-pinned value; HostHardeningInsufficient(reason=bootstrap-missing) emitted."
     },
     "SV-BOOT-02": {
       "name": "Operator-bundled bootstrap",
@@ -324,9 +272,7 @@
       "section_title": "External Bootstrap Root",
       "profile": "core",
       "severity": "critical",
-      "assertion": "When the operator-bundled channel is declared, initial-trust.json is loaded at startup before any Agent Card; absence fails startup with HostHardeningInsufficient(reason=bootstrap-missing).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-BOOT category extends M1/M2 assertions."
+      "assertion": "When the operator-bundled channel is declared, initial-trust.json is loaded at startup before any Agent Card; absence fails startup with HostHardeningInsufficient(reason=bootstrap-missing)."
     },
     "SV-BOOT-03": {
       "name": "DNSSEC TXT bootstrap",
@@ -334,9 +280,7 @@
       "section_title": "External Bootstrap Root + Bootstrap Testability Env Hooks",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Validator runs three subprocess-isolated Runners with SOA_BOOTSTRAP_DNSSEC_TXT pointing at test-vectors/dnssec-bootstrap/{valid,empty,missing-ad-bit}.json. valid.json → /ready 200. empty.json + missing-ad-bit.json → /ready 503 + /logs/system/recent category=Config carries HostHardeningInsufficient(bootstrap-missing).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-BOOT category extends M1/M2 assertions."
+      "assertion": "Validator runs three subprocess-isolated Runners with SOA_BOOTSTRAP_DNSSEC_TXT pointing at test-vectors/dnssec-bootstrap/{valid,empty,missing-ad-bit}.json. valid.json → /ready 200. empty.json + missing-ad-bit.json → /ready 503 + /logs/system/recent category=Config carries HostHardeningInsufficient(bootstrap-missing)."
     },
     "SV-BOOT-04": {
       "name": "Bootstrap key rotation + compromise",
@@ -344,9 +288,7 @@
       "section_title": "Bootstrap-Key Rotation and Compromise + Testability Env Hooks",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Validator runs subprocess-isolated Runner with RUNNER_BOOTSTRAP_POLL_TICK_MS=100 + SOA_BOOTSTRAP_REVOCATION_FILE=<path>. After ≥1 tick, writes a revocation matching the active publisher_kid to the file. Within 200ms, Runner emits HostHardeningInsufficient(bootstrap-revoked), halts SI, and refuses Agent Cards referencing the revoked value. Rotation overlap ≥ 30 d honored (non-matching revocation entry does NOT trigger).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-BOOT category extends M1/M2 assertions."
+      "assertion": "Validator runs subprocess-isolated Runner with RUNNER_BOOTSTRAP_POLL_TICK_MS=100 + SOA_BOOTSTRAP_REVOCATION_FILE=<path>. After ≥1 tick, writes a revocation matching the active publisher_kid to the file. Within 200ms, Runner emits HostHardeningInsufficient(bootstrap-revoked), halts SI, and refuses Agent Cards referencing the revoked value. Rotation overlap ≥ 30 d honored (non-matching revocation entry does NOT trigger)."
     },
     "SV-BOOT-05": {
       "name": "Anchor disagreement / split-brain",
@@ -354,9 +296,7 @@
       "section_title": "Anchor Disagreement and Split-Brain + Testability Env Hooks",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Validator runs subprocess-isolated Runner with SOA_BOOTSTRAP_CHANNEL=sdk-pinned (authoritative, different publisher_kid) + SOA_BOOTSTRAP_SECONDARY_CHANNEL=test-vectors/bootstrap-secondary-channel/initial-trust.json (dissenting publisher_kid). Runner MUST refuse /ready (stays 503) and emit HostHardeningInsufficient(bootstrap-split-brain) on /logs/system/recent category=Config with both publisher_kid values + channel names. Multi-channel agreement (same publisher_kid on both) MUST NOT trigger.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-BOOT category extends M1/M2 assertions."
+      "assertion": "Validator runs subprocess-isolated Runner with SOA_BOOTSTRAP_CHANNEL=sdk-pinned (authoritative, different publisher_kid) + SOA_BOOTSTRAP_SECONDARY_CHANNEL=test-vectors/bootstrap-secondary-channel/initial-trust.json (dissenting publisher_kid). Runner MUST refuse /ready (stays 503) and emit HostHardeningInsufficient(bootstrap-split-brain) on /logs/system/recent category=Config with both publisher_kid values + channel names. Multi-channel agreement (same publisher_kid on both) MUST NOT trigger."
     },
     "SV-BOOT-06": {
       "name": "initial-trust.json schema conformance",
@@ -364,9 +304,7 @@
       "section_title": "External Bootstrap Root",
       "profile": "core",
       "severity": "critical",
-      "assertion": "For operator-bundled deployments, initial-trust.json validates against schemas/initial-trust.schema.json (required fields soaHarnessVersion='1.0', publisher_kid, spki_sha256 matching /^[A-Fa-f0-9]{64}$/, issuer); validation failure fails startup with HostHardeningInsufficient(reason=bootstrap-missing).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-BOOT category extends M1/M2 assertions."
+      "assertion": "For operator-bundled deployments, initial-trust.json validates against schemas/initial-trust.schema.json (required fields soaHarnessVersion='1.0', publisher_kid, spki_sha256 matching /^[A-Fa-f0-9]{64}$/, issuer); validation failure fails startup with HostHardeningInsufficient(reason=bootstrap-missing)."
     },
     "SV-SIGN-01": {
       "name": "Agent Card JWS profile",
@@ -374,9 +312,7 @@
       "section_title": "Artifact Signing Profile",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Agent Card JWS uses detached serialization over JCS(agent-card.json), alg ∈ {EdDSA,ES256,RS256≥3072}, typ=soa-agent-card+jws, header carries kid and x5c; mismatch → CardSignatureFailed.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-SIGN category extends M1/M2 assertions."
+      "assertion": "Agent Card JWS uses detached serialization over JCS(agent-card.json), alg ∈ {EdDSA,ES256,RS256≥3072}, typ=soa-agent-card+jws, header carries kid and x5c; mismatch → CardSignatureFailed."
     },
     "SV-SIGN-02": {
       "name": "program.md JWS profile",
@@ -384,9 +320,7 @@
       "section_title": "Artifact Signing Profile",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Fixture test-vectors/program-md/program.md.jws parses as detached JWS over raw UTF-8 bytes of program.md (NOT JCS); header.alg=EdDSA (ES256 also acceptable), header.typ=soa-program+jws, header.kid=soa-conformance-test-handler-v1.0. Signature verifies against test-vectors/handler-keypair/public.jwk.json.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-SIGN category extends M1/M2 assertions."
+      "assertion": "Fixture test-vectors/program-md/program.md.jws parses as detached JWS over raw UTF-8 bytes of program.md (NOT JCS); header.alg=EdDSA (ES256 also acceptable), header.typ=soa-program+jws, header.kid=soa-conformance-test-handler-v1.0. Signature verifies against test-vectors/handler-keypair/public.jwk.json."
     },
     "SV-SIGN-03": {
       "name": "MANIFEST JWS profile",
@@ -394,9 +328,7 @@
       "section_title": "Artifact Signing Profile",
       "profile": "core",
       "severity": "critical",
-      "assertion": "MANIFEST.json.jws is detached over JCS(MANIFEST.json), alg ∈ {EdDSA,ES256} (RS256 forbidden), typ=soa-manifest+jws, header.kid equals the configured publisher_kid.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-SIGN category extends M1/M2 assertions."
+      "assertion": "MANIFEST.json.jws is detached over JCS(MANIFEST.json), alg ∈ {EdDSA,ES256} (RS256 forbidden), typ=soa-manifest+jws, header.kid equals the configured publisher_kid."
     },
     "SV-SIGN-04": {
       "name": "x5c chain depth and ordering",
@@ -404,9 +336,7 @@
       "section_title": "Artifact Signing Profile",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Agent Card JWS x5c header is an RFC 7515 §4.1.6 array ordered leaf-first (index 0 = signing cert) including every intermediate certificate required to chain to an anchor in security.trustAnchors; trust-anchor root MAY be omitted. Verifiers reject leaf-only x5c with CardSignatureFailed(reason=x5c-chain-incomplete) when an intermediate is missing from the anchor store.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-SIGN category extends M1/M2 assertions."
+      "assertion": "Agent Card JWS x5c header is an RFC 7515 §4.1.6 array ordered leaf-first (index 0 = signing cert) including every intermediate certificate required to chain to an anchor in security.trustAnchors; trust-anchor root MAY be omitted. Verifiers reject leaf-only x5c with CardSignatureFailed(reason=x5c-chain-incomplete) when an intermediate is missing from the anchor store."
     },
     "SV-SIGN-05": {
       "name": "program.md two-step signer resolution",
@@ -414,9 +344,7 @@
       "section_title": "Artifact Signing Profile",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Fixture test-vectors/program-md/program.md.x5t.jws carries x5t#S256 header containing base64url-no-pad SHA-256 of handler-keypair SPKI. Verifier performs two-step resolution: (1) decode x5t#S256 to 32 bytes, match against trustAnchors[].spki_sha256; (2) verify that matched anchor's publisher_kid equals the JWS header kid. Both steps MUST succeed. Mismatch → CardSignatureFailed(reason=x5t-thumbprint-mismatch | chain-anchor-mismatch).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-SIGN category extends M1/M2 assertions."
+      "assertion": "Fixture test-vectors/program-md/program.md.x5t.jws carries x5t#S256 header containing base64url-no-pad SHA-256 of handler-keypair SPKI. Verifier performs two-step resolution: (1) decode x5t#S256 to 32 bytes, match against trustAnchors[].spki_sha256; (2) verify that matched anchor's publisher_kid equals the JWS header kid. Both steps MUST succeed. Mismatch → CardSignatureFailed(reason=x5t-thumbprint-mismatch | chain-anchor-mismatch)."
     },
     "SV-A2A-10": {
       "name": "A2A JWT algorithm allowlist",
@@ -424,9 +352,7 @@
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "A2A JWT alg ∈ {EdDSA,ES256,RS256}; RS256 requires key size ≥ 3072; any other alg rejected with HandoffRejected(reason=bad-alg).",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "A2A JWT alg ∈ {EdDSA,ES256,RS256}; RS256 requires key size ≥ 3072; any other alg rejected with HandoffRejected(reason=bad-alg)."
     },
     "SV-A2A-11": {
       "name": "A2A signing-key discovery",
@@ -434,9 +360,7 @@
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "A2A JWT signing key matches either (a) the caller's Agent Card JWS signer kid (same trust anchor, same SPKI) or (b) the SPKI of the caller's mTLS client certificate with the x5t#S256 header present.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "A2A JWT signing key matches either (a) the caller's Agent Card JWS signer kid (same trust anchor, same SPKI) or (b) the SPKI of the caller's mTLS client certificate with the x5t#S256 header present."
     },
     "SV-A2A-12": {
       "name": "A2A jti replay cache",
@@ -444,9 +368,7 @@
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "Receiver rejects a repeated jti within exp+30s (= 330s) from first observation with HandoffRejected(reason=jti-replay); cache MAY be per-connection (mTLS) or per-(iss,aud) keyed.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "Receiver rejects a repeated jti within exp+30s (= 330s) from first observation with HandoffRejected(reason=jti-replay); cache MAY be per-connection (mTLS) or per-(iss,aud) keyed."
     },
     "SV-A2A-13": {
       "name": "A2A agent_card_etag drift",
@@ -454,9 +376,7 @@
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "Receiver fetches caller's Agent Card and compares its JWS digest to the presented agent_card_etag; mismatch emits CardVersionDrift and responds JSON-RPC error -32051; etag cached ≤ 60 s.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "Receiver fetches caller's Agent Card and compares its JWS digest to the presented agent_card_etag; mismatch emits CardVersionDrift and responds JSON-RPC error -32051; etag cached ≤ 60 s."
     },
     "SV-A2A-14": {
       "name": "A2A digest canonicalization",
@@ -464,9 +384,7 @@
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "messages_digest / workflow_digest / result_digest use form sha256:<64-hex-lowercase> where the hashed bytes are JCS-RFC-8785 canonical of the corresponding JSON object. Receiver recomputes and compares; mismatch → HandoffRejected(reason=digest-mismatch).",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "messages_digest / workflow_digest / result_digest use form sha256:<64-hex-lowercase> where the hashed bytes are JCS-RFC-8785 canonical of the corresponding JSON object. Receiver recomputes and compares; mismatch → HandoffRejected(reason=digest-mismatch)."
     },
     "SV-ENC-01": {
       "name": "UTF-8 no BOM",
@@ -474,9 +392,7 @@
       "section_title": "Conventions",
       "profile": "core",
       "severity": "minor",
-      "assertion": "Every text file defined by the spec is UTF-8 without BOM.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-ENC category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Every text file defined by the spec is UTF-8 without BOM."
     },
     "SV-ENC-02": {
       "name": "RFC 3339 timestamps",
@@ -484,9 +400,7 @@
       "section_title": "Conventions",
       "profile": "core",
       "severity": "minor",
-      "assertion": "Every timestamp emitted in StreamEvent, audit trail, session file, and memory-note responses is RFC 3339 with explicit timezone offset and ≥ ms precision.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-ENC category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Every timestamp emitted in StreamEvent, audit trail, session file, and memory-note responses is RFC 3339 with explicit timezone offset and ≥ ms precision."
     },
     "SV-ENC-03": {
       "name": "ISO-8601 durations",
@@ -494,9 +408,7 @@
       "section_title": "Conventions",
       "profile": "core",
       "severity": "minor",
-      "assertion": "Duration fields are ISO-8601 (e.g., P30D, PT5M).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-ENC category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Duration fields are ISO-8601 (e.g., P30D, PT5M)."
     },
     "SV-ENC-04": {
       "name": "LF line separators",
@@ -504,9 +416,7 @@
       "section_title": "Conventions",
       "profile": "core",
       "severity": "minor",
-      "assertion": "Persisted JSON uses LF line endings; CRLF rejected at ingest.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-ENC category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Persisted JSON uses LF line endings; CRLF rejected at ingest."
     },
     "SV-ENC-05": {
       "name": "JCS canonicalization",
@@ -514,9 +424,7 @@
       "section_title": "Conventions",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Every JSON signing input (Agent Card JWS, MANIFEST JWS, PDA, audit canonical hash) is JCS-canonicalized per RFC 8785; re-serialization by verifier produces byte-identical output; RFC 8785 Appendix test vectors pass round-trip. program.md JWS is explicitly NOT included — it signs raw UTF-8 Markdown bytes per Core §1 and §6.1.1.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-ENC category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Every JSON signing input (Agent Card JWS, MANIFEST JWS, PDA, audit canonical hash) is JCS-canonicalized per RFC 8785; re-serialization by verifier produces byte-identical output; RFC 8785 Appendix test vectors pass round-trip. program.md JWS is explicitly NOT included — it signs raw UTF-8 Markdown bytes per Core §1 and §6.1.1."
     },
     "SV-ENC-06": {
       "name": "Clock-skew JWT",
@@ -524,9 +432,7 @@
       "section_title": "Conventions",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Validator runs Runner with RUNNER_TEST_CLOCK=2026-04-23T12:40:00Z (T_REF=1776948000 per §10.6.1). Submits each of test-vectors/jwt-clock-skew/{iat-in-window,iat-past,iat-future,exp-expired}.jwt as a bearer. Expected: iat-in-window accepts; iat-past/iat-future/exp-expired each reject with 401 AuthFailed carrying distinct reason codes (iat-past-skew / iat-future-skew / exp-expired).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-ENC category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Validator runs Runner with RUNNER_TEST_CLOCK=2026-04-23T12:40:00Z (T_REF=1776948000 per §10.6.1). Submits each of test-vectors/jwt-clock-skew/{iat-in-window,iat-past,iat-future,exp-expired}.jwt as a bearer. Expected: iat-in-window accepts; iat-past/iat-future/exp-expired each reject with 401 AuthFailed carrying distinct reason codes (iat-past-skew / iat-future-skew / exp-expired)."
     },
     "SV-ENC-07": {
       "name": "Clock-skew PDA window",
@@ -534,9 +440,7 @@
       "section_title": "Conventions",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "PDA not_before/not_after validated ±60s; not_after - not_before ≤ 15 minutes; outside window → HandlerKeyRevoked or equivalent.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-ENC category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "PDA not_before/not_after validated ±60s; not_after - not_before ≤ 15 minutes; outside window → HandlerKeyRevoked or equivalent."
     },
     "SV-CARD-01": {
       "name": "HTTPS required",
@@ -544,9 +448,7 @@
       "section_title": "Discovery and Transport",
       "profile": "core",
       "severity": "critical",
-      "assertion": "http:// URL for agent-card.json MUST be rejected.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-CARD category extends M1/M2 assertions."
+      "assertion": "http:// URL for agent-card.json MUST be rejected."
     },
     "SV-CARD-02": {
       "name": "Content-Type enforced",
@@ -554,9 +456,7 @@
       "section_title": "Discovery and Transport",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Response without application/json; charset=utf-8 rejected.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-CARD category extends M1/M2 assertions."
+      "assertion": "Response without application/json; charset=utf-8 rejected."
     },
     "SV-CARD-03": {
       "name": "JWS signature verify",
@@ -564,9 +464,7 @@
       "section_title": "Discovery and Transport",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Valid detached JWS at /.well-known/agent-card.jws required; mismatch fails closed.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-CARD category extends M1/M2 assertions."
+      "assertion": "Valid detached JWS at /.well-known/agent-card.jws required; mismatch fails closed."
     },
     "SV-CARD-04": {
       "name": "Trust anchor chain",
@@ -574,9 +472,7 @@
       "section_title": "Discovery and Transport",
       "profile": "core",
       "severity": "critical",
-      "assertion": "JWS signer chain MUST chain to security.trustAnchors; foreign issuer rejected.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-CARD category extends M1/M2 assertions."
+      "assertion": "JWS signer chain MUST chain to security.trustAnchors; foreign issuer rejected."
     },
     "SV-CARD-05": {
       "name": "Schema validate",
@@ -584,9 +480,7 @@
       "section_title": "Normative JSON Schema",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Card validates against the normative JSON Schema 2020-12 artifact.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-CARD category extends M1/M2 assertions."
+      "assertion": "Card validates against the normative JSON Schema 2020-12 artifact."
     },
     "SV-CARD-06": {
       "name": "soaHarnessVersion const",
@@ -594,9 +488,7 @@
       "section_title": "Normative JSON Schema",
       "profile": "core",
       "severity": "critical",
-      "assertion": "soaHarnessVersion != 1.0 → CardInvalid.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-CARD category extends M1/M2 assertions."
+      "assertion": "soaHarnessVersion != 1.0 → CardInvalid."
     },
     "SV-CARD-07": {
       "name": "additionalProperties false",
@@ -604,9 +496,7 @@
       "section_title": "Normative JSON Schema",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Unknown top-level field rejected.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-CARD category extends M1/M2 assertions."
+      "assertion": "Unknown top-level field rejected."
     },
     "SV-CARD-08": {
       "name": "Cache-Control ≤ 300s",
@@ -614,9 +504,7 @@
       "section_title": "Discovery and Transport",
       "profile": "core",
       "severity": "minor",
-      "assertion": "Card honored max-age up to 300s only unless signer overrides.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-CARD category extends M1/M2 assertions."
+      "assertion": "Card honored max-age up to 300s only unless signer overrides."
     },
     "SV-CARD-09": {
       "name": "Validation failure halt",
@@ -624,9 +512,7 @@
       "section_title": "Validation Failure Behavior",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Own Card invalid → refuse to start.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-CARD category extends M1/M2 assertions."
+      "assertion": "Own Card invalid → refuse to start."
     },
     "SV-CARD-10": {
       "name": "Declared precedence",
@@ -634,9 +520,7 @@
       "section_title": "Precedence Among Declaration Sources",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Runner started with RUNNER_AGENT_CARD_PATH=test-vectors/conformance-card-precedence-violation/agent-card.json (agentType=explore + permissions.activeMode=DangerFullAccess — lower-precedence agentType constraint says ReadOnly-only per §11.2 line 1407; Card's activeMode tries to loosen). Runner MUST refuse bootstrap: /ready returns 503, /logs/system/recent category=Config carries exactly one record with code=ConfigPrecedenceViolation.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-CARD category extends M1/M2 assertions."
+      "assertion": "Runner started with RUNNER_AGENT_CARD_PATH=test-vectors/conformance-card-precedence-violation/agent-card.json (agentType=explore + permissions.activeMode=DangerFullAccess — lower-precedence agentType constraint says ReadOnly-only per §11.2 line 1407; Card's activeMode tries to loosen). Runner MUST refuse bootstrap: /ready returns 503, /logs/system/recent category=Config carries exactly one record with code=ConfigPrecedenceViolation."
     },
     "SV-CARD-11": {
       "name": "ETag + If-None-Match",
@@ -644,9 +528,7 @@
       "section_title": "Discovery and Transport",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Response MUST include ETag header; If-None-Match with matching ETag returns 304 Not Modified.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-CARD category extends M1/M2 assertions."
+      "assertion": "Response MUST include ETag header; If-None-Match with matching ETag returns 304 Not Modified."
     },
     "SV-AGENTS-01": {
       "name": "Required H2 present",
@@ -654,9 +536,7 @@
       "section_title": "Required Headings and Grammar",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Missing required H2 → AgentsMdInvalid on startup.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-AGENTS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Missing required H2 → AgentsMdInvalid on startup."
     },
     "SV-AGENTS-02": {
       "name": "H2 ordering",
@@ -664,9 +544,7 @@
       "section_title": "Required Headings and Grammar",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Out-of-order required H2 → AgentsMdInvalid.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-AGENTS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Out-of-order required H2 → AgentsMdInvalid."
     },
     "SV-AGENTS-03": {
       "name": "Duplicate H2 rejected",
@@ -674,9 +552,7 @@
       "section_title": "Required Headings and Grammar",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Duplicate required H2 → AgentsMdInvalid.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-AGENTS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Duplicate required H2 → AgentsMdInvalid."
     },
     "SV-AGENTS-04": {
       "name": "@import depth",
@@ -684,9 +560,7 @@
       "section_title": "@import Semantics",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Depth 9 → AgentsMdImportDepthExceeded.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-AGENTS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Depth 9 → AgentsMdImportDepthExceeded."
     },
     "SV-AGENTS-05": {
       "name": "@import cycle",
@@ -694,9 +568,7 @@
       "section_title": "@import Semantics",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "A → B → A → AgentsMdImportCycle.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-AGENTS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "A → B → A → AgentsMdImportCycle."
     },
     "SV-AGENTS-06": {
       "name": "Reload after SI accept",
@@ -704,9 +576,7 @@
       "section_title": "Reload Rules",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "AGENTS.md re-read after accepted SI iteration.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
+      "assertion": "AGENTS.md re-read after accepted SI iteration."
     },
     "SV-AGENTS-07": {
       "name": "No mid-turn reload",
@@ -714,9 +584,7 @@
       "section_title": "Reload Rules",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "AGENTS.md modified mid-turn is ignored until turn end.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-AGENTS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "AGENTS.md modified mid-turn is ignored until turn end."
     },
     "SV-MEM-01": {
       "name": "Tool signatures",
@@ -724,9 +592,7 @@
       "section_title": "MCP Tool Contract",
       "profile": "core",
       "severity": "critical",
-      "assertion": "All required memory tools discoverable with declared schemas.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-MEM category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "All required memory tools discoverable with declared schemas."
     },
     "SV-MEM-02": {
       "name": "Loading algorithm",
@@ -734,9 +600,7 @@
       "section_title": "Loading Algorithm",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Scoring + tie-break + accumulate-to-budget produces deterministic slice.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-MEM category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Scoring + tie-break + accumulate-to-budget produces deterministic slice."
     },
     "SV-MEM-03": {
       "name": "Startup fail-closed",
@@ -744,9 +608,7 @@
       "section_title": "Unavailability and Timeout",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Memory MCP unreachable at startup → MemoryUnavailableStartup.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-MEM category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Memory MCP unreachable at startup → MemoryUnavailableStartup."
     },
     "SV-MEM-04": {
       "name": "Mid-loop degrade",
@@ -754,9 +616,7 @@
       "section_title": "Unavailability and Timeout + System Event Log Observation Channel",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Single mid-loop timeout → MemoryDegraded System Event Log record emitted (non-terminal, not a §14.1 StreamEvent per §8.3.1 L-34). Observable via GET /logs/system/recent?session_id=<sid>&category=MemoryDegraded (§14.5.4): exactly one record with level=warn + code=MemoryDegraded + session continues (no corresponding SessionEnd).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-MEM category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Single mid-loop timeout → MemoryDegraded System Event Log record emitted (non-terminal, not a §14.1 StreamEvent per §8.3.1 L-34). Observable via GET /logs/system/recent?session_id=<sid>&category=MemoryDegraded (§14.5.4): exactly one record with level=warn + code=MemoryDegraded + session continues (no corresponding SessionEnd)."
     },
     "SV-MEM-05": {
       "name": "Consolidation trigger",
@@ -764,9 +624,7 @@
       "section_title": "Consolidation Trigger",
       "profile": "core",
       "severity": "minor",
-      "assertion": "consolidate_memories invoked within 24h or after 100 new notes.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-MEM category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "consolidate_memories invoked within 24h or after 100 new notes."
     },
     "SV-MEM-06": {
       "name": "Sharing policy enforced",
@@ -774,9 +632,7 @@
       "section_title": "Sharing Policy and Isolation",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Runner started with RUNNER_AGENT_CARD_PATH=test-vectors/conformance-card-memory-project/agent-card.json (memory.enabled=true, memory.sharing_policy=\"project\") + memory-mcp-mock on :8001 seeded from corpus-seed.json. Drive a session that triggers search_memories. Assert the outgoing request carries sharing_scope=\"project\" (card-driven, per §8.5), not \"session\" (historical impl default).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-MEM category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Runner started with RUNNER_AGENT_CARD_PATH=test-vectors/conformance-card-memory-project/agent-card.json (memory.enabled=true, memory.sharing_policy=\"project\") + memory-mcp-mock on :8001 seeded from corpus-seed.json. Drive a session that triggers search_memories. Assert the outgoing request carries sharing_scope=\"project\" (card-driven, per §8.5), not \"session\" (historical impl default)."
     },
     "SV-MEM-07": {
       "name": "delete_memory_note idempotent",
@@ -784,9 +640,7 @@
       "section_title": "MCP Tool Contract",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Repeated delete of same id returns identical tombstone_id.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-MEM category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Repeated delete of same id returns identical tombstone_id."
     },
     "SV-MEM-08": {
       "name": "Tombstone audit",
@@ -794,9 +648,7 @@
       "section_title": "MCP Tool Contract",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Tombstone retains id/tags/dates but not note body; excluded from search.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-MEM category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Tombstone retains id/tags/dates but not note body; excluded from search."
     },
     "SV-SI-01": {
       "name": "program.md schema",
@@ -804,9 +656,7 @@
       "section_title": "program.md Schema",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Missing required H2 in program.md → rejected.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Missing required H2 in program.md → rejected."
     },
     "SV-SI-02": {
       "name": "program.md JWS required",
@@ -814,9 +664,7 @@
       "section_title": "program.md Schema",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "program.md.jws missing or invalid → iteration rejected.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "program.md.jws missing or invalid → iteration rejected."
     },
     "SV-SI-03": {
       "name": "Markers required",
@@ -824,9 +672,7 @@
       "section_title": "agent.py Markers",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Missing EDITABLE/IMMUTABLE markers → rejected.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Missing EDITABLE/IMMUTABLE markers → rejected."
     },
     "SV-SI-04": {
       "name": "Immutable digest check",
@@ -834,9 +680,7 @@
       "section_title": "agent.py Markers",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "IMMUTABLE ADAPTER digest drift aborts iteration.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "IMMUTABLE ADAPTER digest drift aborts iteration."
     },
     "SV-SI-05": {
       "name": "Benchmark mTLS auth",
@@ -844,9 +688,7 @@
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "benchmark_mcp_endpoint without mTLS rejected; missing scope → BenchmarkAuthFailed.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "benchmark_mcp_endpoint without mTLS rejected; missing scope → BenchmarkAuthFailed."
     },
     "SV-SI-06": {
       "name": "Iteration fingerprint",
@@ -854,9 +696,7 @@
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "Fingerprint recorded and referenced in improvement.log.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Fingerprint recorded and referenced in improvement.log."
     },
     "SV-SI-07": {
       "name": "Holdout split stable",
@@ -864,9 +704,7 @@
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Training/holdout partition reproducible from iteration-id.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Training/holdout partition reproducible from iteration-id."
     },
     "SV-SI-08": {
       "name": "Acceptance strict-improve",
@@ -874,9 +712,7 @@
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "training_score == baseline → rejected (strict > required).",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "training_score == baseline → rejected (strict > required)."
     },
     "SV-SI-09": {
       "name": "Stage-activate ordering",
@@ -884,9 +720,7 @@
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "pending.ptr → add_memory_note → activation.record → git fast-forward order enforced.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "pending.ptr → add_memory_note → activation.record → git fast-forward order enforced."
     },
     "SV-SI-10": {
       "name": "Commit signed",
@@ -894,9 +728,7 @@
       "section_title": "Execution Sequence",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "commit.gpgsign=true verified; unsigned commit rejected.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "commit.gpgsign=true verified; unsigned commit rejected."
     },
     "SV-SI-11": {
       "name": "12b failure compensation",
@@ -904,9 +736,7 @@
       "section_title": "Abort, Rollback, and Recovery",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "add_memory_note succeeds, activation.record fails → delete_memory_note compensation.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "add_memory_note succeeds, activation.record fails → delete_memory_note compensation."
     },
     "SV-SI-12": {
       "name": "Orphan replay",
@@ -914,9 +744,7 @@
       "section_title": "Abort, Rollback, and Recovery",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "Crash after 12c → resume replays 12d; 3 failures → SelfImprovementOrphaned.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Crash after 12c → resume replays 12d; 3 failures → SelfImprovementOrphaned."
     },
     "SV-SI-13": {
       "name": "Docker baseline applied",
@@ -924,9 +752,7 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Container launch includes seccomp=<profile>, no-new-privileges, user-namespace remapping. Disaggregated sub-tests SV-SI-19..SV-SI-26 assert each individual flag.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Container launch includes seccomp=<profile>, no-new-privileges, user-namespace remapping. Disaggregated sub-tests SV-SI-19..SV-SI-26 assert each individual flag."
     },
     "SV-SI-14": {
       "name": "Docker unavailable closed",
@@ -934,9 +760,7 @@
       "section_title": "Docker Unavailability",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Docker daemon down → DockerUnavailable, no host execution.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Docker daemon down → DockerUnavailable, no host execution."
     },
     "SV-SI-15": {
       "name": "Image digest-pinned",
@@ -944,9 +768,7 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Task with tag-only image reference rejected.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Task with tag-only image reference rejected."
     },
     "SV-SI-16": {
       "name": "results.tsv format",
@@ -954,9 +776,7 @@
       "section_title": "results.tsv Format",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Header verbatim; aggregation mean; fail/error count as 0.0.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Header verbatim; aggregation mean; fail/error count as 0.0."
     },
     "SV-SI-17": {
       "name": "Max iterations terminal",
@@ -964,9 +784,7 @@
       "section_title": "Abort, Rollback, and Recovery",
       "profile": "core+si",
       "severity": "minor",
-      "assertion": "max_iterations reached → SelfImprovementMaxIterations with best-so-far summary.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "max_iterations reached → SelfImprovementMaxIterations with best-so-far summary."
     },
     "SV-SI-18": {
       "name": "program.md trust-anchor chain",
@@ -974,9 +792,7 @@
       "section_title": "program.md Schema",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "program.md.jws signer chains to security.trustAnchors; foreign issuer → iteration rejected.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "program.md.jws signer chains to security.trustAnchors; foreign issuer → iteration rejected."
     },
     "SV-SI-19": {
       "name": "--read-only rootfs",
@@ -984,9 +800,7 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Container launched with --read-only; write to rootfs returns EROFS.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Container launched with --read-only; write to rootfs returns EROFS."
     },
     "SV-SI-20": {
       "name": "--cap-drop=ALL",
@@ -994,9 +808,7 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "All capabilities dropped; CAP_SYS_ADMIN operations fail.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "All capabilities dropped; CAP_SYS_ADMIN operations fail."
     },
     "SV-SI-21": {
       "name": "User-namespace remap",
@@ -1004,9 +816,7 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "--user=65534:65534 with user-namespace remap; host UID/GID 0 never appears inside container.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "--user=65534:65534 with user-namespace remap; host UID/GID 0 never appears inside container."
     },
     "SV-SI-22": {
       "name": "--pids-limit enforced",
@@ -1014,9 +824,7 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "Container fork bomb hits task.resources.pids limit; fails to exhaust host.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Container fork bomb hits task.resources.pids limit; fails to exhaust host."
     },
     "SV-SI-23": {
       "name": "No swap",
@@ -1024,9 +832,7 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "--memory-swap equals --memory; no swap usage observable.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "--memory-swap equals --memory; no swap usage observable."
     },
     "SV-SI-24": {
       "name": "docker.sock not mounted",
@@ -1034,9 +840,7 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "/var/run/docker.sock does not appear in container mount table.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "/var/run/docker.sock does not appear in container mount table."
     },
     "SV-SI-25": {
       "name": "Env scrubbed",
@@ -1044,9 +848,7 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Host env not visible in container; only task.json.env entries pass through.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Host env not visible in container; only task.json.env entries pass through."
     },
     "SV-SI-26": {
       "name": "Mount allowlist + watchdog",
@@ -1054,9 +856,7 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Only /inputs (ro) and /output (rw) mounted; wall-clock timeout SIGKILLs container at task.resources.wall_clock_seconds.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Only /inputs (ro) and /output (rw) mounted; wall-clock timeout SIGKILLs container at task.resources.wall_clock_seconds."
     },
     "SV-SI-27": {
       "name": "Host unprivileged userns disabled",
@@ -1064,9 +864,7 @@
       "section_title": "Docker Isolation Baseline",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Before launching any benchmark container, Runner verifies one of: sysctl user.max_user_namespaces=0, sysctl kernel.unprivileged_userns_clone=0, or an AppArmor/SELinux policy that denies userns_create. Absence raises HostHardeningInsufficient and aborts.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Before launching any benchmark container, Runner verifies one of: sysctl user.max_user_namespaces=0, sysctl kernel.unprivileged_userns_clone=0, or an AppArmor/SELinux policy that denies userns_create. Absence raises HostHardeningInsufficient and aborts."
     },
     "SV-SI-28": {
       "name": "clone3 allowed, flags defended",
@@ -1074,9 +872,7 @@
       "section_title": "clone3 Policy",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "clone3 is permitted by the seccomp profile; a process attempting clone3(CLONE_NEWUSER) inside the container fails with EPERM because the host sysctl denies unprivileged user-namespace creation.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "clone3 is permitted by the seccomp profile; a process attempting clone3(CLONE_NEWUSER) inside the container fails with EPERM because the host sysctl denies unprivileged user-namespace creation."
     },
     "SV-SI-29": {
       "name": "Manifest JWS verify + digest",
@@ -1084,9 +880,7 @@
       "section_title": "Seccomp Profile and Release Manifest",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Runner fetches release manifest, verifies JWS against publisher_kid, recomputes SHA-256 of JCS-canonicalized soa-harness-profile-v1.json bytes, compares to manifest. Mismatch → ManifestDigestMismatch; container launch refused.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Runner fetches release manifest, verifies JWS against publisher_kid, recomputes SHA-256 of JCS-canonicalized soa-harness-profile-v1.json bytes, compares to manifest. Mismatch → ManifestDigestMismatch; container launch refused."
     },
     "SV-SI-30": {
       "name": "Manifest schema validates",
@@ -1094,9 +888,7 @@
       "section_title": "Seccomp Profile and Release Manifest",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "Retrieved manifest validates against release-manifest.schema.json; additionalProperties=false.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Retrieved manifest validates against release-manifest.schema.json; additionalProperties=false."
     },
     "SV-SI-31": {
       "name": "self_optimize args defaulted from Card",
@@ -1104,9 +896,7 @@
       "section_title": "SelfOptimizer Primitive",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Every runner.self_optimize() argument (safety_gates, docker_isolation, stage_activate, git_commit_policy, etc.) has a corresponding field in Agent Card self_improvement object; invocation without Card default sources fails precedence.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "Every runner.self_optimize() argument (safety_gates, docker_isolation, stage_activate, git_commit_policy, etc.) has a corresponding field in Agent Card self_improvement object; invocation without Card default sources fails precedence."
     },
     "SV-SI-32": {
       "name": "clone arg filter blocks NEWNS",
@@ -1114,9 +904,7 @@
       "section_title": "clone3 Policy",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "clone(CLONE_NEWNS) from inside a Harbor benchmark container fails with EPERM (seccomp clone-arg filter blocks namespace-creation flags on x86_64/aarch64/riscv64).",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §9 Self-Improvement runtime. Per master plan."
+      "assertion": "clone(CLONE_NEWNS) from inside a Harbor benchmark container fails with EPERM (seccomp clone-arg filter blocks namespace-creation flags on x86_64/aarch64/riscv64)."
     },
     "SV-AGENTS-08": {
       "name": "AGENTS.md entrypoint matches Card",
@@ -1124,9 +912,7 @@
       "section_title": "Self-Improvement Policy",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "AGENTS.md ## Self-Improvement Policy contains entrypoint: <path>; the same value equals Agent Card self_improvement.entrypoint_file; mismatch raises AgentsMdInvalid.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-AGENTS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "AGENTS.md ## Self-Improvement Policy contains entrypoint: <path>; the same value equals Agent Card self_improvement.entrypoint_file; mismatch raises AgentsMdInvalid."
     },
     "SV-PERM-01": {
       "name": "Capability lattice",
@@ -1134,9 +920,7 @@
       "section_title": "Resolution Algorithm + Permission Decision Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "ReadOnly rejects Mutating; WorkspaceWrite rejects Destructive. Vector path: schema validation of test-vectors/permission-prompt/ PDA-JWS and canonical-decision bundle. Live path: validator issues GET /permissions/resolve per §10.3.1 across the pinned Tool Registry and asserts decision=CapabilityDenied for (ReadOnly, Mutating) and (WorkspaceWrite, Destructive) pairs; asserts not-a-side-effect property by reading audit-log tail hash before and after the query batch.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "ReadOnly rejects Mutating; WorkspaceWrite rejects Destructive. Vector path: schema validation of test-vectors/permission-prompt/ PDA-JWS and canonical-decision bundle. Live path: validator issues GET /permissions/resolve per §10.3.1 across the pinned Tool Registry and asserts decision=CapabilityDenied for (ReadOnly, Mutating) and (WorkspaceWrite, Destructive) pairs; asserts not-a-side-effect property by reading audit-log tail hash before and after the query batch."
     },
     "SV-PERM-02": {
       "name": "Resolution precedence",
@@ -1144,9 +928,7 @@
       "section_title": "Resolution Algorithm",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Default → toolRequirements → policyEndpoint; each may only tighten.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "Default → toolRequirements → policyEndpoint; each may only tighten."
     },
     "SV-PERM-03": {
       "name": "Autonomous escalation",
@@ -1154,9 +936,7 @@
       "section_title": "Autonomous Handler / Escalation State-Machine / Escalation Test Hooks",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Runner started with RUNNER_HANDLER_ESCALATION_TIMEOUT_MS=500 + SOA_HANDLER_ESCALATION_RESPONDER=<tempfile> (§10.4.2). Submit high-risk PDA signed by Autonomous handler; leave responder file empty for ≥600ms. Assert 403 {error:PermissionDenied, reason:escalation-timeout} + audit row with handler:Autonomous, decision:Deny, reason:escalation-timeout per §10.4.1 step 4.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "Runner started with RUNNER_HANDLER_ESCALATION_TIMEOUT_MS=500 + SOA_HANDLER_ESCALATION_RESPONDER=<tempfile> (§10.4.2). Submit high-risk PDA signed by Autonomous handler; leave responder file empty for ≥600ms. Assert 403 {error:PermissionDenied, reason:escalation-timeout} + audit row with handler:Autonomous, decision:Deny, reason:escalation-timeout per §10.4.1 step 4."
     },
     "SV-PERM-04": {
       "name": "HITL == Interactive",
@@ -1164,9 +944,7 @@
       "section_title": "Autonomous Handler / Escalation State-Machine / Escalation Test Hooks / Normative Terminology",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Same setup as SV-PERM-03. Submit high-risk PDA signed by Autonomous handler; write {\"kid\":\"<Autonomous-kid>\", \"response\":\"approve\"} to responder file. Runner MUST reject with 403 {error:PermissionDenied, reason:hitl-required, detail:autonomous-insufficient} — Autonomous cannot satisfy HITL even via responder surface (§10.4.2). Coordinator-signed variant rejects with detail:coordinator-insufficient.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "Same setup as SV-PERM-03. Submit high-risk PDA signed by Autonomous handler; write {\"kid\":\"<Autonomous-kid>\", \"response\":\"approve\"} to responder file. Runner MUST reject with 403 {error:PermissionDenied, reason:hitl-required, detail:autonomous-insufficient} — Autonomous cannot satisfy HITL even via responder surface (§10.4.2). Coordinator-signed variant rejects with detail:coordinator-insufficient."
     },
     "SV-PERM-05": {
       "name": "Audit chain prev_hash",
@@ -1174,9 +952,7 @@
       "section_title": "Audit Trail",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Record's this_hash verifies against prev_hash+canonical_json.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "Record's this_hash verifies against prev_hash+canonical_json."
     },
     "SV-PERM-06": {
       "name": "WORM sink append-only",
@@ -1184,9 +960,7 @@
       "section_title": "Audit Trail + WORM Sink Modeling Test Hook",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Runner started with RUNNER_AUDIT_SINK_MODE=worm-in-memory (§10.5.5). PUT /audit/records/<id> and DELETE /audit/records/<id> → 405 Method Not Allowed + body {error:ImmutableAuditSink, reason:worm-sink-forbids-mutation}; a /logs/system/recent record with category=Audit, level=error, code=ImmutableAuditSink is emitted.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "Runner started with RUNNER_AUDIT_SINK_MODE=worm-in-memory (§10.5.5). PUT /audit/records/<id> and DELETE /audit/records/<id> → 405 Method Not Allowed + body {error:ImmutableAuditSink, reason:worm-sink-forbids-mutation}; a /logs/system/recent record with category=Audit, level=error, code=ImmutableAuditSink is emitted."
     },
     "SV-PERM-07": {
       "name": "WORM external timestamp",
@@ -1194,9 +968,7 @@
       "section_title": "Audit Trail + WORM Sink Modeling Test Hook",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "With RUNNER_AUDIT_SINK_MODE=worm-in-memory, driven decision's audit record carries optional sink_timestamp field (RFC 3339) distinct from timestamp; |sink_timestamp − timestamp| ≤ 1s.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "With RUNNER_AUDIT_SINK_MODE=worm-in-memory, driven decision's audit record carries optional sink_timestamp field (RFC 3339) distinct from timestamp; |sink_timestamp − timestamp| ≤ 1s."
     },
     "SV-PERM-08": {
       "name": "Handler key rotation 90d",
@@ -1204,9 +976,7 @@
       "section_title": "Handler Key Management + Handler Key Lifecycle Test Hooks",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Runner started with SOA_HANDLER_ENROLLED_AT=(T_ref − 91d) + RUNNER_TEST_CLOCK=T_ref (§10.6.2). High-risk decision signed by the aged handler rejects with 403 {error:HandlerKeyExpired, reason:key-age-exceeded, age_days:91}.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "Runner started with SOA_HANDLER_ENROLLED_AT=(T_ref − 91d) + RUNNER_TEST_CLOCK=T_ref (§10.6.2). High-risk decision signed by the aged handler rejects with 403 {error:HandlerKeyExpired, reason:key-age-exceeded, age_days:91}."
     },
     "SV-PERM-09": {
       "name": "CRL refresh hourly",
@@ -1214,9 +984,7 @@
       "section_title": "Handler Key Management + Handler Key Lifecycle Test Hooks",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Runner started with RUNNER_HANDLER_CRL_POLL_TICK_MS=100 + SOA_BOOTSTRAP_REVOCATION_FILE=<path> (§10.6.2 extends AQ watcher to handler_kid entries). Validator writes {\"handler_kid\":\"<current-kid>\"} to file; within 200ms the next PDA-signed decision rejects with 403 {error:HandlerKeyRevoked}.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "Runner started with RUNNER_HANDLER_CRL_POLL_TICK_MS=100 + SOA_BOOTSTRAP_REVOCATION_FILE=<path> (§10.6.2 extends AQ watcher to handler_kid entries). Validator writes {\"handler_kid\":\"<current-kid>\"} to file; within 200ms the next PDA-signed decision rejects with 403 {error:HandlerKeyRevoked}."
     },
     "SV-PERM-10": {
       "name": "Rotation overlap ≥ 24h",
@@ -1224,9 +992,7 @@
       "section_title": "Handler Key Management + Handler Key Lifecycle Test Hooks",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Runner started with SOA_HANDLER_KEYPAIR_OVERLAP_DIR=test-vectors/handler-keypair-overlap/ + RUNNER_TEST_CLOCK=2026-04-22T12:00:00Z (inside overlap window 2026-04-22→2026-04-23). Validator submits two PDAs (one per kid in the fixture); both return handler_accepted:true.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "Runner started with SOA_HANDLER_KEYPAIR_OVERLAP_DIR=test-vectors/handler-keypair-overlap/ + RUNNER_TEST_CLOCK=2026-04-22T12:00:00Z (inside overlap window 2026-04-22→2026-04-23). Validator submits two PDAs (one per kid in the fixture); both return handler_accepted:true."
     },
     "SV-PERM-11": {
       "name": "Key-type enforcement",
@@ -1234,9 +1000,7 @@
       "section_title": "Handler Key Management",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Only Ed25519, ECDSA P-256, or RSA ≥3072 accepted; other algorithms rejected at enrollment.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "Only Ed25519, ECDSA P-256, or RSA ≥3072 accepted; other algorithms rejected at enrollment."
     },
     "SV-PERM-12": {
       "name": "kid uniqueness",
@@ -1244,9 +1008,7 @@
       "section_title": "Handler Key Management + Handler Enrollment Endpoint",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "POST /handlers/enroll (§10.6.3) with fresh body {kid,spki,algo,issued_at,role} → 201 Created + role echoed. Repeat with same kid → 409 Conflict + {error:HandlerKidConflict}. Body with algo=RS256 → 400 + {error:AlgorithmRejected}. Body with unknown role → 400 + {error:RoleRejected}.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "POST /handlers/enroll (§10.6.3) with fresh body {kid,spki,algo,issued_at,role} → 201 Created + role echoed. Repeat with same kid → 409 Conflict + {error:HandlerKidConflict}. Body with algo=RS256 → 400 + {error:AlgorithmRejected}. Body with unknown role → 400 + {error:RoleRejected}."
     },
     "SV-PERM-13": {
       "name": "HSM / keystore storage",
@@ -1254,9 +1016,7 @@
       "section_title": "Handler Key Management + Key-Storage Introspection",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /security/key-storage (§10.6.4) returns body with private_keys_on_disk === false and storage_mode ∈ {hsm, software-keystore} (not ephemeral for conformance).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "GET /security/key-storage (§10.6.4) returns body with private_keys_on_disk === false and storage_mode ∈ {hsm, software-keystore} (not ephemeral for conformance)."
     },
     "SV-PERM-14": {
       "name": "Runner CRL refresh SLA",
@@ -1264,9 +1024,7 @@
       "section_title": "Handler Key Management + Handler Key Lifecycle Test Hooks",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Runner started with RUNNER_HANDLER_CRL_POLL_TICK_MS=<ms>. Polls /logs/system/recent?category=Config across ≥2 refresh ticks; asserts interval between crl-refresh-complete records carrying data.last_crl_refresh_at ≤ tick interval (or 60min ceiling in production).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "Runner started with RUNNER_HANDLER_CRL_POLL_TICK_MS=<ms>. Polls /logs/system/recent?category=Config across ≥2 refresh ticks; asserts interval between crl-refresh-complete records carrying data.last_crl_refresh_at ≤ tick interval (or 60min ceiling in production)."
     },
     "SV-PERM-15": {
       "name": "SuspectDecision flagging",
@@ -1274,9 +1032,7 @@
       "section_title": "Handler Key Management + Retroactive SuspectDecision Flagging",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "After driving decisions signed by handler_kid k, validator revokes k via the §5.3.3/§10.6.2 watcher. Reads /audit/records; asserts every decision-row from the 24h preceding revocation with signer_key_id=k has a corresponding SuspectDecision admin-row (§10.5.4 discriminator + §10.6.5) whose referenced_audit_id points at it and reason=\"kid-revoked-24h-window\".",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "After driving decisions signed by handler_kid k, validator revokes k via the §5.3.3/§10.6.2 watcher. Reads /audit/records; asserts every decision-row from the 24h preceding revocation with signer_key_id=k has a corresponding SuspectDecision admin-row (§10.5.4 discriminator + §10.6.5) whose referenced_audit_id points at it and reason=\"kid-revoked-24h-window\"."
     },
     "SV-PERM-18": {
       "name": "CRL artifact schema",
@@ -1284,9 +1040,7 @@
       "section_title": "CRL Artifact Format",
       "profile": "core",
       "severity": "critical",
-      "assertion": "CRL fetched from <trust-anchor-uri>/crl.json validates against crl.schema.json; past not_after with no fresh refresh, new high-risk decisions rejected with HandlerKeyRevoked(reason=crl-stale).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "CRL fetched from <trust-anchor-uri>/crl.json validates against crl.schema.json; past not_after with no fresh refresh, new high-risk decisions rejected with HandlerKeyRevoked(reason=crl-stale)."
     },
     "SV-PRIV-01": {
       "name": "Data inventory present",
@@ -1294,9 +1048,7 @@
       "section_title": "Privacy and Data-Governance Controls",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "docs/data-inventory.md exists; enumerates per-primitive fields that MAY carry personal data with retention category and asserted legal basis. Absence fails conformance.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-PRIV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "docs/data-inventory.md exists; enumerates per-primitive fields that MAY carry personal data with retention category and asserted legal basis. Absence fails conformance."
     },
     "SV-PRIV-02": {
       "name": "data_class tagging + sensitive-class block",
@@ -1304,9 +1056,7 @@
       "section_title": "Privacy and Data-Governance Controls",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Personal-data-carrying fields tagged with data_class ∈ {public,internal,confidential,personal,sensitive-personal} via x-soa-data-class. Untagged fields default to 'internal'. Memory consolidation of a 'sensitive-personal' entry emits MemoryDeletionForbidden(reason=sensitive-class-forbidden).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-PRIV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Personal-data-carrying fields tagged with data_class ∈ {public,internal,confidential,personal,sensitive-personal} via x-soa-data-class. Untagged fields default to 'internal'. Memory consolidation of a 'sensitive-personal' entry emits MemoryDeletionForbidden(reason=sensitive-class-forbidden)."
     },
     "SV-PRIV-03": {
       "name": "Subject delete + export tools",
@@ -1314,9 +1064,7 @@
       "section_title": "Deletion and Subject-Access Semantics",
       "profile": "core",
       "severity": "critical",
-      "assertion": "MCP tools privacy.delete_subject and privacy.export_subject are exposed. delete produces memory tombstones, SubjectSuppression audit record, and session-body tombstones. export returns JCS-canonical {memory,audit,sessions} with suppressed entries rendered as redacted stubs.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-PRIV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "MCP tools privacy.delete_subject and privacy.export_subject are exposed. delete produces memory tombstones, SubjectSuppression audit record, and session-body tombstones. export returns JCS-canonical {memory,audit,sessions} with suppressed entries rendered as redacted stubs."
     },
     "SV-PRIV-04": {
       "name": "Retention sweep",
@@ -1324,9 +1072,7 @@
       "section_title": "Retention",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Runner runs a retention sweep at least every 24 h; records past category horizon are tombstoned (memory, session-body) or redacted-on-export (audit-personal); audit-integrity records are never destructively deleted.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-PRIV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Runner runs a retention sweep at least every 24 h; records past category horizon are tombstoned (memory, session-body) or redacted-on-export (audit-personal); audit-integrity records are never destructively deleted."
     },
     "SV-PRIV-05": {
       "name": "Residency layered defence",
@@ -1334,9 +1080,7 @@
       "section_title": "Cross-Border and Residency",
       "profile": "core",
       "severity": "critical",
-      "assertion": "When security.data_residency is non-empty: every MCP tool invocation MUST carry a tool-declared data_processing_location intersecting the pinned set; cryptographic attestation (if available) MUST match the declaration; deployments relying solely on DNS/SNI/reverse-lookup network signals are non-conformant. Every residency-gated decision emits an audit record with declared_location, attested_location, network_signal_regions, decision.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-PRIV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "When security.data_residency is non-empty: every MCP tool invocation MUST carry a tool-declared data_processing_location intersecting the pinned set; cryptographic attestation (if available) MUST match the declaration; deployments relying solely on DNS/SNI/reverse-lookup network signals are non-conformant. Every residency-gated decision emits an audit record with declared_location, attested_location, network_signal_regions, decision."
     },
     "SV-OPS-01": {
       "name": "Liveness endpoint",
@@ -1344,9 +1088,7 @@
       "section_title": "Operational Probes",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /health returns 200 with {status:'alive', soaHarnessVersion:'1.0'} within 5 s on both Runner and Gateway. Endpoint reachable under rate-limit saturation; no session or audit data in body.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-OPS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "GET /health returns 200 with {status:'alive', soaHarnessVersion:'1.0'} within 5 s on both Runner and Gateway. Endpoint reachable under rate-limit saturation; no session or audit data in body."
     },
     "SV-OPS-02": {
       "name": "Readiness endpoint",
@@ -1354,9 +1096,7 @@
       "section_title": "Operational Probes",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /ready returns 200 with {status:'ready'} only when bootstrap resolved, tool pool consistent, persistence directory writable within 100 ms, audit sink reachable within 1 s, CRL fresh. Failure returns 503 with reason ∈ {bootstrap-pending, tool-pool-initializing, persistence-unwritable, audit-sink-unreachable, crl-stale}.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-OPS category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "GET /ready returns 200 with {status:'ready'} only when bootstrap resolved, tool pool consistent, persistence directory writable within 100 ms, audit sink reachable within 1 s, CRL fresh. Failure returns 503 with reason ∈ {bootstrap-pending, tool-pool-initializing, persistence-unwritable, audit-sink-unreachable, crl-stale}."
     },
     "SV-PERM-19": {
       "name": "Audit-sink three-state degradation",
@@ -1364,9 +1104,7 @@
       "section_title": "Runtime Audit-Sink Failure",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Runner operates healthy/degraded-buffering/unreachable-halt states. degraded: local fsync-backed buffer; AuditSinkDegraded emitted once per transition; /ready still 200. unreachable-halt: Mutating/Destructive tools rejected with PermissionDenied(reason=audit-sink-unreachable); ReadOnly permitted; /ready flips 503; AuditSinkUnreachable emitted. Recovery flushes buffer in order, resumes this_hash chain, emits AuditSinkRecovered.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
+      "assertion": "Runner operates healthy/degraded-buffering/unreachable-halt states. degraded: local fsync-backed buffer; AuditSinkDegraded emitted once per transition; /ready still 200. unreachable-halt: Mutating/Destructive tools rejected with PermissionDenied(reason=audit-sink-unreachable); ReadOnly permitted; /ready flips 503; AuditSinkUnreachable emitted. Recovery flushes buffer in order, resumes this_hash chain, emits AuditSinkRecovered."
     },
     "SV-SESS-11": {
       "name": "Tool idempotency retention floor",
@@ -1374,9 +1112,7 @@
       "section_title": "Pending/Committed Bracket",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Every tool in the pool declares idempotency_retention_seconds ≥ max(3600, session resume-grace window, session max lifetime up to 24 h). Tools declaring < 3600 s whose risk_class is not Destructive MUST be rejected at pool assembly with ToolPoolStale(reason=idempotency-retention-insufficient).",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 §12.3 atomic-write + §12.5 resume + §12.2 idempotency floor scope. Validator plan v2 covers via V2-06/V2-07/V2-08/V2-09/V2-10."
+      "assertion": "Every tool in the pool declares idempotency_retention_seconds ≥ max(3600, session resume-grace window, session max lifetime up to 24 h). Tools declaring < 3600 s whose risk_class is not Destructive MUST be rejected at pool assembly with ToolPoolStale(reason=idempotency-retention-insufficient)."
     },
     "SV-PERM-16": {
       "name": "WORM retention tiers",
@@ -1384,9 +1120,7 @@
       "section_title": "Audit Trail + Retention Class Tagging",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Validator drives two sessions — one with granted activeMode=DangerFullAccess, one ReadOnly — each with one decision. Reads /audit/records. Asserts DFA session's record carries retention_class=\"dfa-365d\" and ReadOnly session's record carries retention_class=\"standard-90d\" (per §10.5.6).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "Validator drives two sessions — one with granted activeMode=DangerFullAccess, one ReadOnly — each with one decision. Reads /audit/records. Asserts DFA session's record carries retention_class=\"dfa-365d\" and ReadOnly session's record carries retention_class=\"standard-90d\" (per §10.5.6)."
     },
     "SV-PERM-17": {
       "name": "Audit-reader access",
@@ -1394,9 +1128,7 @@
       "section_title": "Audit Trail + Audit-Reader Token Endpoint",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "POST /audit/reader-tokens (§10.5.7) with operator bearer → 201 + {reader_bearer, expires_at, scope:audit:read:*}. Reader bearer: GET /audit/tail → 200; GET /audit/records → 200; any POST/PUT/DELETE → 403 {error:bearer-lacks-audit-write-scope}; admin-scoped /events/recent → 403.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "POST /audit/reader-tokens (§10.5.7) with operator bearer → 201 + {reader_bearer, expires_at, scope:audit:read:*}. Reader bearer: GET /audit/tail → 200; GET /audit/records → 200; any POST/PUT/DELETE → 403 {error:bearer-lacks-audit-write-scope}; admin-scoped /events/recent → 403."
     },
     "SV-REG-01": {
       "name": "list_tools metadata-only",
@@ -1404,9 +1136,7 @@
       "section_title": "Global Tool Registry",
       "profile": "core",
       "severity": "critical",
-      "assertion": "list_tools returns only metadata; no invocation side effects.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-REG category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "list_tools returns only metadata; no invocation side effects."
     },
     "SV-REG-02": {
       "name": "MCP name pattern",
@@ -1414,9 +1144,7 @@
       "section_title": "Global Tool Registry",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "mcp__[server]__[tool] pattern enforced; foreign chars percent-encoded or rejected.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-REG category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "mcp__[server]__[tool] pattern enforced; foreign chars percent-encoded or rejected."
     },
     "SV-REG-03": {
       "name": "Pool pinned per session",
@@ -1424,9 +1152,7 @@
       "section_title": "Re-Registration Timing",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Tools added mid-session do not appear in in-flight pool.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-REG category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Tools added mid-session do not appear in in-flight pool."
     },
     "SV-REG-04": {
       "name": "Deny list from AGENTS.md",
@@ -1434,9 +1160,7 @@
       "section_title": "Per-Session Tool Pool + AGENTS.md Source Path Test Hook",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Runner started with SOA_RUNNER_AGENTS_MD_PATH=test-vectors/agents-md-denylist/AGENTS.md (§11.2.1 hook). GET /tools/registered.tools[] excludes the denied name (fs_write_dangerous from the fixture's ### Deny section) regardless of activeMode.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-REG category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Runner started with SOA_RUNNER_AGENTS_MD_PATH=test-vectors/agents-md-denylist/AGENTS.md (§11.2.1 hook). GET /tools/registered.tools[] excludes the denied name (fs_write_dangerous from the fixture's ### Deny section) regardless of activeMode."
     },
     "SV-REG-05": {
       "name": "list_tools field shape",
@@ -1444,9 +1168,7 @@
       "section_title": "Global Tool Registry",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Each entry exposes exactly { name, description, input_schema, risk_class, default_control }; missing or extra fields fail.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-REG category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Each entry exposes exactly { name, description, input_schema, risk_class, default_control }; missing or extra fields fail."
     },
     "SV-SESS-01": {
       "name": "Session schema",
@@ -1454,9 +1176,7 @@
       "section_title": "Session File Schema",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Session file validates against session.schema.json.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
+      "assertion": "Session file validates against session.schema.json."
     },
     "SV-SESS-02": {
       "name": "status enum closed",
@@ -1464,9 +1184,7 @@
       "section_title": "Session File Schema",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Non-enum status value → SessionFormatIncompatible on load.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
+      "assertion": "Non-enum status value → SessionFormatIncompatible on load."
     },
     "SV-SESS-03": {
       "name": "Event bracketing",
@@ -1474,9 +1192,7 @@
       "section_title": "Significant Events",
       "profile": "core",
       "severity": "critical",
-      "assertion": "pending→committed bracket observed for every significant event.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
+      "assertion": "pending→committed bracket observed for every significant event."
     },
     "SV-SESS-04": {
       "name": "Idempotency key",
@@ -1484,9 +1200,7 @@
       "section_title": "Significant Events",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Replayed tool receives identical idempotency key; dedupes.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
+      "assertion": "Replayed tool receives identical idempotency key; dedupes."
     },
     "SV-SESS-05": {
       "name": "Non-idempotent = Destructive",
@@ -1494,9 +1208,7 @@
       "section_title": "Significant Events",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Tool lacking idempotency MUST be classified Destructive with control=Prompt.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 crash-safe persistence (§12) + audit-sink degradation (§10.5.1) scope."
+      "assertion": "Tool lacking idempotency MUST be classified Destructive with control=Prompt."
     },
     "SV-SESS-06": {
       "name": "POSIX atomic write",
@@ -1504,9 +1216,7 @@
       "section_title": "Atomic Writes",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Crash after fsync+rename produces exactly-one consistent file.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 §12.3 atomic-write + §12.5 resume + §12.2 idempotency floor scope. Validator plan v2 covers via V2-06/V2-07/V2-08/V2-09/V2-10."
+      "assertion": "Crash after fsync+rename produces exactly-one consistent file."
     },
     "SV-SESS-07": {
       "name": "Windows atomic write",
@@ -1514,9 +1224,7 @@
       "section_title": "Atomic Writes",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Crash across MoveFileExW produces exactly-one consistent file.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 §12.3 atomic-write + §12.5 resume + §12.2 idempotency floor scope. Validator plan v2 covers via V2-06/V2-07/V2-08/V2-09/V2-10."
+      "assertion": "Crash across MoveFileExW produces exactly-one consistent file."
     },
     "SV-SESS-08": {
       "name": "Resume replays pending",
@@ -1524,9 +1232,7 @@
       "section_title": "Resume Algorithm",
       "profile": "core",
       "severity": "critical",
-      "assertion": "pending-phase tool replays; committed-phase skipped.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 §12.3 atomic-write + §12.5 resume + §12.2 idempotency floor scope. Validator plan v2 covers via V2-06/V2-07/V2-08/V2-09/V2-10."
+      "assertion": "pending-phase tool replays; committed-phase skipped."
     },
     "SV-SESS-09": {
       "name": "Card-drift terminates",
@@ -1534,9 +1240,7 @@
       "section_title": "Resume Algorithm",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Card version changed mid-session → StopReason::CardVersionDrift on resume.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 §12.3 atomic-write + §12.5 resume + §12.2 idempotency floor scope. Validator plan v2 covers via V2-06/V2-07/V2-08/V2-09/V2-10."
+      "assertion": "Card version changed mid-session → StopReason::CardVersionDrift on resume."
     },
     "SV-SESS-10": {
       "name": "Inflight compensation",
@@ -1544,9 +1248,7 @@
       "section_title": "Resume Algorithm",
       "profile": "core",
       "severity": "critical",
-      "assertion": "phase=inflight on resume → compensating action if tool supports; else mark compensated with ResumeCompensationGap note.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 §12.3 atomic-write + §12.5 resume + §12.2 idempotency floor scope. Validator plan v2 covers via V2-06/V2-07/V2-08/V2-09/V2-10."
+      "assertion": "phase=inflight on resume → compensating action if tool supports; else mark compensated with ResumeCompensationGap note."
     },
     "SV-BUD-01": {
       "name": "Projection algorithm",
@@ -1554,9 +1256,7 @@
       "section_title": "Projection Algorithm",
       "profile": "core",
       "severity": "critical",
-      "assertion": "p95*1.15 with W default 10; cold-start baseline 4096 min.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-BUD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "p95*1.15 with W default 10; cold-start baseline 4096 min."
     },
     "SV-BUD-02": {
       "name": "Pre-call halt",
@@ -1564,9 +1264,7 @@
       "section_title": "Projection Algorithm",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Runner started with RUNNER_AGENT_CARD_PATH=test-vectors/conformance-card-low-budget/agent-card.json (tokenBudget.maxTokensPerRun=1000). Drive a single decision with input_tokens + projected_output_tokens > 1000. Assert: no API call issued (projection-over fail-closed per §13.1), SessionEnd event with payload.stop_reason=\"BudgetExhausted\" observable via /events/recent.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-BUD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Runner started with RUNNER_AGENT_CARD_PATH=test-vectors/conformance-card-low-budget/agent-card.json (tokenBudget.maxTokensPerRun=1000). Drive a single decision with input_tokens + projected_output_tokens > 1000. Assert: no API call issued (projection-over fail-closed per §13.1), SessionEnd event with payload.stop_reason=\"BudgetExhausted\" observable via /events/recent."
     },
     "SV-BUD-03": {
       "name": "Mid-stream cancel",
@@ -1574,9 +1272,7 @@
       "section_title": "Mid-Stream Enforcement",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Overage observed mid-stream → cancel on next ContentBlockDelta boundary.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — cancellation on next ContentBlockDelta boundary requires real LLM streaming with delta-boundary arithmetic; beyond M3 impl scope (L-37 retag, same class as SV-STR-11)."
+      "assertion": "Overage observed mid-stream → cancel on next ContentBlockDelta boundary."
     },
     "SV-BUD-04": {
       "name": "Cache accounting",
@@ -1584,9 +1280,7 @@
       "section_title": "Cache Accounting",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Cached input counted at 10% unless provider-advertised ratio overrides.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-BUD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Cached input counted at 10% unless provider-advertised ratio overrides."
     },
     "SV-BUD-05": {
       "name": "Billing tag propagated",
@@ -1594,9 +1288,7 @@
       "section_title": "Cache Accounting",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "billing_tag propagated end-to-end per §13.3: (a) OTel span attribute soa.billing.tag observable via /observability/otel-spans/recent, (b) audit record optional billing_tag field observable via /audit/records (schema extended per L-40 to allow the field; hash-chain includes it via canonical JCS when present), (c) PermissionDecision StreamEvent optional billing_tag field observable via /events/recent. All three surfaces MUST carry identical value matching Agent Card tokenBudget.billingTag.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-BUD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "billing_tag propagated end-to-end per §13.3: (a) OTel span attribute soa.billing.tag observable via /observability/otel-spans/recent, (b) audit record optional billing_tag field observable via /audit/records (schema extended per L-40 to allow the field; hash-chain includes it via canonical JCS when present), (c) PermissionDecision StreamEvent optional billing_tag field observable via /events/recent. All three surfaces MUST carry identical value matching Agent Card tokenBudget.billingTag."
     },
     "SV-BUD-06": {
       "name": "StopReason closed enum",
@@ -1604,9 +1296,7 @@
       "section_title": "StopReason Enum",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Unknown StopReason value rejected by soa-validate.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-BUD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Unknown StopReason value rejected by soa-validate."
     },
     "SV-BUD-07": {
       "name": "BillingTagMismatch detected",
@@ -1614,9 +1304,7 @@
       "section_title": "Cache Accounting",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Session billing_tag differing from Agent Card raises BillingTagMismatch.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-BUD category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Session billing_tag differing from Agent Card raises BillingTagMismatch."
     },
     "SV-STR-01": {
       "name": "StreamEvent schema",
@@ -1624,9 +1312,7 @@
       "section_title": "StreamEvent",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Every emitted event validates; type ∈ closed enum of 27 (§14.1 + §19.4 errata adding PreToolUseOutcome + PostToolUseOutcome).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Every emitted event validates; type ∈ closed enum of 27 (§14.1 + §19.4 errata adding PreToolUseOutcome + PostToolUseOutcome)."
     },
     "SV-STR-02": {
       "name": "Sequence monotonic",
@@ -1634,9 +1320,7 @@
       "section_title": "StreamEvent",
       "profile": "core",
       "severity": "critical",
-      "assertion": "sequence is strictly increasing per session.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "sequence is strictly increasing per session."
     },
     "SV-STR-03": {
       "name": "event_id unique",
@@ -1644,9 +1328,7 @@
       "section_title": "StreamEvent",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "event_id unique per session.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "event_id unique per session."
     },
     "SV-STR-04": {
       "name": "CrashEvent final position",
@@ -1654,9 +1336,7 @@
       "section_title": "StreamEvent",
       "profile": "core",
       "severity": "critical",
-      "assertion": "On crash, CrashEvent is the last event with workflow_state_id set.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "On crash, CrashEvent is the last event with workflow_state_id set."
     },
     "SV-STR-05": {
       "name": "System Event Log categories",
@@ -1664,9 +1344,7 @@
       "section_title": "System Event Log",
       "profile": "core",
       "severity": "minor",
-      "assertion": "Every record has category from closed list.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Every record has category from closed list."
     },
     "SV-STR-06": {
       "name": "OTel span names",
@@ -1674,9 +1352,7 @@
       "section_title": "OpenTelemetry Mapping + OTel Span Observability Channel",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "GET /observability/otel-spans/recent (§14.5.2) returns spans including name=soa.turn + name=soa.tool.<tool_name> with required attributes (soa.session.id, soa.turn.id, soa.billing.tag, soa.agent.name, soa.agent.version for turn; soa.tool.risk_class, soa.permission.decision for tool). StreamEvent.event_id appears as span event.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "GET /observability/otel-spans/recent (§14.5.2) returns spans including name=soa.turn + name=soa.tool.<tool_name> with required attributes (soa.session.id, soa.turn.id, soa.billing.tag, soa.agent.name, soa.agent.version for turn; soa.tool.risk_class, soa.permission.decision for tool). StreamEvent.event_id appears as span event."
     },
     "SV-STR-07": {
       "name": "OTel required resource",
@@ -1684,9 +1360,7 @@
       "section_title": "OpenTelemetry Mapping + OTel Span Observability Channel",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Two-part: (a) Runner started with observability.requiredResourceAttrs missing → /ready probe returns 503 with reason per §5.4; (b) Runner started with all required attrs → GET /observability/otel-spans/recent (§14.5.2) returns spans whose resource_attributes include every name listed in observability.requiredResourceAttrs.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Two-part: (a) Runner started with observability.requiredResourceAttrs missing → /ready probe returns 503 with reason per §5.4; (b) Runner started with all required attrs → GET /observability/otel-spans/recent (§14.5.2) returns spans whose resource_attributes include every name listed in observability.requiredResourceAttrs."
     },
     "SV-STR-08": {
       "name": "Exporter backpressure",
@@ -1694,9 +1368,7 @@
       "section_title": "OpenTelemetry Mapping + Observability Backpressure Status Endpoint",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Flood OTel exporter with unreachable collector; poll GET /observability/backpressure (§14.5.3); assert buffer_capacity=10000, dropped_since_boot > 0 after flood, last_backpressure_applied_at > test-start, Runner /ready still 200 (does not halt).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Flood OTel exporter with unreachable collector; poll GET /observability/backpressure (§14.5.3); assert buffer_capacity=10000, dropped_since_boot > 0 after flood, last_backpressure_applied_at > test-start, Runner /ready still 200 (does not halt)."
     },
     "SV-STR-09": {
       "name": "Per-type payload schema",
@@ -1704,9 +1376,7 @@
       "section_title": "StreamEvent",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Every event's payload validates against stream-event-payloads.schema.json for its declared type.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Every event's payload validates against stream-event-payloads.schema.json for its declared type."
     },
     "SV-STR-10": {
       "name": "CrashEvent payload shape",
@@ -1714,9 +1384,7 @@
       "section_title": "StreamEvent + Post-Crash Observation via Admin Scope",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Validator (1) drives a session with open bracket, (2) kills Runner process mid-turn, (3) restarts Runner, (4) polls GET /events/recent?type=CrashEvent with admin:read bearer (§14.5.5 admin-scope extension), (5) asserts exactly one CrashEvent record whose payload carries required fields reason, workflow_state_id, last_committed_event_id, stack_hint per §14.1.1 CrashEvent $defs.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Validator (1) drives a session with open bracket, (2) kills Runner process mid-turn, (3) restarts Runner, (4) polls GET /events/recent?type=CrashEvent with admin:read bearer (§14.5.5 admin-scope extension), (5) asserts exactly one CrashEvent record whose payload carries required fields reason, workflow_state_id, last_committed_event_id, stack_hint per §14.1.1 CrashEvent $defs."
     },
     "SV-STR-11": {
       "name": "CompactionDeferred",
@@ -1724,9 +1392,7 @@
       "section_title": "Cross-Interaction Matrix",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Compaction trigger while ContentBlockDelta open → CompactionDeferred emitted, no mid-block compaction.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — mid-ContentBlockDelta compaction trigger requires real LLM dispatcher streaming, beyond M3 impl scope (L-36 retag)."
+      "assertion": "Compaction trigger while ContentBlockDelta open → CompactionDeferred emitted, no mid-block compaction."
     },
     "SV-STR-12": {
       "name": "Runner stream endpoint + mTLS",
@@ -1734,9 +1400,7 @@
       "section_title": "Runner Stream Subscription Contract",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Runner serves /stream/v1/{session_id} over TLS 1.3 with mTLS; bearer scope stream:read:<session_id> required; unauthenticated or unsigned requests rejected.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — requires §14.3 full SSE transport with mTLS + bearer + Last-Event-ID resume semantics. M3 ships §14.5 polling-friendly minimum; full SSE transport is M4."
+      "assertion": "Runner serves /stream/v1/{session_id} over TLS 1.3 with mTLS; bearer scope stream:read:<session_id> required; unauthenticated or unsigned requests rejected."
     },
     "SV-STR-13": {
       "name": "Last-Event-ID resume",
@@ -1744,9 +1408,7 @@
       "section_title": "Runner Stream Subscription Contract",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Reconnecting client sends Last-Event-ID; Runner resumes from next sequence or returns 409 {error:\"ResumeGap\"} when past buffer horizon.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — requires §14.3 full SSE transport with mTLS + bearer + Last-Event-ID resume semantics. M3 ships §14.5 polling-friendly minimum; full SSE transport is M4."
+      "assertion": "Reconnecting client sends Last-Event-ID; Runner resumes from next sequence or returns 409 {error:\"ResumeGap\"} when past buffer horizon."
     },
     "SV-STR-14": {
       "name": "Stream backpressure",
@@ -1754,9 +1416,7 @@
       "section_title": "Runner Stream Subscription Contract",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Client > 10000 events behind head → Runner emits terminal SSE event `event: soa-terminate` with `data: {\"error\":\"ConsumerLagging\"}` and then closes the underlying HTTP response (SSE has no WebSocket-style close frame); buffer floor 50k/1h enforced; ceiling 500k/24h enforced.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — requires §14.3 full SSE transport with mTLS + bearer + Last-Event-ID resume semantics. M3 ships §14.5 polling-friendly minimum; full SSE transport is M4."
+      "assertion": "Client > 10000 events behind head → Runner emits terminal SSE event `event: soa-terminate` with `data: {\"error\":\"ConsumerLagging\"}` and then closes the underlying HTTP response (SSE has no WebSocket-style close frame); buffer floor 50k/1h enforced; ceiling 500k/24h enforced."
     },
     "SV-STR-15": {
       "name": "Stream event mapping",
@@ -1764,9 +1424,7 @@
       "section_title": "Per-Type Payload Schemas",
       "profile": "core",
       "severity": "critical",
-      "assertion": "stream-event-payloads.schema.json has top-level oneOf dispatch; every emitted event validates (including PermissionPrompt with additionalProperties:false).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-STR category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "stream-event-payloads.schema.json has top-level oneOf dispatch; every emitted event validates (including PermissionPrompt with additionalProperties:false)."
     },
     "SV-STR-16": {
       "name": "Trust-class determinism",
@@ -1774,9 +1432,7 @@
       "section_title": "Event Type → Trust Class Mapping",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Gateway chooses trust_class deterministically from workflow.status (and signer_kid for PermissionDecision); no payload inspection for trust selection.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — trust_class enforcement observation requires Gateway surface (§14.1.2 is a Runner-side static mapping; decision-and-render happens at Gateway, not Runner). L-36 retag."
+      "assertion": "Gateway chooses trust_class deterministically from workflow.status (and signer_kid for PermissionDecision); no payload inspection for trust selection."
     },
     "SV-HOOK-01": {
       "name": "stdin schema",
@@ -1784,9 +1440,7 @@
       "section_title": "Stdin JSON Schema",
       "profile": "core",
       "severity": "critical",
-      "assertion": "PreToolUse/PostToolUse stdin conforms to schema.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-HOOK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "PreToolUse/PostToolUse stdin conforms to schema."
     },
     "SV-HOOK-02": {
       "name": "Timeout PreToolUse",
@@ -1794,9 +1448,7 @@
       "section_title": "Hook Invocation Contract",
       "profile": "core",
       "severity": "critical",
-      "assertion": "5s default; PreToolUse hang → SIGKILL + Deny.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-HOOK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "5s default; PreToolUse hang → SIGKILL + Deny."
     },
     "SV-HOOK-03": {
       "name": "Timeout PostToolUse",
@@ -1804,9 +1456,7 @@
       "section_title": "Hook Invocation Contract",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "10s default; PostToolUse hang → SIGKILL + log.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-HOOK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "10s default; PostToolUse hang → SIGKILL + log."
     },
     "SV-HOOK-04": {
       "name": "Exit-code table",
@@ -1814,9 +1464,7 @@
       "section_title": "Stdout and Exit Codes",
       "profile": "core",
       "severity": "critical",
-      "assertion": "0,1,2,3 behave per spec; other codes → HookAbnormalExit.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-HOOK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "0,1,2,3 behave per spec; other codes → HookAbnormalExit."
     },
     "SV-HOOK-05": {
       "name": "replace_args honored",
@@ -1824,9 +1472,7 @@
       "section_title": "Stdout and Exit Codes",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "PreToolUse replace_args modifies tool invocation; observable via PreToolUseOutcome StreamEvent (§14.1 + §19.4 errata) with outcome=replace_args and args_digest_before ≠ args_digest_after. Resolver re-invocation MUST substitute replaced args before fingerprinting.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-HOOK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "PreToolUse replace_args modifies tool invocation; observable via PreToolUseOutcome StreamEvent (§14.1 + §19.4 errata) with outcome=replace_args and args_digest_before ≠ args_digest_after. Resolver re-invocation MUST substitute replaced args before fingerprinting."
     },
     "SV-HOOK-06": {
       "name": "replace_result honored",
@@ -1834,9 +1480,7 @@
       "section_title": "Stdout and Exit Codes",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "PostToolUse replace_result modifies recorded tool result; observable via PostToolUseOutcome StreamEvent (§14.1 + §19.4 errata) with outcome=replace_result and output_digest_before ≠ output_digest_after.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-HOOK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "PostToolUse replace_result modifies recorded tool result; observable via PostToolUseOutcome StreamEvent (§14.1 + §19.4 errata) with outcome=replace_result and output_digest_before ≠ output_digest_after."
     },
     "SV-HOOK-07": {
       "name": "Step-5 ordering",
@@ -1844,9 +1488,7 @@
       "section_title": "Ordering Within §16 Step 5",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /events/recent shows lifecycle ordering: PermissionDecision → PreToolUseOutcome → ToolResult → PostToolUseOutcome → Audit/Persist, observable via sequence monotonicity on the 27-value §14.1 closed enum (PreToolUseOutcome + PostToolUseOutcome added per §19.4 errata).",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-HOOK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "GET /events/recent shows lifecycle ordering: PermissionDecision → PreToolUseOutcome → ToolResult → PostToolUseOutcome → Audit/Persist, observable via sequence monotonicity on the 27-value §14.1 closed enum (PreToolUseOutcome + PostToolUseOutcome added per §19.4 errata)."
     },
     "SV-HOOK-08": {
       "name": "No hook reentrancy",
@@ -1854,9 +1496,7 @@
       "section_title": "Cross-Interaction Matrix",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Hook invoking a Runner tool → HookReentrancy + session terminate.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-HOOK category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Hook invoking a Runner tool → HookReentrancy + session terminate."
     },
     "SV-A2A-01": {
       "name": "mTLS required",
@@ -1864,9 +1504,7 @@
       "section_title": "Endpoint and Transport",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "TLS 1.3 with mTLS; peer cert not in trust anchors → TrustAnchorMismatch.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "TLS 1.3 with mTLS; peer cert not in trust anchors → TrustAnchorMismatch."
     },
     "SV-A2A-02": {
       "name": "JWT validation",
@@ -1874,9 +1512,7 @@
       "section_title": "Endpoint and Transport",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "Missing/expired/mis-aud JWT → AuthFailed (-32002).",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "Missing/expired/mis-aud JWT → AuthFailed (-32002)."
     },
     "SV-A2A-03": {
       "name": "agent.describe",
@@ -1884,9 +1520,7 @@
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "Returns signed Card bytes + JWS.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "Returns signed Card bytes + JWS."
     },
     "SV-A2A-04": {
       "name": "handoff.offer accept",
@@ -1894,9 +1528,7 @@
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "Well-formed offer accepted with {accept:true}.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "Well-formed offer accepted with {accept:true}."
     },
     "SV-A2A-05": {
       "name": "handoff.offer reject",
@@ -1904,9 +1536,7 @@
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "CapabilityMismatch returns -32003.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "CapabilityMismatch returns -32003."
     },
     "SV-A2A-06": {
       "name": "handoff.transfer success",
@@ -1914,9 +1544,7 @@
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "Destination starts new session with workflow.status=Handoff.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "Destination starts new session with workflow.status=Handoff."
     },
     "SV-A2A-07": {
       "name": "State-transfer scope",
@@ -1924,9 +1552,7 @@
       "section_title": "State Transfer Scope",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "Memory/audit/session-path NOT transferred; billing_tag + messages ARE.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "Memory/audit/session-path NOT transferred; billing_tag + messages ARE."
     },
     "SV-A2A-08": {
       "name": "HandoffBusy while Optim",
@@ -1934,9 +1560,7 @@
       "section_title": "Cross-Interaction Matrix",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "Incoming handoff during Optimizing → -32050.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "Incoming handoff during Optimizing → -32050."
     },
     "SV-A2A-09": {
       "name": "Error code set",
@@ -1944,9 +1568,7 @@
       "section_title": "Errors",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "Error codes in {-32000..-32003,-32050..-32052,-32060}.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — §17 A2A Handoff. Per master plan."
+      "assertion": "Error codes in {-32000..-32003,-32050..-32052,-32060}."
     },
     "SV-GOV-01": {
       "name": "Version advertised",
@@ -1954,9 +1576,7 @@
       "section_title": "Normative JSON Schema",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "soaHarnessVersion=1.0 advertised in Card.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "soaHarnessVersion=1.0 advertised in Card."
     },
     "SV-GOV-02": {
       "name": "Stability tiers",
@@ -1964,9 +1584,7 @@
       "section_title": "Stability Tiers",
       "profile": "core",
       "severity": "minor",
-      "assertion": "Companion stability-tiers.md present; Experimental fields opt-in.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Companion stability-tiers.md present; Experimental fields opt-in."
     },
     "SV-GOV-03": {
       "name": "Migration guide on bump",
@@ -1974,9 +1592,7 @@
       "section_title": "Versioning",
       "profile": "core",
       "severity": "minor",
-      "assertion": "Release ships migrations/1.x-to-1.y.md when minor bumps.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Release ships migrations/1.x-to-1.y.md when minor bumps."
     },
     "SV-GOV-04": {
       "name": "Deprecation lifetime",
@@ -1984,9 +1600,7 @@
       "section_title": "Deprecation",
       "profile": "core",
       "severity": "minor",
-      "assertion": "Deprecated fields work for ≥ 2 minor releases.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Deprecated fields work for ≥ 2 minor releases."
     },
     "SV-GOV-05": {
       "name": "Errata URL reachable",
@@ -1994,9 +1608,7 @@
       "section_title": "Errata",
       "profile": "core",
       "severity": "minor",
-      "assertion": "Published errata URL returns 200 with JSON-formatted errata.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Published errata URL returns 200 with JSON-formatted errata."
     },
     "SV-GOV-06": {
       "name": "soa-validate pinned",
@@ -2004,9 +1616,7 @@
       "section_title": "Distribution",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "soa-validate binary digest matches release-tag manifest.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "soa-validate binary digest matches release-tag manifest."
     },
     "SV-GOV-07": {
       "name": "Normative references pinned",
@@ -2014,9 +1624,7 @@
       "section_title": "Normative References",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Every entry in §2 resolves to a URL/tag with an immutable digest or version. Wall-clock citations rejected.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Every entry in §2 resolves to a URL/tag with an immutable digest or version. Wall-clock citations rejected."
     },
     "SV-GOV-08": {
       "name": "Version negotiation: empty intersection",
@@ -2024,9 +1632,7 @@
       "section_title": "Wire-Level Version Negotiation",
       "profile": "core",
       "severity": "critical",
-      "assertion": "When a caller's and callee's supported_core_versions sets have empty intersection, the session is aborted with VersionNegotiationFailed; A2A returns JSON-RPC -32061; UI transports return ui.version-mismatch. No further traffic permitted.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "When a caller's and callee's supported_core_versions sets have empty intersection, the session is aborted with VersionNegotiationFailed; A2A returns JSON-RPC -32061; UI transports return ui.version-mismatch. No further traffic permitted."
     },
     "SV-GOV-09": {
       "name": "Version negotiation: highest-common selection",
@@ -2034,9 +1640,7 @@
       "section_title": "Wire-Level Version Negotiation",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Given an intersection {1.0, 1.1, 1.2}, the negotiated version is the highest value by (major,minor) numeric tuple — here 1.2. Lower values are not selected when higher values are present in the intersection.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Given an intersection {1.0, 1.1, 1.2}, the negotiated version is the highest value by (major,minor) numeric tuple — here 1.2. Lower values are not selected when higher values are present in the intersection."
     },
     "SV-GOV-10": {
       "name": "Version negotiation: binding on A2A",
@@ -2044,9 +1648,7 @@
       "section_title": "Wire-Level Version Negotiation",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "A2A JWT carries soa_core_version claim matching the negotiated version; absent or mismatched claim → HandoffRejected(reason=version-not-negotiated).",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — core+handoff profile requires §17 A2A infrastructure (M5). Retagged from M3 per L-34 finding F-06."
+      "assertion": "A2A JWT carries soa_core_version claim matching the negotiated version; absent or mismatched claim → HandoffRejected(reason=version-not-negotiated)."
     },
     "SV-GOV-11": {
       "name": "Release-build verification gate",
@@ -2054,9 +1656,7 @@
       "section_title": "Release-Build Verification Gate",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Release CI re-runs extract-schemas and build-manifest; schema files, MANIFEST.json content (modulo JWS signature), and test-vector digests are byte-identical to committed copies; must-maps show zero orphans; every file under schemas/ parses as JSON Schema 2020-12. Pipeline surfaces release-gate.json enumerating each of the five checks.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — SV-GOV category (Memory/Budget/Stream/Hooks/Registry/etc.)."
+      "assertion": "Release CI re-runs extract-schemas and build-manifest; schema files, MANIFEST.json content (modulo JWS signature), and test-vector digests are byte-identical to committed copies; must-maps show zero orphans; every file under schemas/ parses as JSON Schema 2020-12. Pipeline surfaces release-gate.json enumerating each of the five checks."
     },
     "SV-CLUS-01": {
       "name": "Local lock (default)",
@@ -2064,9 +1664,7 @@
       "section_title": "Concurrency",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Single-host contention → SelfImproveLockBusy after 30s.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — §12.4 distributed coordination + fencing-token infrastructure is Gateway-adjacent (fits alongside UI Gateway shipment in M4). Retagged from M3 per L-34 finding F-07."
+      "assertion": "Single-host contention → SelfImproveLockBusy after 30s."
     },
     "SV-CLUS-02": {
       "name": "Distributed fencing",
@@ -2074,9 +1672,7 @@
       "section_title": "Concurrency",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "SOA_COORD_MODE=distributed: commits carry Soa-Fencing-Token trailer.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — §12.4 distributed coordination + fencing-token infrastructure is Gateway-adjacent (fits alongside UI Gateway shipment in M4). Retagged from M3 per L-34 finding F-07."
+      "assertion": "SOA_COORD_MODE=distributed: commits carry Soa-Fencing-Token trailer."
     },
     "SV-CLUS-03": {
       "name": "Token gap detection",
@@ -2084,9 +1680,7 @@
       "section_title": "Concurrency",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Non-monotonic adjacent fencing tokens → SelfImproveFencingViolation; loop pauses.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — §12.4 distributed coordination + fencing-token infrastructure is Gateway-adjacent (fits alongside UI Gateway shipment in M4). Retagged from M3 per L-34 finding F-07."
+      "assertion": "Non-monotonic adjacent fencing tokens → SelfImproveFencingViolation; loop pauses."
     },
     "SV-CLUS-04": {
       "name": "Lease expiry rejection",
@@ -2094,9 +1688,7 @@
       "section_title": "Concurrency",
       "profile": "core",
       "severity": "moderate",
-      "assertion": "Writer holding an expired lease rejected at commit.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — §12.4 distributed coordination + fencing-token infrastructure is Gateway-adjacent (fits alongside UI Gateway shipment in M4). Retagged from M3 per L-34 finding F-07."
+      "assertion": "Writer holding an expired lease rejected at commit."
     },
     "SV-GOOD-01": {
       "name": "Holdout gate",
@@ -2104,9 +1696,7 @@
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Holdout delta < −0.02 → iteration rejected.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
+      "assertion": "Holdout delta < −0.02 → iteration rejected."
     },
     "SV-GOOD-02": {
       "name": "Immutable /tasks/",
@@ -2114,9 +1704,7 @@
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Meta-agent diff touching /tasks/ → ImmutableTargetEdit.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
+      "assertion": "Meta-agent diff touching /tasks/ → ImmutableTargetEdit."
     },
     "SV-GOOD-03": {
       "name": "Score ceiling saturation",
@@ -2124,9 +1712,7 @@
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "training_score ≥ 0.98 × 3 → SelfImprovementSaturation.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
+      "assertion": "training_score ≥ 0.98 × 3 → SelfImprovementSaturation."
     },
     "SV-GOOD-04": {
       "name": "Novelty quota enforced",
@@ -2134,9 +1720,7 @@
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "10 accepted iterations with unchanged tasks_fingerprint → SelfImprovementSaturation(NoveltyQuotaUnmet).",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
+      "assertion": "10 accepted iterations with unchanged tasks_fingerprint → SelfImprovementSaturation(NoveltyQuotaUnmet)."
     },
     "SV-GOOD-05": {
       "name": "Human-sign resumes",
@@ -2144,9 +1728,7 @@
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "Only non-meta-agent signed commit to /tasks/ resumes the loop.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
+      "assertion": "Only non-meta-agent signed commit to /tasks/ resumes the loop."
     },
     "SV-GOOD-06": {
       "name": "Fingerprint audited",
@@ -2154,9 +1736,7 @@
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "moderate",
-      "assertion": "Iteration fingerprint recorded in audit chain and improvement log.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
+      "assertion": "Iteration fingerprint recorded in audit chain and improvement log."
     },
     "SV-GOOD-07": {
       "name": "tasks_fingerprint reproducible",
@@ -2164,27 +1744,21 @@
       "section_title": "Safety Constraints",
       "profile": "core+si",
       "severity": "critical",
-      "assertion": "Given the reference test-vectors/tasks-fingerprint/ tree, a conformant Runner produces the published tasks_fingerprint string byte-for-byte: JCS of sorted-by-task_id array of {task_id, task_json_sha256 (JCS of task.json), dockerfile_sha256 (raw bytes), entrypoint_sha256 (raw bytes or 'absent')}, then SHA-256.",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — depends on §9 Self-Improvement runtime OR §17 A2A Handoff infrastructure, both deferred to M5."
+      "assertion": "Given the reference test-vectors/tasks-fingerprint/ tree, a conformant Runner produces the published tasks_fingerprint string byte-for-byte: JCS of sorted-by-task_id array of {task_id, task_json_sha256 (JCS of task.json), dockerfile_sha256 (raw bytes), entrypoint_sha256 (raw bytes or 'absent')}, then SHA-256."
     },
     "SV-SESS-12": {
       "name": "Replay-cache / tool-idempotency disjointness",
       "section": "§12.2",
       "profile": "core",
       "assertion": "UI §11.4.1 replay cache and §12.2 tool idempotency are implemented as disjoint subsystems with independent metrics.",
-      "status": "reserved",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — asserts §12.2 tool idempotency + UI §11.4.1 prompt-nonce replay cache are disjoint mechanisms. §12.2 ships M1 but UI §11.4.1 infrastructure requires Gateway (M4)."
+      "status": "reserved"
     },
     "SV-GOV-12": {
       "name": "Upstream A2A major-version wire-compatibility detection",
       "section": "§19.4.3",
       "profile": "core",
       "assertion": "Runner detects an upstream-A2A major-version bump that breaks any §17 wire property and refuses the peer with HandoffRejected(reason=wire-incompatibility).",
-      "status": "reserved",
-      "implementation_milestone": "M5",
-      "milestone_reason": "M5 — status=reserved entry depends on §17 A2A. Retagged from M3 per L-34 finding F-06."
+      "status": "reserved"
     },
     "SV-AUDIT-TAIL-01": {
       "name": "Audit tail observability response",
@@ -2192,9 +1766,7 @@
       "section_title": "Audit Tail Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /audit/tail returns 200 with body conforming to schemas/audit-tail-response.schema.json. On empty log, this_hash equals the literal \"GENESIS\" and last_record_timestamp is omitted. On non-empty log, this_hash is 64-char lowercase hex and matches the most recent record's this_hash. Reading MUST NOT append a meta-record — the endpoint is pure query.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 — shipped and verified green during M2 execution. Retroactive tagging per L-33 rev 2 (plan-evaluator finding F-07)."
+      "assertion": "GET /audit/tail returns 200 with body conforming to schemas/audit-tail-response.schema.json. On empty log, this_hash equals the literal \"GENESIS\" and last_record_timestamp is omitted. On non-empty log, this_hash is 64-char lowercase hex and matches the most recent record's this_hash. Reading MUST NOT append a meta-record — the endpoint is pure query."
     },
     "SV-AUDIT-RECORDS-01": {
       "name": "Audit records observability response + pagination",
@@ -2202,9 +1774,7 @@
       "section_title": "Audit Records Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /audit/records?after=<id>&limit=<n> returns 200 with body conforming to schemas/audit-records-response.schema.json. Records are in chain order earliest-to-latest. has_more transitions correctly as the caller paginates with next_after. Reading MUST NOT append a meta-record.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 — shipped and verified green during M2 execution. Retroactive tagging per L-33 rev 2 (plan-evaluator finding F-07)."
+      "assertion": "GET /audit/records?after=<id>&limit=<n> returns 200 with body conforming to schemas/audit-records-response.schema.json. Records are in chain order earliest-to-latest. has_more transitions correctly as the caller paginates with next_after. Reading MUST NOT append a meta-record."
     },
     "SV-AUDIT-RECORDS-02": {
       "name": "Audit chain integrity",
@@ -2212,9 +1782,7 @@
       "section_title": "Audit Records Observability + Audit Trail",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Validator reads all records via /audit/records pagination, verifies records[0].prev_hash == \"GENESIS\" and for all i > 0, records[i].prev_hash == records[i-1].this_hash. Any mismatch fails the assertion.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 — shipped and verified green during M2 execution. Retroactive tagging per L-33 rev 2 (plan-evaluator finding F-07)."
+      "assertion": "Validator reads all records via /audit/records pagination, verifies records[0].prev_hash == \"GENESIS\" and for all i > 0, records[i].prev_hash == records[i-1].this_hash. Any mismatch fails the assertion."
     },
     "SV-SESS-BOOT-01": {
       "name": "Session bootstrap response + tighten-only",
@@ -2222,9 +1790,7 @@
       "section_title": "Session Bootstrap",
       "profile": "core",
       "severity": "critical",
-      "assertion": "POST /sessions with requested_activeMode ≤ Agent Card's permissions.activeMode returns 201 with body conforming to schemas/session-bootstrap-response.schema.json. granted_activeMode equals requested_activeMode. session_id matches the §12.1 session-file pattern. session_bearer is opaque and authorizes /stream, /permissions/resolve, /audit/tail for exactly this session.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 — shipped and verified green during M2 execution. Retroactive tagging per L-33 rev 2 (plan-evaluator finding F-07)."
+      "assertion": "POST /sessions with requested_activeMode ≤ Agent Card's permissions.activeMode returns 201 with body conforming to schemas/session-bootstrap-response.schema.json. granted_activeMode equals requested_activeMode. session_id matches the §12.1 session-file pattern. session_bearer is opaque and authorizes /stream, /permissions/resolve, /audit/tail for exactly this session."
     },
     "SV-SESS-BOOT-02": {
       "name": "Session bootstrap rejects looser-than-card request",
@@ -2232,9 +1798,7 @@
       "section_title": "Session Bootstrap",
       "profile": "core",
       "severity": "critical",
-      "assertion": "POST /sessions with requested_activeMode > Agent Card's permissions.activeMode returns 403 with reason=ConfigPrecedenceViolation. Agent Card activeMode is the per-deployment upper bound; session activeMode is tighten-only from that bound.",
-      "implementation_milestone": "M2",
-      "milestone_reason": "M2 — shipped and verified green during M2 execution. Retroactive tagging per L-33 rev 2 (plan-evaluator finding F-07)."
+      "assertion": "POST /sessions with requested_activeMode > Agent Card's permissions.activeMode returns 403 with reason=ConfigPrecedenceViolation. Agent Card activeMode is the per-deployment upper bound; session activeMode is tighten-only from that bound."
     },
     "SV-PERM-20": {
       "name": "Permission decision recording",
@@ -2242,9 +1806,7 @@
       "section_title": "Permission Decision Recording",
       "profile": "core",
       "severity": "critical",
-      "assertion": "POST /permissions/decisions with valid body for an AutoAllow tool returns 201 with body conforming to schemas/permission-decision-response.schema.json. Exactly one audit record is appended; response.audit_this_hash equals the new tail hash. Decision matches what /permissions/resolve would return (forgery resistance). Error-code enum per §10.3.2: 400 reasons = {malformed-json, missing-required-field, unknown-tool, pda-malformed}; 403 reasons = {insufficient-scope, session-bearer-mismatch, pda-decision-mismatch}. ConfigPrecedenceViolation is RESERVED for §10.3 step 3 and MUST NOT be used here.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "POST /permissions/decisions with valid body for an AutoAllow tool returns 201 with body conforming to schemas/permission-decision-response.schema.json. Exactly one audit record is appended; response.audit_this_hash equals the new tail hash. Decision matches what /permissions/resolve would return (forgery resistance). Error-code enum per §10.3.2: 400 reasons = {malformed-json, missing-required-field, unknown-tool, pda-malformed}; 403 reasons = {insufficient-scope, session-bearer-mismatch, pda-decision-mismatch}. ConfigPrecedenceViolation is RESERVED for §10.3 step 3 and MUST NOT be used here."
     },
     "SV-PERM-21": {
       "name": "PDA verification happy path",
@@ -2252,9 +1814,7 @@
       "section_title": "Permission Decision Recording + Artifact Signing Profile",
       "profile": "core",
       "severity": "critical",
-      "assertion": "POST /permissions/decisions with a tool whose resolver output is Prompt and a valid PDA whose canonical-decision.decision matches the resolver output returns 201 with handler_accepted=true. Audit record signer_key_id equals the PDA x5c[0] kid.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "POST /permissions/decisions with a tool whose resolver output is Prompt and a valid PDA whose canonical-decision.decision matches the resolver output returns 201 with handler_accepted=true. Audit record signer_key_id equals the PDA x5c[0] kid."
     },
     "SV-PERM-22": {
       "name": "PDA verification negative paths",
@@ -2262,9 +1822,7 @@
       "section_title": "Permission Decision Recording + Artifact Signing Profile",
       "profile": "core",
       "severity": "critical",
-      "assertion": "POST /permissions/decisions with a cryptographically-invalid PDA returns 201 with decision=Deny, handler_accepted=false, reason=pda-verify-failed AND audits the attempt. POST with a PDA whose canonical-decision.decision disagrees with the resolver computation returns 403 reason=pda-decision-mismatch with no audit record written.",
-      "implementation_milestone": "M3",
-      "milestone_reason": "M3 — core-profile completion; SV-PERM category extends M1/M2 assertions."
+      "assertion": "POST /permissions/decisions with a cryptographically-invalid PDA returns 201 with decision=Deny, handler_accepted=false, reason=pda-verify-failed AND audits the attempt. POST with a PDA whose canonical-decision.decision disagrees with the resolver computation returns 403 reason=pda-decision-mismatch with no audit record written."
     },
     "SV-SESS-STATE-01": {
       "name": "Session state observability response",
@@ -2272,8 +1830,7 @@
       "section_title": "Session State Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /sessions/<session_id>/state returns 200 with body conforming to schemas/session-state-response.schema.json. Response reflects persisted state (not stale pre-flush in-memory state). Reading MUST NOT advance workflow state, emit StreamEvents, or append audit rows. Rate limit 120 rpm per bearer; 401/403/404/429/503 per spec.",
-      "implementation_milestone": "M2"
+      "assertion": "GET /sessions/<session_id>/state returns 200 with body conforming to schemas/session-state-response.schema.json. Response reflects persisted state (not stale pre-flush in-memory state). Reading MUST NOT advance workflow state, emit StreamEvents, or append audit rows. Rate limit 120 rpm per bearer; 401/403/404/429/503 per spec."
     },
     "SV-AUDIT-SINK-EVENTS-01": {
       "name": "Audit-sink event channel (M2 minimum observability)",
@@ -2281,8 +1838,7 @@
       "section_title": "Audit-Sink Event Channel",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /audit/sink-events returns 200 with body conforming to schemas/audit-sink-events-response.schema.json. Each event has event_id, type ∈ {AuditSinkDegraded, AuditSinkUnreachable, AuditSinkRecovered}, transition_at. Fresh Runner boot with SOA_RUNNER_AUDIT_SINK_FAILURE_MODE=<state> emits exactly one matching event (the implicit transition from healthy). Pagination via after/next_after/has_more; audit:read scope required.",
-      "implementation_milestone": "M2"
+      "assertion": "GET /audit/sink-events returns 200 with body conforming to schemas/audit-sink-events-response.schema.json. Each event has event_id, type ∈ {AuditSinkDegraded, AuditSinkUnreachable, AuditSinkRecovered}, transition_at. Fresh Runner boot with SOA_RUNNER_AUDIT_SINK_FAILURE_MODE=<state> emits exactly one matching event (the implicit transition from healthy). Pagination via after/next_after/has_more; audit:read scope required."
     },
     "SV-MEM-STATE-01": {
       "name": "Memory state observability",
@@ -2290,8 +1846,7 @@
       "section_title": "Memory State Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /memory/state?session_id=<sid> returns 200 with body conforming to schemas/memory-state-response.schema.json when memory.enabled=true. Returns 501 memory-disabled when Agent Card carries memory.enabled=false. Byte-identity excludes generated_at. Not-a-side-effect: reads MUST NOT trigger consolidation or advance aging clocks.",
-      "implementation_milestone": "M3"
+      "assertion": "GET /memory/state?session_id=<sid> returns 200 with body conforming to schemas/memory-state-response.schema.json when memory.enabled=true. Returns 501 memory-disabled when Agent Card carries memory.enabled=false. Byte-identity excludes generated_at. Not-a-side-effect: reads MUST NOT trigger consolidation or advance aging clocks."
     },
     "SV-BUD-PROJ-01": {
       "name": "Budget projection observability",
@@ -2299,8 +1854,7 @@
       "section_title": "Budget Projection Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /budget/projection?session_id=<sid> returns 200 with body conforming to schemas/budget-projection-response.schema.json. safety_factor always 1.15. cold_start_baseline_active reflects cold vs warm session state. Byte-identity excludes generated_at. Not-a-side-effect: reads MUST NOT advance counters or fire cancellations.",
-      "implementation_milestone": "M3"
+      "assertion": "GET /budget/projection?session_id=<sid> returns 200 with body conforming to schemas/budget-projection-response.schema.json. safety_factor always 1.15. cold_start_baseline_active reflects cold vs warm session state. Byte-identity excludes generated_at. Not-a-side-effect: reads MUST NOT advance counters or fire cancellations."
     },
     "SV-REG-OBS-01": {
       "name": "Tool Registry observability (dynamic registration)",
@@ -2308,8 +1862,7 @@
       "section_title": "Dynamic Registration Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /tools/registered returns 200 with body conforming to schemas/tools-registered-response.schema.json. Each entry carries registration_source ∈ {static-fixture, mcp-dynamic}. registry_version is sha256 of JCS(tools[]). Byte-identity excludes generated_at.",
-      "implementation_milestone": "M3"
+      "assertion": "GET /tools/registered returns 200 with body conforming to schemas/tools-registered-response.schema.json. Each entry carries registration_source ∈ {static-fixture, mcp-dynamic}. registry_version is sha256 of JCS(tools[]). Byte-identity excludes generated_at."
     },
     "SV-MEM-STATE-02": {
       "name": "Memory state not-a-side-effect invariant",
@@ -2317,8 +1870,7 @@
       "section_title": "Memory State Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Two successive GET /memory/state?session_id=<sid> calls against a quiescent session return byte-identical bodies when generated_at is excluded from the comparison. Consolidation not triggered, aging clocks unchanged, no audit rows, no StreamEvents.",
-      "implementation_milestone": "M3"
+      "assertion": "Two successive GET /memory/state?session_id=<sid> calls against a quiescent session return byte-identical bodies when generated_at is excluded from the comparison. Consolidation not triggered, aging clocks unchanged, no audit rows, no StreamEvents."
     },
     "SV-BUD-PROJ-02": {
       "name": "Budget projection not-a-side-effect invariant",
@@ -2326,8 +1878,7 @@
       "section_title": "Budget Projection Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Two successive GET /budget/projection?session_id=<sid> calls against a quiescent session return byte-identical bodies when generated_at is excluded. Token counters unchanged, no cancellation fired, no audit rows.",
-      "implementation_milestone": "M3"
+      "assertion": "Two successive GET /budget/projection?session_id=<sid> calls against a quiescent session return byte-identical bodies when generated_at is excluded. Token counters unchanged, no cancellation fired, no audit rows."
     },
     "SV-REG-OBS-02": {
       "name": "Tool Registry not-a-side-effect invariant",
@@ -2335,8 +1886,7 @@
       "section_title": "Dynamic Registration Observability",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Two successive GET /tools/registered calls in a quiescent registry return byte-identical bodies when generated_at is excluded. registry_version unchanged between reads.",
-      "implementation_milestone": "M3"
+      "assertion": "Two successive GET /tools/registered calls in a quiescent registry return byte-identical bodies when generated_at is excluded. registry_version unchanged between reads."
     },
     "SV-STR-OBS-01": {
       "name": "Minimum StreamEvent observability channel",
@@ -2344,8 +1894,7 @@
       "section_title": "Minimum StreamEvent Observability Channel",
       "profile": "core",
       "severity": "critical",
-      "assertion": "GET /events/recent?session_id=<sid>&after=<id>&limit=<n> returns 200 with body conforming to schemas/events-recent-response.schema.json. Events carry event_id + sequence + type (∈ 27-value enum incl. PreToolUseOutcome/PostToolUseOutcome per §19.4 errata) + session_id + emitted_at. Pagination via next_after/has_more. Byte-identity excludes generated_at. Not-a-side-effect on reads.",
-      "implementation_milestone": "M3"
+      "assertion": "GET /events/recent?session_id=<sid>&after=<id>&limit=<n> returns 200 with body conforming to schemas/events-recent-response.schema.json. Events carry event_id + sequence + type (∈ 27-value enum incl. PreToolUseOutcome/PostToolUseOutcome per §19.4 errata) + session_id + emitted_at. Pagination via next_after/has_more. Byte-identity excludes generated_at. Not-a-side-effect on reads."
     },
     "SV-ADAPTER-01": {
       "name": "Adapter Card injection",
@@ -2353,9 +1902,7 @@
       "section_title": "Adapter Conformance + Adapter Definition + Documented Exceptions + Invocation + Agent Card",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Validator invoked with --adapter=<name> (name ∈ {langgraph, crewai, autogen, langchain-agents, custom}) fetches /.well-known/agent-card.json + .jws from adapter URL. Card JWS verifies against §5.3 bootstrap trust anchor. Card validates against schemas/agent-card.schema.json. Card MUST carry adapter_notes.host_framework equal to the --adapter value (§18.5.1). Card MAY carry adapter_notes.deferred_test_families (array of strings ∈ {SV-MEM, SV-BUD, SV-SESS}) per §18.5.4; if present, each entry MUST match a family the validator will subsequently skip. Declared host_framework without matching --adapter flag → fail with reason card-vs-invocation-mismatch. Missing adapter_notes when --adapter specified → fail with reason missing-adapter-declaration.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — LangGraph adapter package introduction (L-52). §18.5 and §14.6 added as v1.0.16 editorial addenda; validator gains --adapter flag per §18.5.5; impl ships packages/langgraph-adapter emitting the declared Agent Card."
+      "assertion": "Validator invoked with --adapter=<name> (name ∈ {langgraph, crewai, autogen, langchain-agents, custom}) fetches /.well-known/agent-card.json + .jws from adapter URL. Card JWS verifies against §5.3 bootstrap trust anchor. Card validates against schemas/agent-card.schema.json. Card MUST carry adapter_notes.host_framework equal to the --adapter value (§18.5.1). Card MAY carry adapter_notes.deferred_test_families (array of strings ∈ {SV-MEM, SV-BUD, SV-SESS}) per §18.5.4; if present, each entry MUST match a family the validator will subsequently skip. Declared host_framework without matching --adapter flag → fail with reason card-vs-invocation-mismatch. Missing adapter_notes when --adapter specified → fail with reason missing-adapter-declaration."
     },
     "SV-ADAPTER-02": {
       "name": "Pre-dispatch permission interception",
@@ -2363,9 +1910,7 @@
       "section_title": "Permission Interception Points + Resolution Algorithm + StreamEvent + Per-Type Payload Schemas + Hook Ordering",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Validator drives a session invoking one Mutating tool via the adapter. Validator subscribes to GET /events/recent?session_id=<sid> and asserts ordering: (1) ToolInputStart (or ToolInputEnd if args stream ≤1 chunk) emitted with tool_call_id T and args_digest D, (2) PermissionPrompt emitted with tool.args_digest==D (same D, proving same pre-dispatch args snapshot) and nonce field populated per §14.1.1, (3) Validator signs a PDA decision=deny for the prompt and POSTs /permissions/decisions (§10.3.2), (4) PermissionDecision emitted with prompt_id matching (2) and decision=deny, (5) NO ToolResult AND NO ToolError for tool_call_id T appears in the channel after step (4). If ToolResult or ToolError for T appears after step (4), the adapter violated §18.5.2 pre-dispatch invariant → fail with reason post-dispatch-permission. If the Card declares adapter_notes.permission_mode=advisory (§18.5.2 fallback), this test fails by construction with reason advisory-mode-not-core-conformant.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — LangGraph adapter package introduction (L-52). Exercises the hardest adapter correctness invariant; proves host-framework tool dispatch is wrapped pre-execution, not post-hoc."
+      "assertion": "Validator drives a session invoking one Mutating tool via the adapter. Validator subscribes to GET /events/recent?session_id=<sid> and asserts ordering: (1) ToolInputStart (or ToolInputEnd if args stream ≤1 chunk) emitted with tool_call_id T and args_digest D, (2) PermissionPrompt emitted with tool.args_digest==D (same D, proving same pre-dispatch args snapshot) and nonce field populated per §14.1.1, (3) Validator signs a PDA decision=deny for the prompt and POSTs /permissions/decisions (§10.3.2), (4) PermissionDecision emitted with prompt_id matching (2) and decision=deny, (5) NO ToolResult AND NO ToolError for tool_call_id T appears in the channel after step (4). If ToolResult or ToolError for T appears after step (4), the adapter violated §18.5.2 pre-dispatch invariant → fail with reason post-dispatch-permission. If the Card declares adapter_notes.permission_mode=advisory (§18.5.2 fallback), this test fails by construction with reason advisory-mode-not-core-conformant."
     },
     "SV-ADAPTER-03": {
       "name": "LangGraph event mapping",
@@ -2373,9 +1918,7 @@
       "section_title": "Required Conformance Tests + LangGraph Event Mapping + Event Inventory + Synthetic Events + Deviation Protocol",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Validator loads fixture test-vectors/langgraph-adapter/simple-agent-trace.json which enumerates (a) a reference LangGraph astream_events v2 sequence (by event type, ordering, and run_id), and (b) the expected SOA StreamEvent emission under the default §14.6.1 mapping. Validator POSTs the fixture LangGraph trace input to the adapter's trace-ingest endpoint (or drives the adapter's wrapped StateGraph with the fixture's initial state), then subscribes to /events/recent?session_id=<sid> and collects emitted StreamEvents. The emitted type sequence MUST equal the fixture's expected sequence exactly (per §14.6.1 direct mappings and §14.6.2 synthetic events). Adapter-declared deviations per §14.6.4 substitute into expectations: the validator reads adapter_notes.event_mapping_deviations from the Card and reads the paired test vector referenced there, then substitutes into the expected set before comparison. Unmapped LangGraph events (§14.6.1 'dropped' list) MUST NOT produce SOA events. Silent deviation (unmapped emission without Card declaration) → fail with reason event-mapping-silent-deviation.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — LangGraph adapter package introduction (L-52). Tests the 40→27 event-translation correctness that motivates §14.6; evaluator finding #2 (pre-drafted inventory) lands here."
+      "assertion": "Validator loads fixture test-vectors/langgraph-adapter/simple-agent-trace.json which enumerates (a) a reference LangGraph astream_events v2 sequence (by event type, ordering, and run_id), and (b) the expected SOA StreamEvent emission under the default §14.6.1 mapping. Validator POSTs the fixture LangGraph trace input to the adapter's trace-ingest endpoint (or drives the adapter's wrapped StateGraph with the fixture's initial state), then subscribes to /events/recent?session_id=<sid> and collects emitted StreamEvents. The emitted type sequence MUST equal the fixture's expected sequence exactly (per §14.6.1 direct mappings and §14.6.2 synthetic events). Adapter-declared deviations per §14.6.4 substitute into expectations: the validator reads adapter_notes.event_mapping_deviations from the Card and reads the paired test vector referenced there, then substitutes into the expected set before comparison. Unmapped LangGraph events (§14.6.1 'dropped' list) MUST NOT produce SOA events. Silent deviation (unmapped emission without Card declaration) → fail with reason event-mapping-silent-deviation."
     },
     "SV-ADAPTER-04": {
       "name": "Adapter audit forwarding",
@@ -2383,9 +1926,7 @@
       "section_title": "Required Conformance Tests + Audit Trail + Tail + Records + Retention Class",
       "profile": "core",
       "severity": "critical",
-      "assertion": "Validator drives a session invoking two tools (one ReadOnly, one Mutating) via the adapter. After session completes, validator fetches GET /audit/records with admin:read bearer. Response body validates against schemas/audit-records-response.schema.json. Record count ≥ 2 (at minimum, one per tool invocation; additional rows for PermissionDecision emission and session lifecycle are permitted). Audit hash chain verifies per §10.5 (each record's prev_hash matches the previous record's own hash under JCS-canonical bytes). Each tool-invocation row carries retention_class per §10.5.6 (∈ {dfa-365d, standard-90d}). A row missing from the chain or a chain break → fail with reason audit-chain-broken. Missing retention_class → fail with reason retention-class-missing.",
-      "implementation_milestone": "M4",
-      "milestone_reason": "M4 — LangGraph adapter package introduction (L-52). Ensures adapter's tool invocations flow through the Runner audit chain rather than a host-framework side-channel."
+      "assertion": "Validator drives a session invoking two tools (one ReadOnly, one Mutating) via the adapter. After session completes, validator fetches GET /audit/records with admin:read bearer. Response body validates against schemas/audit-records-response.schema.json. Record count ≥ 2 (at minimum, one per tool invocation; additional rows for PermissionDecision emission and session lifecycle are permitted). Audit hash chain verifies per §10.5 (each record's prev_hash matches the previous record's own hash under JCS-canonical bytes). Each tool-invocation row carries retention_class per §10.5.6 (∈ {dfa-365d, standard-90d}). A row missing from the chain or a chain break → fail with reason audit-chain-broken. Missing retention_class → fail with reason retention-class-missing."
     }
   },
   "tests_by_category": {
