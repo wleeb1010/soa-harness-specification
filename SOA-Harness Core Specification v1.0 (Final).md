@@ -701,7 +701,7 @@ GET /memory/state?session_id=<session_id>
 
 **Conformance linkage.** `SV-MEM-STATE-01` (new) — schema + not-a-side-effect + memory-disabled 501 path. `SV-MEM-01..08` live paths use this endpoint as the observation surface for aging, consolidation, and sharing-policy assertions.
 
-### 8.7 Reference Memory Backend Implementations (Informative — M5 addition, L-56)
+### 8.7 Reference Memory Backend Implementations (Informative)
 
 **Status.** This subsection is **informative** (non-normative). It documents reference Memory MCP backend implementations shipped under the `@soa-harness/memory-mcp-*` namespace alongside v1.0.0. None of the specific backends are privileged by §8 — the §8.1–§8.6 contract is the sole normative surface, and any server honoring it is conformant. The three backends below exist to prove §8 is implementable by the ecosystem's leading memory layers, not to elevate them above alternatives.
 
@@ -1721,7 +1721,7 @@ Deny lists live in `AGENTS.md`; the syntax is one tool name per line under `### 
 
 **Conformance linkage.** `SV-REG-03` validator drives the env var with a controlled tool entry; asserts `registry_version` (`/tools/registered` per §11.4) updates AND the in-flight session's `tool_pool_hash` does NOT (mid-session pool is pinned per §11.2).
 
-### 11.4 Dynamic Registration Observability (Normative — M3 addition)
+### 11.4 Dynamic Registration Observability (Normative)
 
 **Rationale.** §11.1–§11.3 define the global Tool Registry + per-session Tool Pool + re-registration rules. Dynamic MCP registration (tools added to the registry at runtime) is M3 scope. Conformance validators need an observation surface to verify: current registered tools, pool assignments per session, and re-registration events since boot.
 
@@ -2119,7 +2119,7 @@ StopReason := NaturalStop
             | Crash
 ```
 
-### 13.5 Budget Projection Observability (Normative — M3 addition)
+### 13.5 Budget Projection Observability (Normative)
 
 **Rationale.** §13.1 defines the p95-over-window projection algorithm with 1.15 safety factor. §13.2 defines mid-stream enforcement. §13.3 defines cache accounting. Conformance tests (`SV-BUD-01..07` + `HR-02` + `HR-03` + `HR-06`) can't verify the projection is actually correct without reading the projection value. Standard observability-endpoint pattern.
 
@@ -2334,7 +2334,7 @@ This endpoint is the primary consumer surface for UI Gateways (see UI Integratio
 - `observability.requiredResourceAttrs` are REQUIRED; missing → refuse to start.
 - OTel exporter unavailable: the Runner MUST buffer up to 10,000 spans then drop with `ObservabilityBackpressure`. The Runner MUST NOT halt.
 
-### 14.5 Minimum StreamEvent Observability Channel (Normative — M3 addition)
+### 14.5 Minimum StreamEvent Observability Channel (Normative)
 
 **Rationale.** §14.1–§14.4 define the StreamEvent closed enum, per-type payload schemas, SSE transport at `/stream/v1/{session_id}`, and OTel mapping. Full SSE transport (§14.3) is M4 scope. Many conformance tests (`SV-STR-01..04`, `SV-STR-09/10/11/15`) need an observation surface for StreamEvents that DON'T require the full SSE pipeline — they just need to READ emitted events. This section defines a polling-friendly minimum observability channel that parallels §12.5.4 (audit-sink events) but scoped to the full StreamEvent enum.
 
@@ -2377,7 +2377,7 @@ Pagination same pattern as `/audit/records` (§10.5.3). Byte-identity excludes `
 
 **Conformance linkage.** `SV-STR-OBS-01` (new) — schema + pagination + not-a-side-effect + full-enum coverage. SV-STR-01/02/03/04/09/10/11/15 consume this endpoint for their assertions. SV-STR-12/13/14 remain M4 (require §14.3 full SSE transport with Last-Event-ID / terminal SSE semantics).
 
-### 14.5.2 OTel Span Observability Channel (Normative — M3 addition, L-36)
+### 14.5.2 OTel Span Observability Channel (Normative)
 
 **Rationale.** §14.4 normatively MUSTs OTel span emission (`soa.turn` + `soa.tool.<name>` with required attributes, `StreamEvent.event_id` as span event) but defines no validator-observable surface. In production, impls export spans to operator-configured OTLP collectors; conformance tests can't assume a collector is reachable or inspectable. `SV-STR-06/07` need an in-process surface that mirrors what was (or would have been) exported, independent of collector availability.
 
@@ -2424,7 +2424,7 @@ Span content MUST be byte-equivalent to what the Runner exports (or would have e
 
 **Conformance linkage.** `SV-STR-06` validates `soa.turn` + `soa.tool.<name>` span presence with required attributes. `SV-STR-07` validates `observability.requiredResourceAttrs` completeness (missing → refuse start, observable via Runner failing `/ready` probe — existing conformance coverage in §5.4; the span endpoint itself asserts non-empty `resource_attributes`).
 
-### 14.5.3 Observability Backpressure Status Endpoint (Normative — M3 addition, L-36)
+### 14.5.3 Observability Backpressure Status Endpoint (Normative)
 
 **Rationale.** §14.4 line 2050 specifies "buffer up to 10,000 spans then drop with `ObservabilityBackpressure`" as the exporter-unavailable behavior. §24 defines `ObservabilityBackpressure` as an error-code identifier, but the spec did not define WHERE a validator observes that backpressure has been applied. `SV-STR-08` needs a deterministic surface to assert drop-oldest + named signal happened.
 
@@ -2461,7 +2461,7 @@ GET /observability/backpressure
 
 **Conformance linkage.** `SV-STR-08` floods the OTLP exporter (or drives a pinned scenario that forces backpressure with the collector unavailable), polls `/observability/backpressure`, asserts `dropped_since_boot` > 0 AND `last_backpressure_applied_at` > test-start wall-clock.
 
-### 14.5.4 System Event Log Observation Channel (Normative — M3 addition, L-38)
+### 14.5.4 System Event Log Observation Channel (Normative)
 
 **Rationale.** §14.2 defines the System Event Log at `/logs/system.log` (JSON Lines) with closed-set categories `ContextLoad, MemoryLoad, MemoryDegraded, Permission, Routing, Config, Card, SelfImprovement, Audit, Budget, Handoff, Error` and record shape `{ ts, session_id, category, level, code, message, data }`. The file-path surface is the production persistence channel; conformance tests cannot assume shared filesystem access to impl's log file. `SV-MEM-04` observes non-terminal `MemoryDegraded` (per-timeout, pre-threshold) via this log — a pure HTTP observation surface is required.
 
@@ -2509,7 +2509,7 @@ GET /logs/system/recent?session_id=<session_id>&category=<cat1,cat2,...>&after=<
 
 **Conformance linkage.** `SV-MEM-04` asserts mid-loop timeout emits a non-terminal `MemoryDegraded` record: Validator drives one timeout (mock configured to time out once), polls `/logs/system/recent?session_id=<sid>&category=MemoryDegraded`, asserts exactly one record with `level=warn` + `code=MemoryDegraded` + session continues (no `SessionEnd` with this `session_id`). Same endpoint subsumes observation of other §14.2 categories for future conformance tests.
 
-### 14.5.5 Post-Crash Observation via Admin Scope (Normative — M3 addition, L-47)
+### 14.5.5 Post-Crash Observation via Admin Scope (Normative)
 
 **Rationale.** `/events/recent` (§14.5) requires `sessions:read:<session_id>` scope. Bearers are in-memory (§5.4), so a pre-crash session's bearer does NOT survive a process restart. When the Runner's boot-scan (§12) resumes a session with an open bracket, it MUST emit a `CrashEvent` for that session per §14.1. Without an auth path that survives the restart, conformance validators cannot observe the emission — `SV-STR-10` becomes untestable.
 
@@ -2526,7 +2526,7 @@ GET /logs/system/recent?session_id=<session_id>&category=<cat1,cat2,...>&after=<
 
 **Privacy note.** `admin:read` scope holders receive broad read access across all sessions in the current process boot. This is consistent with the existing admin-scope surfaces (§14.5.3 `/observability/backpressure`, §10.5.2 `/audit/tail`, §10.5.3 `/audit/records`). Operators MUST ensure `admin:read` is granted only to principals authorized to read audit-class data.
 
-### 14.6 LangGraph Event Mapping (Informative — M4 addition, L-52)
+### 14.6 LangGraph Event Mapping (Informative)
 
 **Status.** This subsection is **informative** (non-normative). It documents the expected mapping from LangGraph's `astream_events v2` event surface to the §14.1 closed 27-type StreamEvent enum when an adapter (per §18.5 Adapter Conformance) wraps a LangGraph `StateGraph`. Normative requirements for adapter event emission are in §18.5.3 (Required Conformance Tests) and §18.5.4 (Documented Exceptions); this section supports `SV-ADAPTER-03` by providing the authoritative mapping table against which an adapter's emission is checked.
 
@@ -2835,7 +2835,7 @@ soa-validate --agent-url https://agent.example.com \
 
 Exit code `0` means all required tests passed. Non-zero indicates failures enumerated in `report.json`.
 
-### 18.5 Adapter Conformance (Normative — M4 addition, L-52)
+### 18.5 Adapter Conformance (Normative)
 
 **Motivation.** Many SOA-Harness deployments begin life as agents built on a third-party orchestration framework (LangGraph, CrewAI, AutoGen, LangChain Agents). An *adapter* is a module that wraps such a framework so the resulting runtime satisfies SOA-Harness wire contracts (§5 bootstrap, §6 Agent Card, §10 permission, §14 StreamEvent, §15 hooks). Adapters are orthogonal to the Conformance Levels defined in §18.3 — an adapter MAY claim Core, Core+SI, Core+Handoff, or Full conformance, but its qualification as an adapter (as distinct from a native Runner implementation) imposes the additional normative requirements in this subsection. §14.6 provides the informative event-mapping companion for LangGraph-based adapters.
 
