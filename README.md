@@ -1,13 +1,19 @@
 # SOA-Harness Specification v1.0
 
-> **Status (as of 2026-04-19): draft specification + reference architecture, not a shipping production bundle.**
->
-> - [`MANIFEST.json.jws`](./MANIFEST.json.jws) ships with a **placeholder signature**; the real SOA-WG release-signing key will be distributed per Core §5.3 bootstrap at first official release.
-> - [`SOA UI Gateway Reference Implementation Sketch.md`](./SOA%20UI%20Gateway%20Reference%20Implementation%20Sketch.md) is **illustrative only — not a conformant implementation** and explicitly labeled as such.
-> - External normative mirrors under [`artifacts/external/`](./artifacts/external/) are declared by Core §2 but **not yet populated** (mirroring is a release-bundle build step per Core §19.1.1).
-> - At least **one independent passing implementation per profile** is a prerequisite before conformance claims from downstream adopters are meaningful.
->
-> Implementers may use the spec as a design contract today. Third-party claims of "SOA-Harness v1.0 conformant" are premature until the release-signing key is distributed and the reference implementations ship.
+Normative specification bundle for **Secure Operating Agents (SOA)** — a conformance-testable harness for agentic runtimes and their UI gateways, centering cryptographic integrity, permission gating, hash-chained audit, and signed-artifact provenance.
+
+**Release documents** for adopters reading at v1.0.0:
+- [`RELEASE-NOTES.md`](./RELEASE-NOTES.md) — adopter-facing narrative: what this is, who should adopt now, 90-second getting-started
+- [`CHANGELOG.md`](./CHANGELOG.md) — line-by-line capability summary for v1.0.0
+- [`ERRATA.md`](./ERRATA.md) — per-patch errata for versions after v1.0.0
+- [`docs/errata-policy.md`](./docs/errata-policy.md) — editorial / minor / breaking decision tree
+- [`GOVERNANCE.md`](./GOVERNANCE.md) — honest single-maintainer acknowledgment, issue-reporting paths
+
+**Conformance-label stance at v1.0.0:**
+- **"Reference Implementation"** label — self-assigned for the TypeScript reference runtime (`@soa-harness/*`) and Go conformance harness (`soa-validate`), both shipping under the same v1.0.0 tag.
+- **"Bake-Off Verified"** label — requires one independent second-party implementation whose `soa-validate` output converges to zero divergence. Until one exists, downstream adopters claim Reference-level conformance only.
+
+The [UI Gateway Reference Sketch](./SOA%20UI%20Gateway%20Reference%20Implementation%20Sketch.md) ships alongside the spec as illustrative TypeScript — explicitly labeled non-normative. The production Gateway reference lives in the `soa-harness-impl` sibling repository.
 
 Normative specification bundle for **Secure Operating Agents (SOA)** — a conformance-testable harness for agentic runtimes and their UI gateways, centering cryptographic integrity, permission gating, hash-chained audit, and signed-artifact provenance as the core guarantees on every page.
 
@@ -51,7 +57,7 @@ Notes on the artifact table:
 - **`soa-harness-profile-v1.json`** enforces the §9.7 deny-by-default allowlist. Baseline applies on `x86_64`, `aarch64`, `riscv64`, `s390x`, `ppc64le`; the `CLONE_NEW*` arg filter is gated to the first three via `includes.arches`.
 - **`schemas/`** contains: `agent-card`, `session`, `stream-event`, `stream-event-payloads`, `harbor-task`, `release-manifest`, `crl`, `gateway-config`, `ui-envelope`, `ui-derived-payloads`, `canonical-decision`, `locale-map`, `wcag-addendum`.
 - **`MANIFEST.json`** lists every artifact with SHA-256 digest + canonicalization rule; validates against `schemas/release-manifest.schema.json`.
-- **`MANIFEST.json.jws`** currently ships a placeholder signature; the real SOA-WG release key is distributed per §9.7.1 `publisher_kid`.
+- **`MANIFEST.json.jws`** is signed with the v1.0 release key (Ed25519; fingerprint recorded in `keys/soa-release-v1.0.pub`); verifiers chain to the bootstrap anchor per §5.3 and the `publisher_kid` in MANIFEST.
 - **Build tools** run from the repo root or with `SOA_BUNDLE_ROOT` set; they regenerate `schemas/` and `MANIFEST.json` after any spec edit.
 
 ## Conformance profiles
@@ -221,6 +227,6 @@ Governance and errata policy: Core §19. SemVer binding table: Core §19.4.
 
 ## Status
 
-Public draft — v1.0 specification pending first signed release. Primary audience is conformance-tool implementers (`soa-validate`, `ui-validate`) and Runner / Gateway authors building against the bundle.
+v1.0.0 public release. Primary audience is conformance-tool implementers (`soa-validate`, `ui-validate`) and Runner / Gateway authors building against the bundle.
 
-`MANIFEST.json` lists both `soa_validate_binary` and `ui_validate_binary` with an all-zero SHA-256 and a `status: "placeholder"` marker — those slots are reserved; their digests become real when the validator binaries ship in a tagged release.
+`MANIFEST.json` lists `soa_validate_binary` and `ui_validate_binary` with a `status` field per `schemas/release-manifest.schema.json`. Per the schema, `status: "placeholder"` means the validator binary is released separately in its sibling repo (`soa-validate` / `ui-validate`) and conformance tools MUST refuse to verify against a placeholder entry — fetch the binary from the sibling repo's tagged release directly and verify its digest there.
