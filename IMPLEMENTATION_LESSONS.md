@@ -987,6 +987,57 @@ Remaining 6 skips are legit deferrals (4 M4 retags + 1 pre-budgeted + 1 platform
 
 **Pattern note:** L-52 captures the largest scope-defining decision since the plan-ultimate spawn. The critical insight surfaced mid-conversation: a fully-specified §8 Memory Layer shipped with only a conformance mock backing it is the same "no working implementation" gap we're closing for orchestration via the LangGraph adapter. Both gaps close during v1.0.0. Memory-first framing also revealed the underlying greenfield-presentation decision — the spec's current accumulation of `(M3 addition, L-XX)` markers is development honesty but release noise. M6 is the dedicated refactor pass to resolve the tension between "build incrementally with honest change-tracking" and "ship a cohesive v1.0."
 
+### L-53 — M4 adoption gate revised: solo multi-environment verification replaces external-reviewer recruitment `[process + governance decision]`
+
+- **Surfaced:** 2026-04-22 · mid-M4-execution reality check. Plan-ultimate M4 specified "3 external reviewers × ≤15 min POSIX / ≤20 min Windows" as the adoption-gate exit criterion. Sole maintainer reality (consistent with existing `GOVERNANCE.md` single-maintainer acknowledgment) means external-reviewer recruitment is not achievable at this cadence. Gate is rescoped rather than waived.
+- **Why this is defensible, not a retreat:**
+  - The reviewer gate was meant to validate four things: (a) cross-platform install works, (b) real bugs surface at install time, (c) the 15/20-min budget is achievable, (d) documentation is followable by a stranger.
+  - (a) is already proven — Phase 0d cross-platform runs: Windows 11 (PowerShell) 7.5s and WSL2 Ubuntu 24.04 11.8s, both at >75× headroom, recorded in `soa-harness-impl/docs/m4/dry-run-telemetry.md`.
+  - (b) is already proven — real bugs surfaced organically during the dry-run sweep: `create-soa-agent@1.0.0-rc.1` template `workspace:*` protocol (fixed in rc.1→rc.1 template flip), and `create-soa-agent@1.0.0-rc.1` Linux-symlink silent-exit in `invokedAsCli` guard (fixed in rc.1→rc.2 with `realpathSync`). Both caught before any external reviewer would have touched them.
+  - (c) is already proven — wall-clock measurements land orders of magnitude under budget.
+  - (d) is the one dimension a solo maintainer can't fully self-verify (they wrote the docs; the blind spot is their own context). Partially addressable via self-critical re-read pass with fresh eyes.
+
+**Replacement gate:**
+
+1. **Cross-platform install pass (already complete):**
+   - Windows 11 cold run → ✅ captured in dry-run-telemetry.md Re-run 1
+   - WSL2 Ubuntu 24.04 cold run → ✅ captured in Re-run 2
+   - macOS cold run → OPTIONAL (if maintainer has access; nice-to-have for portability signal, not blocking)
+2. **Self-critical cookbook re-read pass:**
+   - Maintainer opens `soa-harness-impl/README.md` fresh, reads it as if unfamiliar with the project, flags any sentence that assumes context not established earlier in the doc
+   - Any flagged items → commit fix; repeat until no flags surface on a clean read
+   - Target: ~1-2 hours
+3. **Post-release community feedback (post-v1.0.0, not blocking M4 exit):**
+   - GitHub Issues + Discussions on each of the three repos (spec, impl, validate)
+   - No recruitment; organic contributor-funnel as the project surfaces
+   - First external bug report closes out the "human factor" loop empirically
+
+**Revised M4 exit criteria (supersedes Phase 4 of plan-ultimate M4 plan):**
+
+| Gate | Source of proof |
+|---|---|
+| `156/0/6/0` via `soa-validate --adapter=langgraph` | Validator probe bodies land against published adapter |
+| All 5 packages installable from registry under `next` dist-tag | Fresh install + boot test green on at least 2 platforms |
+| Publish runbook + cookbook shipped | `docs/m4/publish-runbook.md` + `README.md` rewrite |
+| Self-critical cookbook re-read pass | Commit trail demonstrating fixes (or confirmation of zero flags) |
+| `v1.0.0-rc.1` tagged on impl + validate | After all above |
+
+**Unchanged:**
+
+- Three-repo independent-judge architecture still holds (spec ≠ impl ≠ validate). External validation shifts to the post-release community funnel, not a pre-release gate. The integrity of `soa-validate` as a separate-judge validator is preserved regardless of reviewer count.
+- M5 (three memory backends) and M6 (greenfield presentation refactor) unchanged — pure engineering, unaffected by reviewer-count reality.
+- "First-rate, no matter how long" stance unchanged. Solo maintainer discipline means verifying what can be verified empirically and being honest about what can't.
+
+**What this does NOT mean:**
+
+- We do NOT claim "three reviewers certified v1.0.0" — release notes honestly state solo maintainer + cross-platform empirical verification + publicly readable code+spec.
+- We do NOT skip reviewer-quality validation — the three-repo split + independent must-map + published tarball audits + real-HTTP conformance tests provide most of what reviewer-eyes would catch, minus the human-factor documentation clarity which the self-critical re-read partially covers.
+- We do NOT defer v1.0.0 waiting for community to materialize — v1.0.0 ships on engineering merit; community contributors form organically post-release and their feedback drives v1.0.x / v1.1 errata normally.
+
+**Version impact:** §19.4 editorial. No normative change. 1.0.16 (L-52) remains current.
+
+**Pattern note:** L-53 is the first L-entry that is purely a process/governance revision with no spec edits or impl coordination. Worth recording because the decision is non-obvious from outside: a reader of a future v1.0.0 release might wonder why `GOVERNANCE.md` acknowledges single-maintainer while the M4 plan originally specified external reviewers. L-53 is the reconciliation record. The deeper lesson: plan artifacts captured BEFORE execution sometimes encode assumptions that execution surfaces as unrealistic; honest mid-flight re-scoping is better than either pretending the original plan stands OR silently skipping the gate. The gate's VALUE is what matters (four dimensions above); the FORM can adapt.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
