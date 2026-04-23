@@ -926,6 +926,67 @@ Remaining 6 skips are legit deferrals (4 M4 retags + 1 pre-budgeted + 1 platform
 
 **Pattern note:** This is the first rebrand of the project. Timing chosen deliberately — pre-v1.0-final-signing, post-M3-exit, graphify-across-three-repos freshly installed. The window for zero-cost rebranding closes at v1.0 final; doing it now costs one commit + two sibling pin-bumps. Doing it post-release would be a re-release event with external-adopter churn. Lesson: identity choices worth getting right BEFORE the first signed release, even if the acronym happens to survive.
 
+### L-52 — M4 kickoff: adapter conformance spec + multi-backend memory scope lock `[normative spec + milestone decision, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-22 · post-M3 exit planning pass via plan-ultimate skill (3-agent exploration + first-principles critique). User directive: "first-rate specification and application on the back end when we're done no matter how long it takes." Greenfield v1.0.0 presentation targeted; intermediate editorial bumps remain convention through M5 with refactor deferred to M6.
+- **Scope:** three additions to the spec, four new SV-ADAPTER tests, one new test-vector directory, one regenerated MANIFEST. Additionally: finalized scope for M5 (memory backends) and M6 (greenfield refactor) so the remaining path to v1.0.0 is locked.
+
+**Spec additions:**
+
+1. **§14.6 LangGraph Event Mapping (Informative)** — complete 40-LangGraph-event → 27-SOA-StreamEvent inventory across four subsections:
+   - §14.6.1 Event Inventory (14 direct-mapped, 22 dropped-with-rationale, 4+ synthetic-only SOA types)
+   - §14.6.2 Synthetic Events (MemoryLoad, PermissionPrompt/Decision, PreToolUseOutcome/PostToolUseOutcome, CrashEvent, Handoff*, SelfImprovement* as adapter-synthesized)
+   - §14.6.3 Example Trace (shows a minimal single-tool agent's LangGraph-to-SOA translation)
+   - §14.6.4 Adapter Deviation Protocol (README declaration + Card field + paired test vector required for any deviation; silent deviation is non-conformant)
+
+2. **§18.5 Adapter Conformance (Normative)** — new parent section with five subsections:
+   - §18.5.1 Adapter Definition — runtime-is-adapter criteria (delegates to host framework, exposes §5 stack, declares `adapter_notes.host_framework ∈ {langgraph, crewai, autogen, langchain-agents, custom}`)
+   - §18.5.2 Permission Interception Points — normative pre-dispatch interception requirement (adapter MUST intercept before host-framework executes; §15.4 ordering preserved; advisory-mode fallback defined but explicitly non-core-conformant)
+   - §18.5.3 Required Conformance Tests — test-family-by-family requirements for adapters claiming Core profile (SV-BOOT, SV-CARD, SV-PERM, SV-STR, SV-HOOK, SV-AUDIT all MUST pass; SV-MEM/BUD/SESS deferrable per §18.5.4)
+   - §18.5.4 Documented Exceptions Enumeration — closed list of permitted deferrals (Memory pass-through, Budget pass-through, Session persistence pass-through, profile-scoped omissions, §14.6.4 deviations). Closed at v1.0.16; additions require §19.4 minor bump
+   - §18.5.5 Adapter-Specific Invocation — `--adapter=<name>` flag on soa-validate; card-vs-invocation-mismatch failure mode
+
+3. **Four new SV-ADAPTER tests** in must-map (§18.5.3):
+   - SV-ADAPTER-01 Adapter Card injection — verifies `adapter_notes.host_framework` present + matches `--adapter` flag + valid deferred_test_families if declared
+   - SV-ADAPTER-02 Pre-dispatch permission interception — drives a denied Mutating tool; asserts ToolResult/ToolError ABSENT for `tool_call_id` after deny PermissionDecision; advisory-mode fails by construction
+   - SV-ADAPTER-03 LangGraph event mapping — drives fixture trace against adapter; emitted SOA events must equal expected sequence per §14.6.1 + substituted declared deviations
+   - SV-ADAPTER-04 Adapter audit forwarding — verifies adapter's tool invocations land in Runner's hash-chained audit records with retention_class populated
+
+**Test vector:** `test-vectors/langgraph-adapter/` — README + `simple-agent-trace.json` (14 LangGraph events + 22 expected SOA emissions covering SessionStart, streaming LLM, synthetic PermissionPrompt/Decision around one tool invocation, synthetic hook outcomes, SessionEnd). Serves as the reference input for SV-ADAPTER-03.
+
+**Plan-evaluator findings incorporated (4 CRITICAL / 7 MODERATE-MINOR):**
+- Feasibility spike with explicit acceptance criteria + advisory-mode fallback design (was "revisit design" with no contingency)
+- 40-event inventory pre-drafted in Phase 0a spec addendum (was post-hoc discovery risk)
+- Internal dry-run on Windows + POSIX **before** external recruitment closes (was risk of recruiting on unproven plan)
+- Enumerated exception list in Phase 2 CI config — CI fails on any undocumented delta (was vague "zero delta" aspiration)
+- Recruit 4-5 reviewers with staggered confirmations (was 3 with no bench)
+- "Green" quantified in exit criteria as 156/0/6/0 + platform-budget wall-clock per reviewer
+- MANIFEST-SHA pin enforced by build-time CI check in adapter repo (was assumed, unenforced)
+- LangGraph pin: `~0.2.x` with quarterly upgrade cadence ADR
+- Reviewer personas refocused on impl+adapter (validator Go code not in external-gate scope)
+- README decision tree at top (scaffold vs adapter, mutually exclusive paths)
+- npm publish Day 1 post-gate, version `1.0.0` no-rc
+
+**Milestone tally update:** 135 M3 · **16 M4** · 60 M5-SI · 22 M2 · 1 M1. M4 delta: +4 SV-ADAPTER from Phase 0a spec additions (initial 12 M4-retagged tests from prior milestones unchanged). Total test count: 230 → 234.
+
+**Version impact:** §19.4 editorial. 1.0.15 → **1.0.16**. Additive across the board — new informative §14.6, new normative §18.5 that only applies to adapters (opt-in via `--adapter` flag + Card declaration), four new test IDs that skip for native Runners. Zero impact on deployed Runners. Wire format unchanged.
+
+**Post-M4 scope finalization (M5 + M6):**
+
+- **M5 — Reference Memory Backends (6-8 weeks)**: Three parallel tracks shipping §8-conformant Memory MCP servers. (T1) `memory-mcp-sqlite` — zero-dep scaffold default using SQLite + `transformers.js` local embeddings, ~1 week. (T2) `memory-mcp-mem0` — production reference wrapping mem0 (Apache 2.0) via Qdrant + LLM-API + optional Neo4j, ~4 weeks. (T3) `memory-mcp-zep` — architectural stress test (Zep's temporal-graph model diverges from mem0 → validates §8 framework-agnosticism), ~3-4 weeks. Each passes SV-MEM-01..08 + HR-17 independently; per-backend conformance reports ship in release notes. Spec addition: §8.7 informative "Reference Memory Backend Implementations." Scaffold default pivots from `memory-mcp-mock` to `memory-mcp-sqlite`; mock retained in `tools/memory-mcp-mock/` for conformance (independent-judge property preserved). Letta-backed backend deferred to v1.1. Exit: `v1.0.0-rc.2` tagged.
+
+- **M6 — Greenfield v1.0.0 Release (3-4 weeks)**: Presentation refactor, zero content change. Strip all `(Normative — M\d addition, L-XX)` annotations from section titles; move L-XX cross-references out of normative text into `CHANGELOG.md` + `ERRATA.md`; strip `implementation_milestone` + `milestone_reason` from must-map (they're impl scheduling, not conformance contract); prose pass for uniform voice + consistent terminology across sections written at different times. Optional subsection renumbering (close gaps like §10.5.5→§10.5.7) only if audit shows <5 external references. External review by 3 reviewers (can be M4's returning reviewers) reading the spec cold — must see cohesive design. Single `v1.0.0` tag across spec + impl + validate + three memory backends on the same day, signed MANIFEST under real release key, synchronized npm publish. Exit criteria: zero `M\d addition` / `L-\d+` references in any normative artifact; reviewer sign-off on cohesive-design read; release announcement references "spec + reference implementation + conformance harness" with no milestone numbers.
+
+**Why this scope shape (user-level decisions captured):**
+
+- M5 ships three backends (not one) because the spec-first validation move is proving §8 is implementable by the ecosystem's leaders, not bespoke to our mock. If all three pass SV-MEM-01..08 identically, §8 is framework-agnostic in practice.
+- Letta deferred because its "self-editing memory blocks" diverge further from §8's note-based schema than mem0/Zep — would test Letta's peculiarities more than §8's contract.
+- M6 is target-state greenfield, not scorched-earth redesign — the spec content is mostly solid; presentation carries process scars from 15+ editorial bumps through M3. Since nothing has been released publicly, refactoring presentation is zero-cost against adopters. Single v1.0.0 release reads as "designed cohesively, shipped complete" rather than "grew over 5 milestones."
+
+**Total path to v1.0.0:** M4 (3w) + M5 (6-8w parallel) + M6 (3-4w) = **12-15 weeks** parallelized; 18-20 weeks serial. Fits "first-rate, no matter how long" comfortably.
+
+**Pattern note:** L-52 captures the largest scope-defining decision since the plan-ultimate spawn. The critical insight surfaced mid-conversation: a fully-specified §8 Memory Layer shipped with only a conformance mock backing it is the same "no working implementation" gap we're closing for orchestration via the LangGraph adapter. Both gaps close during v1.0.0. Memory-first framing also revealed the underlying greenfield-presentation decision — the spec's current accumulation of `(M3 addition, L-XX)` markers is development honesty but release noise. M6 is the dedicated refactor pass to resolve the tension between "build incrementally with honest change-tracking" and "ship a cohesive v1.0."
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

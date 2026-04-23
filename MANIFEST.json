@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "d98c742b4bc1b8ff44c2cd01d049258c01c6a9a786da857e0b61641c84b84ea5",
+        "sha256": "d434c4655edd6be07d6f90977dceaf404ce95fb788200e42182c408a67a3d17c",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "7cb1df6c3a684e21f75085893153fc65df6fa21d8ff04d3ebe8cf7175b94a8d0",
+        "sha256": "3e9fda5bc4f4863e34a989ef00f0518cc43d0afa1fb43c0fac488235fdc2eee3",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -822,6 +822,18 @@
         "path": "test-vectors/jwt-clock-skew/iat-past.jwt",
         "sha256": "1a92e7b5bca6c5e8122435f39ea78be7a7d8bf41040096bedb9137eb4f77a114",
         "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "README.md",
+        "path": "test-vectors/langgraph-adapter/README.md",
+        "sha256": "7fdc605478a01f13b2de14051eadea146abd346f119d3dfca2b79b0e091a0bea",
+        "canonicalization": "raw-utf8"
+      },
+      {
+        "name": "simple-agent-trace.json",
+        "path": "test-vectors/langgraph-adapter/simple-agent-trace.json",
+        "sha256": "fd612691d8a3cfa38c4cbc3df725cd8976093faec4d233c1794fc4b02ba8bb48",
+        "canonicalization": "JCS-RFC-8785"
       },
       {
         "name": "README.md",

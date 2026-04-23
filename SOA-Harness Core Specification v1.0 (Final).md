@@ -2465,6 +2465,103 @@ GET /logs/system/recent?session_id=<session_id>&category=<cat1,cat2,...>&after=<
 
 **Privacy note.** `admin:read` scope holders receive broad read access across all sessions in the current process boot. This is consistent with the existing admin-scope surfaces (§14.5.3 `/observability/backpressure`, §10.5.2 `/audit/tail`, §10.5.3 `/audit/records`). Operators MUST ensure `admin:read` is granted only to principals authorized to read audit-class data.
 
+### 14.6 LangGraph Event Mapping (Informative — M4 addition, L-52)
+
+**Status.** This subsection is **informative** (non-normative). It documents the expected mapping from LangGraph's `astream_events v2` event surface to the §14.1 closed 27-type StreamEvent enum when an adapter (per §18.5 Adapter Conformance) wraps a LangGraph `StateGraph`. Normative requirements for adapter event emission are in §18.5.3 (Required Conformance Tests) and §18.5.4 (Documented Exceptions); this section supports `SV-ADAPTER-03` by providing the authoritative mapping table against which an adapter's emission is checked.
+
+**Rationale.** LangGraph emits approximately 40 distinct event types from its astream_events surface and callback-handler ecosystem. The SOA-Harness StreamEvent enum is deliberately closed at 27 types to keep §14.1.2 trust-class mapping and §15 hook ordering tractable. The mapping below is lossy (many LangGraph events drop with rationale) and partially synthetic (several SOA event types have no LangGraph equivalent and MUST be synthesized by the adapter). An adapter that deviates from this mapping without documenting the deviation in its own README SHOULD be considered non-conformant against `SV-ADAPTER-03` regardless of whether its StreamEvent bytes validate §14.1.
+
+#### 14.6.1 Event Inventory (40 LangGraph events → 27 SOA types)
+
+**Direct mappings (LangGraph → SOA).** These are 1:1 or 1:N translations where the adapter reshapes LangGraph's payload to match the §14.1.1 $defs schema for the target SOA type.
+
+| LangGraph event | SOA StreamEvent type | Notes |
+|---|---|---|
+| `on_thread_start` (or root `on_chain_start`) | `SessionStart` | First thread event becomes session start; subsequent thread starts within a session are dropped |
+| `on_thread_end` (or root `on_chain_end`) | `SessionEnd` | `stop_reason` derived from chain output; `Completed` by default, `Failed` if `on_chain_error` preceded |
+| `on_chat_model_start` | `MessageStart` (role=`assistant`) | `message_id` synthesized from LangGraph `run_id` |
+| `on_chat_model_stream` | `ContentBlockDelta` | Token delta maps to `payload.delta`; `block_id` stable per `run_id` |
+| `on_chat_model_end` | `MessageEnd` (role=`assistant`) | `usage` carried through from LangGraph's `response_metadata` if present |
+| `on_llm_start` | `MessageStart` | Legacy non-chat LLM path; same shape as on_chat_model_start |
+| `on_llm_stream` | `ContentBlockDelta` | Legacy streaming path |
+| `on_llm_end` | `MessageEnd` | Legacy completion path |
+| `on_tool_start` | `ToolInputStart` + synthesized `PermissionPrompt` if §18.5.2 interception fires | `tool_call_id` = LangGraph `run_id`; `risk_class` resolved from §11 Tool Registry lookup |
+| `on_tool_stream` | `ToolInputDelta` | Streaming tool arguments (rare in LangGraph) |
+| `on_tool_end` | `ToolResult` | `ok=true`; `output_digest` computed per §14.1.1 |
+| `on_tool_error` | `ToolError` | `code` derived from error class; `message` truncated to 1024 chars |
+| `on_interrupt` | `PermissionPrompt` | LangGraph's human-in-the-loop gate maps to SOA permission prompt; `prompt_id` synthesized; `nonce` minted per §14.1.1 |
+| `on_text` | `ContentBlockDelta` | Legacy streaming-text callback |
+
+**Dropped events (with rationale).** These LangGraph events do NOT map to any SOA StreamEvent type. Adapters MUST NOT synthesize an SOA event from them; the events are observable via LangGraph's own telemetry for debugging but are not part of SOA's audit surface.
+
+| LangGraph event | Rationale |
+|---|---|
+| `on_chain_start` (non-root) | Internal graph-node chain boundaries; SOA sessions do not expose sub-graph structure |
+| `on_chain_stream` (non-root) | Internal sub-chain streaming; ContentBlockDelta only models LLM token output |
+| `on_chain_end` (non-root) | Internal sub-graph completion |
+| `on_chain_error` (non-root) | Bubbles up to `SessionEnd(stop_reason=Failed)` at root; sub-chain errors are not independently observable |
+| `on_node_start` / `on_node_end` | Graph-node invocation is internal to LangGraph; SOA models tool-use, not node-dispatch |
+| `on_checkpoint_start` / `on_checkpoint_end` | §12 session persistence is observed via `CrashEvent` on resume, not via checkpoint streaming |
+| `on_agent_action` | LangChain agent-loop decision; merged into the surrounding `on_tool_start` |
+| `on_agent_finish` | Merged into the terminal `on_chain_end` → `SessionEnd` |
+| `on_prompt_start` / `on_prompt_end` | Prompt-template rendering is internal; not a user-observable event |
+| `on_parser_start` / `on_parser_end` | Output parsing is internal; not a user-observable event |
+| `on_retriever_start` / `on_retriever_stream` / `on_retriever_end` / `on_retriever_error` | Retrieval is a tool from the SOA perspective. Adapters that wrap a Retriever as a tool MUST route its invocation through `on_tool_*` rather than the retriever callbacks |
+| `on_custom_event` | Adapter-defined payloads have no SOA schema; dropped unless the adapter declares an explicit custom-event → SOA mapping in its README (and such a mapping MUST keep the event set closed at 27 types — adapters MUST NOT add new `StreamEvent.type` values) |
+| `on_channel_write` / `on_channel_read` / `on_channel_update` | Internal LangGraph state-channel plumbing; not semantically a user-observable event |
+| `on_state_update` | Graph state is internal |
+| `on_graph_stream` | Equivalent to `on_chain_stream` at the root; use the chain variant |
+| `on_llm_error` | Bubbles to contextual `SessionEnd(stop_reason=Failed)` or to `ToolError` when the LLM call is inside a tool node |
+
+**Total: 14 direct-mapped + 22 dropped = 36 LangGraph-native events accounted for, plus 4+ synthetic-only SOA types below.**
+
+#### 14.6.2 Synthetic Events (SOA → adapter synthesis)
+
+The following SOA StreamEvent types have NO LangGraph equivalent. The adapter MUST synthesize them from its own execution bookkeeping.
+
+| SOA StreamEvent type | Synthesis trigger | Required-by |
+|---|---|---|
+| `MemoryLoad` | Adapter's §8 Memory layer load-on-context-assembly hook | §18.5.3 SV-ADAPTER-03 assertion |
+| `CompactionStart` / `CompactionEnd` | Adapter's §13.2 compaction trigger (if adapter wraps compaction; pass-through adapters omit per §18.5.4 exception list) | §18.5.4 documented exception |
+| `PermissionDecision` | Adapter's §10.3 permission-hook result after §18.5.2 interception fires | §18.5.3 SV-ADAPTER-02 assertion (pre-dispatch) |
+| `PreToolUseOutcome` / `PostToolUseOutcome` | Adapter's §15 hook pipeline stages (allow/deny/replace_args/replace_result) | §18.5.3 SV-ADAPTER-04 assertion |
+| `CrashEvent` | Adapter-resumed sessions after process crash (only when adapter implements §12.6 resume path) | §18.5.4 documented exception when adapter is stateless |
+| `HandoffStart` / `HandoffComplete` / `HandoffFailed` | Only under `core+handoff` profile (§17); stateless adapters omit per §18.5.4 | §18.5.4 documented exception |
+| `SelfImprovementStart` / `Accepted` / `Rejected` / `Orphaned` | Only under `core+si` profile (§9); adapters omit per §18.5.4 | §18.5.4 documented exception |
+
+#### 14.6.3 Example Trace
+
+A minimal LangGraph agent invoking one tool and completing produces the following LangGraph event sequence:
+
+```
+on_thread_start → on_chain_start(root) → on_chat_model_start → on_chat_model_stream (×N)
+ → on_chat_model_end → on_tool_start → on_tool_end → on_chat_model_start
+ → on_chat_model_stream (×M) → on_chat_model_end → on_chain_end(root) → on_thread_end
+```
+
+Under the §14.6.1 mapping, an adapter emits the SOA sequence:
+
+```
+SessionStart → MemoryLoad (synth, if §8 configured)
+ → MessageStart(assistant) → ContentBlockStart → ContentBlockDelta (×N) → ContentBlockEnd
+ → MessageEnd → ToolInputStart → PermissionPrompt (synth, if gated) → PermissionDecision (synth)
+ → PreToolUseOutcome (synth) → ToolInputEnd → ToolResult → PostToolUseOutcome (synth)
+ → MessageStart(assistant) → ContentBlockStart → ContentBlockDelta (×M) → ContentBlockEnd
+ → MessageEnd → SessionEnd
+```
+
+The test vector `test-vectors/langgraph-adapter/simple-agent-trace.json` enumerates a concrete realization and is the reference input for `SV-ADAPTER-03`.
+
+#### 14.6.4 Adapter Deviation Protocol
+
+An adapter that cannot honor §14.6.1 exactly MUST:
+
+1. Document the specific LangGraph events that deviate from the table in its own `README.md`.
+2. Publish a test vector showing the adapter's emission under a fixture trace.
+3. Declare the deviation in its Agent Card under an `adapter_notes.event_mapping_deviations` field (informative; §6.2 schema permits additional properties on this object under the adapter-conformance profile).
+
+Deviations do NOT automatically invalidate SV-ADAPTER-03 — a conforming validator consults the adapter's declared mapping when computing the expected event set. Silent deviation (no README, no Agent Card declaration, no test vector) IS non-conformant.
+
 ---
 
 ## 15. Verification & Hooks
@@ -2676,6 +2773,81 @@ soa-validate --agent-url https://agent.example.com \
 ```
 
 Exit code `0` means all required tests passed. Non-zero indicates failures enumerated in `report.json`.
+
+### 18.5 Adapter Conformance (Normative — M4 addition, L-52)
+
+**Motivation.** Many SOA-Harness deployments begin life as agents built on a third-party orchestration framework (LangGraph, CrewAI, AutoGen, LangChain Agents). An *adapter* is a module that wraps such a framework so the resulting runtime satisfies SOA-Harness wire contracts (§5 bootstrap, §6 Agent Card, §10 permission, §14 StreamEvent, §15 hooks). Adapters are orthogonal to the Conformance Levels defined in §18.3 — an adapter MAY claim Core, Core+SI, Core+Handoff, or Full conformance, but its qualification as an adapter (as distinct from a native Runner implementation) imposes the additional normative requirements in this subsection. §14.6 provides the informative event-mapping companion for LangGraph-based adapters.
+
+#### 18.5.1 Adapter Definition (Normative)
+
+A runtime is an **SOA-Harness Adapter** if and only if:
+
+1. It delegates model dispatch, tool execution, or graph state management to an external orchestration framework ("host framework"), AND
+2. It exposes the §5 Required Stack HTTP surface (`/.well-known/agent-card.json`, `/.well-known/agent-card.jws`, `/health`, `/ready`, and at least one StreamEvent emission channel per §14.5) such that `soa-validate` can drive conformance tests against it at a network boundary, AND
+3. It declares `adapter_notes.host_framework` in its Agent Card under the adapter-conformance profile with values drawn from the closed set `{"langgraph","crewai","autogen","langchain-agents","custom"}` (case-insensitive; `"custom"` permitted with free-form `adapter_notes.host_framework_details` for frameworks not yet enumerated).
+
+A runtime that implements §5 without delegating to a host framework is a **native Runner** and is NOT subject to §18.5. Native Runners pass `soa-validate` via the existing `SV-*` tests only; `SV-ADAPTER-*` tests are not executed against native Runners.
+
+#### 18.5.2 Permission Interception Points (Normative)
+
+Permission enforcement for adapters is the single hardest correctness invariant in §18.5 because host frameworks typically dispatch tools eagerly. The following requirements are normative and apply to every adapter regardless of host framework:
+
+1. **Pre-dispatch interception.** An adapter MUST intercept every tool invocation **before** the host framework executes the tool. Interception MUST occur at a point where the adapter can:
+   a. Identify the tool by its §11 registry name (`mcp__<server>__<tool>` or native equivalent),
+   b. Compute the `args_digest` (SHA-256 of JCS-canonicalized arguments per §14.1.1),
+   c. Emit a `PermissionPrompt` StreamEvent per §14.1.1,
+   d. Block the host framework's tool dispatcher until a `PermissionDecision` is available, AND
+   e. Cancel or bypass the dispatch when the decision is `deny`.
+2. **Hook pipeline ordering.** The §15.4 ordering within the execution step (permission → PreToolUse hooks → tool → PostToolUse hooks → audit + stream + persist) MUST be preserved by the adapter. The adapter MAY implement this by wrapping the host framework's tool-dispatch entry point (e.g., LangGraph's `ToolNode.invoke`, LangChain's `AgentExecutor._call_tool`, CrewAI's `Task.execute`) or by substituting a permission-aware tool executor at host-framework registration time; either approach is conformant.
+3. **No post-dispatch regression.** An adapter MUST NOT implement permission enforcement by inspecting a tool's output after execution (post-dispatch "undo" is not conformant). A permission denial after execution cannot un-do side effects of a `Mutating` or `Destructive` tool; the permission check MUST fire pre-dispatch.
+4. **Fallback: advisory mode (permitted, documented).** An adapter that cannot guarantee pre-dispatch interception against its host framework MAY operate in **advisory mode** with the following requirements: (a) the Agent Card declares `adapter_notes.permission_mode: "advisory"`, (b) every tool-invocation event carries a §14 `PermissionDecision` synthesized after-the-fact for audit purposes only, (c) the adapter MUST NOT advertise `implementation_capabilities` containing `"core"` (advisory-mode adapters are non-conformant against Core profile), and (d) the README clearly warns that advisory mode is unsuitable for tools with side effects. Conformance validators MUST treat advisory-mode adapters as failing `SV-ADAPTER-02`.
+5. **Observability.** The adapter MUST emit `PermissionPrompt` and `PermissionDecision` StreamEvents on its §14.5 observability channel so that `SV-ADAPTER-02` can verify pre-dispatch ordering by subscribing to the channel and asserting `PermissionPrompt.occurred_at < tool.invoke.occurred_at < PermissionDecision.occurred_at`.
+
+Implementations MAY add PreToolUse/PostToolUse hook wiring (§15) on top of the adapter's permission path; when present, §15.4 ordering is preserved, and the adapter emits `PreToolUseOutcome` / `PostToolUseOutcome` StreamEvents per §14.1.
+
+#### 18.5.3 Required Conformance Tests (Normative)
+
+An adapter claiming Core profile conformance MUST pass the following test sets from `soa-validate`:
+
+| Test family | Requirement | Adapter-specific notes |
+|---|---|---|
+| `SV-BOOT-01..06` | All MUST pass; bootstrap is adapter-agnostic | Adapter MUST honor §5.3 external bootstrap root; no carve-outs |
+| `SV-CARD-*` | All MUST pass; Agent Card schema applies unchanged | Adapter's Card MAY add `adapter_notes.*` fields per §18.5.1 |
+| `SV-PERM-01..22` | All MUST pass **except** tests explicitly listed in the §18.5.4 exception enumeration for the declared host framework | Pre-dispatch interception invariant is covered by `SV-ADAPTER-02` below |
+| `SV-STR-01..16` | All MUST pass; StreamEvent schema applies unchanged | Event-mapping deviations declared per §14.6.4 |
+| `SV-HOOK-01..08` | All MUST pass when adapter implements §15 hooks; adapter MAY declare no hooks in its Agent Card, in which case `SV-HOOK-*` is skipped per profile declaration | |
+| `SV-AUDIT-*` | All MUST pass; audit chain is adapter-agnostic | Adapter forwards tool invocations through Runner audit chain |
+| `SV-MEM-*`, `SV-BUD-*`, `SV-SESS-*` | MAY be deferred per §18.5.4 documented exceptions | Pass-through adapters declare these deferrals explicitly |
+| `SV-ADAPTER-01..04` | All MUST pass (new in v1.0.16) | CardInjection, PermissionInterception, EventMapping, AuditForwarding |
+
+An adapter reports its test result set as `{passed, failed, skipped, documented_exceptions}` in its `release-gate.json` output. The `documented_exceptions` count MUST match the declared exceptions in §18.5.4 exactly; any undeclared skip is a failure.
+
+#### 18.5.4 Documented Exceptions Enumeration (Normative)
+
+An adapter MAY defer the following test families under pass-through semantics, provided the deferral is declared in both the Agent Card (`adapter_notes.deferred_test_families`) and the adapter README:
+
+1. **Memory pass-through (§8):** `SV-MEM-01..08` MAY be skipped if the adapter does not implement its own §8 Memory layer and instead delegates to (a) the host framework's native context store, or (b) a back-end Runner via `/memory/state/:session_id`. The adapter MUST emit `MemoryLoad` StreamEvents synthesized from observable context-assembly points; silent Memory omission is non-conformant.
+
+2. **Budget pass-through (§13):** `SV-BUD-01..07` MAY be skipped if the adapter does not implement its own §13 Token Budget and instead relies on (a) the host framework's native token accounting, or (b) a back-end Runner via `/budget/projection`. The adapter MUST NOT claim `StopReason::BudgetExhausted` without the upstream budget source confirming it.
+
+3. **Session persistence pass-through (§12):** `SV-SESS-01..11` MAY be partially deferred. `SV-SESS-06` (POSIX-only, already deferred) is not reopened by adapter conformance. Adapters that delegate session persistence to a back-end Runner pass `SV-SESS-*` transparently; adapters that manage their own state MUST pass the full set. Stateless adapters (no session persistence) declare `adapter_notes.session_mode: "stateless"` and skip the entire `SV-SESS-*` family; stateless adapters CANNOT claim Core profile conformance (bootstrap and observability assume a session surface).
+
+4. **Handoff (§17) and Self-Improvement (§9):** These are profile-scoped, not adapter-scoped. Adapters claiming `core+handoff` or `core+si` MUST pass the corresponding `SV-A2A-*` / `SV-SI-*` / `SV-GOOD-*` sets; adapters claiming Core only skip them per existing profile rules.
+
+5. **Event-mapping deviations (§14.6.4):** Declared in the adapter README and Agent Card; the conformance validator substitutes the adapter's declared mapping for §14.6's default when computing the expected event set for `SV-ADAPTER-03`.
+
+Exceptions outside this enumerated list are NOT permitted. An adapter that wishes to skip a test family not listed here MUST either (a) implement the underlying capability until the test passes, or (b) NOT claim Core profile conformance. The enumeration is closed at v1.0.16; additions require a §19.4 minor version bump.
+
+#### 18.5.5 Adapter-Specific Invocation
+
+```
+soa-validate --agent-url https://adapter.example.com \
+             --profile core \
+             --adapter langgraph \
+             --report report.json
+```
+
+The `--adapter` flag (values: `langgraph`, `crewai`, `autogen`, `langchain-agents`, `custom`) enables `SV-ADAPTER-*` test execution and substitutes the adapter-declared event mapping into `SV-ADAPTER-03` expectations. Omitting `--adapter` skips `SV-ADAPTER-*` tests (native Runner mode). A Runner that declares `adapter_notes.host_framework` in its Agent Card but is invoked without `--adapter` fails `SV-ADAPTER-01` (card-vs-invocation-mismatch).
 
 ---
 

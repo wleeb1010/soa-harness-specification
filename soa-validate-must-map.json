@@ -54,7 +54,8 @@
     "SV-MEM-STATE": "Memory state observability (§8.6).",
     "SV-BUD-PROJ": "Budget projection observability (§13.5).",
     "SV-REG-OBS": "Tool Registry observability (§11.4).",
-    "SV-STR-OBS": "Minimum StreamEvent observability channel (§14.5)."
+    "SV-STR-OBS": "Minimum StreamEvent observability channel (§14.5).",
+    "SV-ADAPTER": "Adapter conformance: Card injection, permission interception, LangGraph event mapping, audit forwarding (§18.5 + §14.6, M4 L-52)."
   },
   "tests": {
     "HR-01": {
@@ -2345,6 +2346,46 @@
       "severity": "critical",
       "assertion": "GET /events/recent?session_id=<sid>&after=<id>&limit=<n> returns 200 with body conforming to schemas/events-recent-response.schema.json. Events carry event_id + sequence + type (∈ 27-value enum incl. PreToolUseOutcome/PostToolUseOutcome per §19.4 errata) + session_id + emitted_at. Pagination via next_after/has_more. Byte-identity excludes generated_at. Not-a-side-effect on reads.",
       "implementation_milestone": "M3"
+    },
+    "SV-ADAPTER-01": {
+      "name": "Adapter Card injection",
+      "section": "§18.5 + §18.5.1 + §18.5.4 + §18.5.5 + §6",
+      "section_title": "Adapter Conformance + Adapter Definition + Documented Exceptions + Invocation + Agent Card",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "Validator invoked with --adapter=<name> (name ∈ {langgraph, crewai, autogen, langchain-agents, custom}) fetches /.well-known/agent-card.json + .jws from adapter URL. Card JWS verifies against §5.3 bootstrap trust anchor. Card validates against schemas/agent-card.schema.json. Card MUST carry adapter_notes.host_framework equal to the --adapter value (§18.5.1). Card MAY carry adapter_notes.deferred_test_families (array of strings ∈ {SV-MEM, SV-BUD, SV-SESS}) per §18.5.4; if present, each entry MUST match a family the validator will subsequently skip. Declared host_framework without matching --adapter flag → fail with reason card-vs-invocation-mismatch. Missing adapter_notes when --adapter specified → fail with reason missing-adapter-declaration.",
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — LangGraph adapter package introduction (L-52). §18.5 and §14.6 added as v1.0.16 editorial addenda; validator gains --adapter flag per §18.5.5; impl ships packages/langgraph-adapter emitting the declared Agent Card."
+    },
+    "SV-ADAPTER-02": {
+      "name": "Pre-dispatch permission interception",
+      "section": "§18.5.2 + §10.3 + §14.1 + §14.1.1 + §15.4",
+      "section_title": "Permission Interception Points + Resolution Algorithm + StreamEvent + Per-Type Payload Schemas + Hook Ordering",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "Validator drives a session invoking one Mutating tool via the adapter. Validator subscribes to GET /events/recent?session_id=<sid> and asserts ordering: (1) ToolInputStart (or ToolInputEnd if args stream ≤1 chunk) emitted with tool_call_id T and args_digest D, (2) PermissionPrompt emitted with tool.args_digest==D (same D, proving same pre-dispatch args snapshot) and nonce field populated per §14.1.1, (3) Validator signs a PDA decision=deny for the prompt and POSTs /permissions/decisions (§10.3.2), (4) PermissionDecision emitted with prompt_id matching (2) and decision=deny, (5) NO ToolResult AND NO ToolError for tool_call_id T appears in the channel after step (4). If ToolResult or ToolError for T appears after step (4), the adapter violated §18.5.2 pre-dispatch invariant → fail with reason post-dispatch-permission. If the Card declares adapter_notes.permission_mode=advisory (§18.5.2 fallback), this test fails by construction with reason advisory-mode-not-core-conformant.",
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — LangGraph adapter package introduction (L-52). Exercises the hardest adapter correctness invariant; proves host-framework tool dispatch is wrapped pre-execution, not post-hoc."
+    },
+    "SV-ADAPTER-03": {
+      "name": "LangGraph event mapping",
+      "section": "§18.5.3 + §14.6 + §14.6.1 + §14.6.2 + §14.6.4",
+      "section_title": "Required Conformance Tests + LangGraph Event Mapping + Event Inventory + Synthetic Events + Deviation Protocol",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "Validator loads fixture test-vectors/langgraph-adapter/simple-agent-trace.json which enumerates (a) a reference LangGraph astream_events v2 sequence (by event type, ordering, and run_id), and (b) the expected SOA StreamEvent emission under the default §14.6.1 mapping. Validator POSTs the fixture LangGraph trace input to the adapter's trace-ingest endpoint (or drives the adapter's wrapped StateGraph with the fixture's initial state), then subscribes to /events/recent?session_id=<sid> and collects emitted StreamEvents. The emitted type sequence MUST equal the fixture's expected sequence exactly (per §14.6.1 direct mappings and §14.6.2 synthetic events). Adapter-declared deviations per §14.6.4 substitute into expectations: the validator reads adapter_notes.event_mapping_deviations from the Card and reads the paired test vector referenced there, then substitutes into the expected set before comparison. Unmapped LangGraph events (§14.6.1 'dropped' list) MUST NOT produce SOA events. Silent deviation (unmapped emission without Card declaration) → fail with reason event-mapping-silent-deviation.",
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — LangGraph adapter package introduction (L-52). Tests the 40→27 event-translation correctness that motivates §14.6; evaluator finding #2 (pre-drafted inventory) lands here."
+    },
+    "SV-ADAPTER-04": {
+      "name": "Adapter audit forwarding",
+      "section": "§18.5.3 + §10.5 + §10.5.2 + §10.5.3 + §10.5.6",
+      "section_title": "Required Conformance Tests + Audit Trail + Tail + Records + Retention Class",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "Validator drives a session invoking two tools (one ReadOnly, one Mutating) via the adapter. After session completes, validator fetches GET /audit/records with admin:read bearer. Response body validates against schemas/audit-records-response.schema.json. Record count ≥ 2 (at minimum, one per tool invocation; additional rows for PermissionDecision emission and session lifecycle are permitted). Audit hash chain verifies per §10.5 (each record's prev_hash matches the previous record's own hash under JCS-canonical bytes). Each tool-invocation row carries retention_class per §10.5.6 (∈ {dfa-365d, standard-90d}). A row missing from the chain or a chain break → fail with reason audit-chain-broken. Missing retention_class → fail with reason retention-class-missing.",
+      "implementation_milestone": "M4",
+      "milestone_reason": "M4 — LangGraph adapter package introduction (L-52). Ensures adapter's tool invocations flow through the Runner audit chain rather than a host-framework side-channel."
     }
   },
   "tests_by_category": {
@@ -2635,6 +2676,12 @@
     ],
     "SV-STR-OBS": [
       "SV-STR-OBS-01"
+    ],
+    "SV-ADAPTER": [
+      "SV-ADAPTER-01",
+      "SV-ADAPTER-02",
+      "SV-ADAPTER-03",
+      "SV-ADAPTER-04"
     ]
   },
   "must_coverage": {
@@ -3323,6 +3370,45 @@
       "tests": [
         "SV-GOV-12"
       ]
+    },
+    "§14.6.4#deviation-protocol": {
+      "title": "Adapter Deviation Protocol (README, Card declaration, test vector)",
+      "tests": [
+        "SV-ADAPTER-03"
+      ]
+    },
+    "§18.5.1#adapter-definition": {
+      "title": "Adapter Definition (delegates to host framework, exposes §5 stack, declares host_framework)",
+      "tests": [
+        "SV-ADAPTER-01"
+      ]
+    },
+    "§18.5.2#permission-interception": {
+      "title": "Permission Interception Points (pre-dispatch invariant; advisory fallback non-core-conformant)",
+      "tests": [
+        "SV-ADAPTER-02"
+      ]
+    },
+    "§18.5.3#required-tests": {
+      "title": "Required Conformance Tests for adapters (SV-ADAPTER-01..04 pass requirement)",
+      "tests": [
+        "SV-ADAPTER-01",
+        "SV-ADAPTER-02",
+        "SV-ADAPTER-03",
+        "SV-ADAPTER-04"
+      ]
+    },
+    "§18.5.4#documented-exceptions": {
+      "title": "Documented Exceptions Enumeration (Memory/Budget/Session pass-through; closed at v1.0.16)",
+      "tests": [
+        "SV-ADAPTER-01"
+      ]
+    },
+    "§18.5.5#invocation": {
+      "title": "Adapter-Specific Invocation (--adapter flag; card-vs-invocation-mismatch)",
+      "tests": [
+        "SV-ADAPTER-01"
+      ]
     }
   },
   "uncovered_musts_in_v1_0": [],
@@ -3591,6 +3677,16 @@
           "SV-A2A-14",
           "SV-GOV-10",
           "HR-15"
+        ]
+      },
+      {
+        "phase": 7,
+        "name": "Adapter Conformance (gated on --adapter flag; M4 L-52)",
+        "tests": [
+          "SV-ADAPTER-01",
+          "SV-ADAPTER-02",
+          "SV-ADAPTER-03",
+          "SV-ADAPTER-04"
         ]
       }
     ]
