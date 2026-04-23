@@ -1391,6 +1391,117 @@ Currently HELD pending Phase 0e. Once validator probe-fix commits + impl verifie
 
 **Pattern note:** L-58 is the consolidated M5 Phase 0 + Phase 1 progress entry and catches the third layer of drift in this milestone (after tool-count in L-56 Phase 0a and wire-field-name in L-57). Worth observing: three drift layers surfaced in M5 Phase 0 — tool set, response field names, request signature. Each layer was invisible until the next level of detail was probed. Phase 0a's tool-name diff caught layer 1; Phase 0a's handler wiring by the validator caught layer 2; Phase 1's live sweep caught layer 3. Pattern for future milestones' Phase 0a: include REQUEST-BODY structural diff, not just RESPONSE-BODY diff, when verifying spec-vs-impl-vs-validator alignment. Add to kickoff checklist: "do all three sources agree on the REQUEST body fields, not just the response?"
 
+### L-59 — M5 exit reached: three reference memory backends live, v1.0.0-rc.2 tag ready `[milestone closure record]`
+
+- **Surfaced:** 2026-04-23 · All L-56 / L-57 / L-58 gates satisfied; all three reference Memory MCP backends published on npm; scaffold pivoted to sqlite default; integration test passes under budget via pure-registry install. Milestone five closes.
+
+**What shipped in M5:**
+
+| Deliverable | Commit / artifact |
+|---|---|
+| §8.7 Reference Memory Backend Implementations (Informative) | spec `28e6460` |
+| `backend-conformance-report.schema.json` | spec `28e6460` (in `schemas/`) |
+| §8.1 6-tool lockdown + `add_memory_note` signature errata | spec `45bd9df` (L-58) |
+| §10.7.2 add-path rejection extension (`MemoryDeletionForbidden` for `data_class=sensitive-personal`) | spec `45bd9df` |
+| test-vectors/memory-mcp-mock/README.md alignment | spec `45bd9df` + this commit pin |
+| `memory-mcp-mock` drift fix (6 tools) | impl `da41773` |
+| Runner `notes`→`hits` wire-shape flip | impl `76f3749` |
+| Runner rc.2 full public barrel | impl published `@soa-harness/runner@1.0.0-rc.2` |
+| Runner rc.3 `InMemoryMemoryStateStore` export | impl `<integration-fix>` → `@soa-harness/runner@1.0.0-rc.3` |
+| CI matrix + `release-gate.mjs` | impl `6f5fb40` |
+| Phase 0c Gate 6 license audit | impl `5448045` |
+| Phase 0c Gate 3 mem0 spike (shim 202 LOC, deterministic-adjacent pass) | impl `ff9d7a5` |
+| Phase 0c Gate 4 Zep spike (shim 281 LOC, 100% ajv) | impl `05e27b1` |
+| `@soa-harness/memory-mcp-sqlite@1.0.0-rc.0` published | impl `cc5cded` + Phase 0e `65fdc7a` |
+| `@soa-harness/memory-mcp-mem0@1.0.0-rc.0` published | impl `392668e` |
+| `@soa-harness/memory-mcp-zep@1.0.0-rc.0` published | impl `4614fcb` |
+| Phase 4 unified conformance-report orchestrator | impl `5eccaa6` |
+| Phase 5 scaffold pivot: `create-soa-agent@1.0.0-rc.4` (sqlite default + `--memory` flag + 4 templates) | impl `d11a405` + fix `<integration>` + re-test `4ebc3ab` |
+| Validator memmock 6-tool + flat-shape drift sweep | validate `ea36292` + `6042952` |
+| Validator `--memory-backend` flag | validate `f675d4d` |
+| Validator `notes`→`hits` flip | validate `3604219` |
+| Validator SV-MEM-01/02/08 live probes + HR-17 stub | validate `528ee7d` |
+| Validator `add_memory_note` probe canonical-shape flip | validate `a6c333c` |
+| Validator L-58 pin-bump | validate `e0d6e82` (pin to spec `45bd9df`) |
+| L-56 kickoff + scope freeze | spec `28e6460` |
+| L-57 Phase 0 progress + notes→hits flip + Gate 5 lock | spec `d71c83d` |
+| L-58 Phase 0+1 closure + §8.1 errata | spec `45bd9df` |
+| L-59 this entry | spec (this commit) |
+
+**npm registry state at M5 exit:**
+
+| Package | Version | Dist-tags |
+|---|---|---|
+| `@soa-harness/core` | 1.0.0-rc.0 | next, latest |
+| `@soa-harness/schemas` | 1.0.0-rc.0 | next, latest |
+| `@soa-harness/runner` | 1.0.0-rc.3 | next, latest (rc.0, rc.1, rc.2 deprecated) |
+| `@soa-harness/langgraph-adapter` | 1.0.0-rc.2 | next, latest |
+| `@soa-harness/memory-mcp-sqlite` | 1.0.0-rc.0 | next, latest |
+| `@soa-harness/memory-mcp-mem0` | 1.0.0-rc.0 | next, latest |
+| `@soa-harness/memory-mcp-zep` | 1.0.0-rc.0 | next, latest |
+| `create-soa-agent` | 1.0.0-rc.4 | next, latest (rc.0–rc.3 deprecated) |
+
+**Conformance at M5 exit (empirically verified per unified `backend-conformance-report.json`):**
+
+```
+three backends × nine cells = 27 total cells
+  pass:    12  (SV-MEM-01, 02, 07, 08 per backend × 3 = 12)
+  waived:  15  (SV-MEM-03/04/05/06 + HR-17 per backend × 3 = 15)
+  fail:     0
+  error:    0
+  summary.all_green: true
+```
+
+Per-backend waiver rationale (same across all three):
+- `SV-MEM-03` (memory-startup-fail-closed): subprocess-only probe; requires Runner boot-time env control
+- `SV-MEM-04` (mid-loop MemoryDegraded): requires mid-session backend timeout injection beyond `SOA_MEMORY_MCP_*_TIMEOUT_AFTER_N_CALLS` granularity
+- `SV-MEM-05` (consolidation trigger timing): requires `RUNNER_CONSOLIDATION_ELAPSED_MS` boot override
+- `SV-MEM-06` (sharing_policy observability): requires `RUNNER_CARD_FIXTURE` swap at boot
+- `HR-17` (three-consecutive-timeout → MemoryDegraded): requires fault-injection surface beyond mock's env hook
+
+All five waivers point forward to a candidate §8.7.7 "Backend Conformance Fault-Injection Surface (Informative)" post-M5 spec addition that would formalize the cross-backend fault-injection pattern already implemented via mock + each backend's `SOA_MEMORY_MCP_<NAME>_*` env hooks. Deferred to v1.0.x; not M5 scope.
+
+**Integration test at M5 exit (Phase 5 verification per L-53 pattern):**
+
+Pure registry install flow — `npx create-soa-agent@next --memory=sqlite test-agent`:
+
+| Stage | Wall-clock |
+|---|---|
+| scaffold | 3s |
+| npm install (160 packages cold) | 6s |
+| boot + /health + /memory/state probes | ~15s |
+| **Total** | **~24s** |
+
+**Budget**: 20m Windows / 15m POSIX (L-53). **Headroom**: ~40× — well under budget. Captured in `docs/m4/dry-run-telemetry.md` Re-run 3.
+
+**Scope surprises caught during M5 (in order of appearance — the fresh-install-surface-bug pattern):**
+
+1. **Three-way tool-surface drift (L-56 Phase 0a)** — spec §8.1 said 6 tools; impl mock implemented 4 (one non-spec rename); validator memmock implemented 3 with a stale "§8.1 five-tool set" comment. Caught by Phase 0a's Gate 1 verification BEFORE backend code was written.
+2. **`notes` vs `hits` response field drift (L-57)** — spec + test-vectors README said `hits`; impl mock + validator memmock + impl client all shipped `notes`. Caught when validator shipped new handlers per Phase 0a and observed the field-name mismatch.
+3. **`add_memory_note` request signature drift (L-58)** — spec §8.1 under-specified the shape; impl shipped richer `{summary, data_class, session_id, note_id?}`; validator shipped nested `{note: {content, tags, importance}}`. Caught when Phase 1's live sweep drove a real probe against sqlite.
+4. **`create-soa-agent` rc.1 → rc.2 Linux-symlink bug** (M4, not M5, but relevant pattern) — `invokedAsCli` guard compared real path to symlink path; binary silently exited 0 on Linux. Caught by WSL2 dry-run.
+5. **Runner rc.0 → rc.1 missing `InMemorySessionStore` export** (M4) — scaffold's `start.mjs` imported a symbol not in the public barrel. Caught by fresh install + boot test.
+6. **Runner rc.2 → rc.3 missing `InMemoryMemoryStateStore` export (M5 Phase 5)** — scaffold's `start.mjs` needed the memoryState store for the pivoted sqlite default; absent from runner's public barrel. Caught by Phase 5 integration test's `/memory/state` 404.
+7. **`create-soa-agent` rc.3 → rc.4 missing memoryState config wiring** — scaffold template didn't pass `memoryState` config into `startRunner()` call even though the dep was present. Caught alongside finding #6.
+
+Findings 4–7 are the **fresh-install surface-bug pattern**: unit tests pass, package builds clean, monorepo workspace resolves fine — but a fresh consumer consuming ONLY published-npm artifacts trips a missing export or wiring gap. Unit tests cannot see this because they exercise the module system differently than `npm install → node start.mjs` does. The publish runbook's end-to-end fresh-install probe is the mandatory gate for this class of bug.
+
+**What's next — M6 kickoff conditions:**
+
+Per L-52 + L-53, M6 is the greenfield presentation refactor:
+
+- Strip all "(Normative — M\d addition, L-XX)" annotations from spec section titles
+- Move L-XX cross-references from normative text into `CHANGELOG.md` + `ERRATA.md` (new files)
+- Remove `implementation_milestone` + `milestone_reason` fields from `soa-validate-must-map.json` (they're impl scheduling, not conformance contract)
+- Remove M1/M2/M3/M4/M5 references from impl + validate READMEs + commit messages going forward
+- Prose pass for uniform voice across sections written at different milestone vintages
+- Optional subsection renumbering (close gaps like §10.5.5 → §10.5.7 only if audit shows <5 external references)
+- Single `v1.0.0` tag across spec + impl + validate + adapter + three memory backends + create-soa-agent on the same day; signed MANIFEST under real release key; synchronized npm publish
+
+**Version impact:** §19.4 editorial. 1.0.17 → **1.0.18** (L-58 already carried this bump for the §8.1 errata; L-59 is a closure record not a normative change, no version bump beyond what L-58 shipped). MANIFEST regen picks up this L-entry commit.
+
+**Pattern note:** L-59 closes the M5 L-entry cadence (L-56 kickoff → L-57 Phase 0 progress → L-58 Phase 0+1 closure + errata → L-59 closure). Unique M5 signature: **three consecutive drift layers in Phase 0 alone** (tool count, response field names, request signature) — each caught at a successively deeper level of probing. And the fresh-install surface-bug pattern repeated four times across M4 + M5 (rc.1→rc.2 symlink, rc.0→rc.1 session-store export, rc.2→rc.3 memory-state-store export, rc.3→rc.4 scaffold wiring). Combined lesson for M6 and future milestones: the definitive gate for any RC publish is a scripted scaffold-install-boot-probe cycle against ONLY the registry artifacts (no local hot-swap, no workspace linkage, no cached deps). Every bug in the fresh-install-surface pattern would have taken weeks of adopter confusion if shipped; all were caught at the last integration-test stage before tag, which is exactly the right place for them.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
