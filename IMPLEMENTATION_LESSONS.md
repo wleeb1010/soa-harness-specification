@@ -1520,7 +1520,7 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 **Phase structure:**
 
 **Phase 0 — Pre-release gates (days 1-5, parallelized):**
-- 0a (day 2 HARD DEADLINE): Release-key governance **LOCKED** — software Ed25519 with passphrase-encrypted storage (Option A, zero-cost). Generate with `openssl genpkey -algorithm ed25519`, wrap with strong passphrase, stash in password manager + encrypted offsite backup, sign from clean machine, wipe working copy after. Spec format stays JWS. Hardware upgrade (YubiKey) available as v1.0.1 editorial errata later. Phase 0a now covers: key generation ceremony, backup verification, signing-machine hygiene checklist.
+- 0a (day 2 HARD DEADLINE): Release-key governance **LOCKED** — software Ed25519 with passphrase-encrypted storage (Option A, zero-cost). **Keypair generated 2026-04-23**: public key at `keys/soa-release-v1.0.pub` (committed), fingerprint `pV5dl4OVvpjgLhJCeFddcZPHAWK3n4v1WAPL/3rE+sA=`. Private key generated at `C:/Users/wbrumbalow/soa-release-material/soa-release-v1.0.key` (unencrypted — operator must encrypt with passphrase + back up to two offline locations + wipe unencrypted copy per `docs/m6/release-key-ceremony.md` Step 3-4). Spec format stays JWS. Hardware upgrade (YubiKey) available as v1.0.1 editorial errata later.
 - 0a.5 (day 1): Inventory verification sweep — automated regex across spec + must-maps. Halt Phase 1 if count ≠ agent baseline.
 - 0b (days 1-2): npm org 2FA + ownership audit. Archive snapshot.
 - 0c (days 1-3): Test-ID stability audit + pre-commit hook across all 3 repos validating `test_id → §X.Y anchor` mapping.
@@ -1547,7 +1547,7 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 - 2c: Validator `main.go` prose sweep
 - 2d: License-checker clean across all 8 dep trees
 - 2e (days 13-14): MANIFEST regen with real-key JWS. Dry-run with placeholder first; then real sign. Archive ceremony artifact.
-- 2e.1 (day 13): MANIFEST validate-binary placeholder disposition — Phase 0a.5 surfaced 2 placeholder SHA256 entries (`soa_validate_binary`, `ui_validate_binary`). Three options: (A) build + pin real SHA256 (requires binaries hosted by release day), (B) retain `status: "placeholder"` with explicit normative meaning, (C) remove validate binaries from MANIFEST — they live in sibling repos, not spec artifacts. Current lean: **C** (cleanest separation; spec MANIFEST shouldn't pin binary hashes the spec doesn't own). User decision pending before Phase 2e executes.
+- 2e.1 (day 13): MANIFEST validate-binary placeholder disposition **RESOLVED 2026-04-23**: **Option B** — retain `status: "placeholder"` with explicit normative meaning per schema line 521. The schema was DESIGNED with the `status: placeholder | shipped` enum precisely for this case: "conformance tools MUST refuse to verify against a placeholder entry." Option C (remove) would be a schema-breaking edit and discards intentional design. Option A (build + pin real SHAs) requires sibling-repo release-day coordination — available as v1.0.1 editorial errata if operator opts in later. For v1.0.0: MANIFEST ships placeholders + pubkey fingerprint. Adopters fetch validator binaries from sibling-repo GitHub releases separately.
 - 2f (days 14-16): Release orchestration script + **STAGING REGISTRY TEST-RUN against Verdaccio** — full 8-package dependency-ordered publish + install verification + teardown. MANDATORY gate per critic.
 - 2g: `docs/m6/rollback-runbook.md` — phase-by-phase decision tree + commands + 72h window awareness.
 
