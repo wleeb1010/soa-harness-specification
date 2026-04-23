@@ -1303,6 +1303,94 @@ Neither side flips alone. Impl commits `notes`→`hits` in mock + client + fixtu
 
 **Pattern note:** L-57 follows the M4 L-54 pattern — a mid-milestone revision entry that catches drift or scope-fix between kickoff and closure. Worth recording because the `hits` drift was invisible to L-56's Phase 0a verification (which only diffed tool names) — it took the validator implementing new handlers against spec to surface the field-name mismatch. Lesson: tool-surface diff at Phase 0a should include response-schema structural diff, not just endpoint name diff. Next milestone's Phase 0a checklist will extend to schema-level verification.
 
+### L-58 — M5 Phase 0 + Phase 1 closure + §8.1 `add_memory_note` signature errata `[normative spec + milestone progress]`
+
+- **Surfaced:** 2026-04-23 · Phase 1 sqlite backend's live validator sweep (jumped from 49→93 pass) surfaced a genuine §8.1 ambiguity around `add_memory_note`'s wire signature. Third signature-level drift caught across four sessions; requires normative §8.1 tightening before sqlite publishes.
+
+**Phase 0 + Phase 1 progress (all pushed):**
+
+| Session | Commit | Deliverable |
+|---|---|---|
+| impl | `da41773` | Phase 0a mock drift fix (§8.1 6-tool surface) |
+| impl | `6f5fb40` | Phase 0b CI matrix + release-gate.mjs + conformance-report schema consumer |
+| impl | `5448045` | Phase 0c Gate 6 license baseline — clean |
+| impl | `76f3749` | Phase 0d `notes`→`hits` flip |
+| impl | `ff9d7a5` | Phase 0c Gate 3 mem0 spike — green (202-LOC shim, Qdrant + Ollama, SV-MEM-07 live-pass) |
+| impl | `05e27b1` | Phase 0c Gate 4 Zep spike — green (281-LOC shim, ghcr.io/getzep/zep, 7/7 ajv validation) |
+| impl | `cc5cded` | Phase 1 sqlite backend (20/20 package tests, naive scorer default + transformers opt-in, runner empty-string fix bundled) |
+| validator | `ea36292` | Phase 0a memmock drift fix |
+| validator | `f675d4d` | Phase 0b `--memory-backend` flag |
+| validator | `3604219` | Phase 0d `notes`→`hits` flip |
+| validator | `e0d6e82` | L-57 pin-bump |
+| validator | `528ee7d` | SV-MEM-01/02/08 live-mode probes + HR-17 stub |
+| spec | `28e6460` | L-56 kickoff + §8.7 + backend-conformance-report.schema.json |
+| spec | `d71c83d` | L-57 Phase 0 progress + flip + Gate 5 lock |
+| spec | this commit | L-58 + §8.1 errata |
+
+**Phase 0c Gates status:**
+- Gate 3 (mem0 determinism-adjacent): GREEN with L-57 criterion revision (SV-MEM-* pass, not byte-identity)
+- Gate 4 (Zep schema mapping): GREEN — 281-LOC shim under the 300-LOC ceiling, 100% ajv validation
+- Gate 5 (transformers.js cold-start): LOCKED to pre-cache but Phase 1 shipped with naive-scorer default + transformers opt-in. Phase 1 ships rc.0 without empirical cross-platform transformers timing; full transformers verification deferred to a hands-on Gate 5 variant when semantic scoring becomes a real adopter request.
+- Gate 6 (license audit): GREEN across all six dep trees
+
+**Phase 1 sqlite backend status (`cc5cded`):**
+
+- Package shipped locally: 202-LOC backend, Fastify HTTP shell, CLI with Linux-symlink guard, fault-injection env triad (TIMEOUT_AFTER_N_CALLS / RETURN_ERROR / SEED / DB)
+- Tests: 20/20 in-package (18 unit + 2 ajv conformance); 890 monorepo total
+- Live validator sweep against sqlite backend on :8005: **93 pass / 0 fail / 70 skip / 0 error** (from M4 baseline's 49/0/113/0 in native-against-mock — sqlite is a real backend, more probes engage)
+- Live SV-MEM-* passes: SV-MEM-01, 02, 07, STATE-01, STATE-02 (5 probes live against real sqlite)
+- HR-17 + SV-MEM-03/04/05/06 skip pending subprocess-path or §8.7.7 fault-injection surface (deferred to post-publish)
+- Runner empty-string startup-probe fix bundled (canary query `"_runner_startup_probe_"` — enables any embedder backend)
+
+**§8.1 `add_memory_note` signature errata (normative, in this commit):**
+
+Three-way drift caught during Phase 1 live sweep. Validator's SV-MEM-08 probe sent `{"note": {"content", "tags", "importance"}}` (nested object shape); impl mock + sqlite + Runner client shipped `{summary, data_class, session_id, note_id?}` shape; spec §8.1 prose (line 552-557) defined `{note: string, tags: array, importance: number}`.
+
+Spec was under-specified. §8.1 as originally written didn't honor §10.7.2's `data_class` binding requirement at persistence or §8.5's `session_id` binding requirement for sharing-policy. Impl's richer signature was actually the spec-compliant shape given the cross-section constraints; §8.1's prose was the one that drifted when §10.7 and §8.5 were added later without backport.
+
+**Canonical `add_memory_note` signature (post-errata):**
+
+```
+add_memory_note(
+  summary: string (≤ 16 KiB),
+  data_class: "public" | "internal" | "confidential" | "personal",
+  session_id: string,
+  note_id?: string,
+  tags?: array<string> (≤ 32, each ≤ 64 chars),
+  importance?: number (0.0–1.0 inclusive, default 0.5)
+) → { "note_id": string, "created_at": string }
+Errors: MemoryQuotaExceeded, MemoryDuplicate, MemoryMalformedInput, MemoryDeletionForbidden
+```
+
+Key normative clarifications (added to §8.1 in this commit):
+- `data_class == "sensitive-personal"` rejected via `MemoryDeletionForbidden(reason=sensitive-class-forbidden)` — extends §10.7.2's consolidate-path rule to the add-path
+- `note_id` optional caller-supplied id enables idempotent writes; tombstoned ids cannot be reused (MemoryDuplicate)
+- `tags` + `importance` now optional with defaults — enables implicit memory writes without full classification
+- Wire shape: flat JSON (no nesting under `note` object), response `{note_id, created_at}` at top level
+- `note_id` (write-side) == `id` (read-side via `read_memory_note`) == `hits[].id` (search-side). Intentional field-name asymmetry documented explicitly in §8.1
+
+**Phase 0e lock-step flip (triggered by L-58):**
+
+| Touchpoint | Current shape | Errata target |
+|---|---|---|
+| impl mock + sqlite backend + Runner client | `{summary, data_class, session_id, note_id?}` → `{note_id}` | Already correct. Optional addition: `created_at` in response if missing |
+| validator probe `backendAddNote` | `{note: {content, tags, importance}}` nested | Flip to canonical flat shape |
+| spec test-vectors/memory-mcp-mock/README.md | was 5 tools, updated in L-57 Phase 0a | Updated in this commit for the full signature |
+| spec §8.1 | under-specified | Updated in this commit (this is the errata itself) |
+| spec §10.7.2 | covered consolidate-path only | Add-path rejection now normative via §8.1 sibling clause (no edit needed to §10.7.2 itself) |
+
+Phase 0e estimated: ~1-2 hours per side, lock-step commit-and-push as with Phase 0d.
+
+**Publish gate for `@soa-harness/memory-mcp-sqlite@1.0.0-rc.0`:**
+
+Currently HELD pending Phase 0e. Once validator probe-fix commits + impl verifies response includes `created_at` + live re-poll confirms SV-MEM-08 passes against sqlite (not just skips), then publish per docs/m4/publish-runbook.md.
+
+**Phase 2 (mem0) + Phase 3 (Zep) scope unaffected:** Phase 0c spikes (ff9d7a5, 05e27b1) already built shims against impl's richer signature, which matches the post-errata spec. No shim rework needed. Phase 2/3 timelines unchanged from L-56 (compressed estimates hold).
+
+**Version impact:** §19.4 editorial + minor. 1.0.17 (L-56) → **1.0.18**. The `add_memory_note` signature change is technically a breaking change in the function-call signature but: (a) no Runner in the wild deploys the old shape per the three-way drift finding — impl always shipped the richer signature; (b) the spec prose was the minority interpretation; (c) the errata documents reality not prescribes new behavior. Classifying as editorial-plus-clarification per §19.4.
+
+**Pattern note:** L-58 is the consolidated M5 Phase 0 + Phase 1 progress entry and catches the third layer of drift in this milestone (after tool-count in L-56 Phase 0a and wire-field-name in L-57). Worth observing: three drift layers surfaced in M5 Phase 0 — tool set, response field names, request signature. Each layer was invisible until the next level of detail was probed. Phase 0a's tool-name diff caught layer 1; Phase 0a's handler wiring by the validator caught layer 2; Phase 1's live sweep caught layer 3. Pattern for future milestones' Phase 0a: include REQUEST-BODY structural diff, not just RESPONSE-BODY diff, when verifying spec-vs-impl-vs-validator alignment. Add to kickoff checklist: "do all three sources agree on the REQUEST body fields, not just the response?"
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent

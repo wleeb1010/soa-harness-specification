@@ -550,11 +550,14 @@ The Memory MCP server MUST expose the following tools. Error responses follow §
 
 ```text
 add_memory_note(
-  note: string (≤ 16 KiB),
-  tags: array<string> (≤ 32, each ≤ 64 chars),
-  importance: number (0.0–1.0 inclusive)
-) → { "id": string, "created_at": string /* RFC 3339 */ }
-Errors: MemoryQuotaExceeded, MemoryDuplicate, MemoryMalformedInput
+  summary: string (≤ 16 KiB),
+  data_class: "public" | "internal" | "confidential" | "personal",
+  session_id: string,
+  note_id?: string,
+  tags?: array<string> (≤ 32, each ≤ 64 chars),
+  importance?: number (0.0–1.0 inclusive, default 0.5)
+) → { "note_id": string, "created_at": string /* RFC 3339 */ }
+Errors: MemoryQuotaExceeded, MemoryDuplicate, MemoryMalformedInput, MemoryDeletionForbidden
 
 search_memories(
   query: string,
@@ -582,6 +585,17 @@ Errors: MemoryNotFound, MemoryDeletionForbidden
 ```
 
 `delete_memory_note` MUST be idempotent on `id`: a repeated call with the same `id` returns the same `tombstone_id` and `deleted_at`. The deletion MUST leave a tombstone record retaining `id`, `created_at`, `tags`, `deleted_at`, and `reason` (but not the note body). `search_memories` MUST NOT return tombstoned notes. `MemoryDeletionForbidden` is returned when the caller lacks the `delete:memory` scope.
+
+**`add_memory_note` normative behavior (L-58 clarification):**
+
+- **`summary`** is the lossy-compressed content to persist (the memory's working-context form). The raw conversation text that spawned a note is NOT the `summary`; the Runner computes the summary via §8.2 loading-algorithm context or §9.5 self-improvement path before invoking `add_memory_note`.
+- **`data_class`** (REQUIRED) binds the note's §10.7 classification at persistence. The MCP server MUST reject `data_class == "sensitive-personal"` with `MemoryDeletionForbidden` (reason `sensitive-class-forbidden`) — that class MUST NOT be persisted to memory in any form (§10.7.2, already-normative rule extended to the add-path).
+- **`session_id`** (REQUIRED) binds the note for §8.5 `sharing_policy` enforcement. The server uses this to decide cross-session visibility on subsequent `search_memories` calls.
+- **`note_id`** (OPTIONAL) enables idempotent writes. When present: if a non-tombstoned note with the same `note_id` exists, the server returns that existing `{note_id, created_at}` without creating a duplicate (idempotent success); if a tombstoned note with the same `note_id` exists, the server rejects with `MemoryDuplicate` (tombstoned ids cannot be reused). When absent: the server mints a fresh `note_id` and returns it.
+- **`tags`** (OPTIONAL) are caller-supplied classification hints; the server MAY enrich during consolidation. Absent `tags` → empty array.
+- **`importance`** (OPTIONAL, default `0.5`) is a caller-supplied priority hint used in §8.2's composite score.
+- **Response `note_id`** is the same identifier value that `search_memories` returns under its `hits[].id` key and that `read_memory_note` accepts as its `id` parameter. The field-name asymmetry (`note_id` on write, `id` on read) is intentional: `note_id` disambiguates against request-ambient noise on a write (`session_id`, `data_class`), while `id` is the natural read-side key.
+- **Wire shape:** HTTP request body is flat JSON with fields as top-level keys (no nesting under an outer `note` object). Response is flat JSON with `note_id` and `created_at` at the top level.
 
 ### 8.2 Loading Algorithm
 

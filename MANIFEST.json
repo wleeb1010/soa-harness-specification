@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "5c912675880c18f208caacef833c50be0de8446f614e6bc0aeca76656b5b432a",
+        "sha256": "2ee94c938b614957a4f58e25310a8514d17672729711a816f556fa00c4c259fc",
         "canonicalization": "raw-utf8"
       },
       {
@@ -844,7 +844,7 @@
       {
         "name": "README.md",
         "path": "test-vectors/memory-mcp-mock/README.md",
-        "sha256": "d551db9188155e198d7f73abc49fe17104c06147a1d1cb4e758ec6cfb74833f8",
+        "sha256": "9606b38830c8132a9fbf635baac5359e9c66d6bf1736dd76e929a645ce9285a9",
         "canonicalization": "raw-utf8"
       },
       {
