@@ -1508,12 +1508,13 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 
 **Calendar**: 4-5 weeks (revised from 3-4 per critic — staging publish test + release-key buffer + credential-tooling upgrade add ~1 week).
 
-**Inventory baseline (from Agent 1 sweep):**
-- Section-title `(M\d addition, L-XX)` annotations: **2** (§8.7, §14.6 only — M1-M3 era didn't use the pattern)
-- L-XX references in normative prose: **31** (concentrated in §10.3.1, §10.5.2, §14.5+, §18.5)
-- `implementation_milestone` + `milestone_reason` fields in must-maps: **234 entries** (all in `soa-validate-must-map.json`; `ui-validate-must-map.json` has zero)
-- Section-numbering gaps: **zero detected**
-- Placeholder JWS signatures: **1** (MANIFEST.json.jws)
+**Inventory baseline — CORRECTED 2026-04-23 via Phase 0a.5 sweep** (Agent 1 original numbers undercount; halt tripped as designed):
+- Section-title M-annotations: **10** (Agent 1 baseline of 2 was 5× undercount; correct list: §8.7, §11.4, §13.5, §14.5, §14.5.2, §14.5.3, §14.5.4, §14.5.5, §14.6, §18.5 — 7 with L-XX refs, 3 without)
+- L-XX references in normative prose (Core): **30** (baseline 31, off-by-one, within tolerance)
+- `implementation_milestone` fields: **234** in `soa-validate-must-map.json`, **0** in `ui-validate-must-map.json` (matches baseline)
+- `milestone_reason` fields: **225** in `soa-validate-must-map.json` — 9 orphans where `implementation_milestone` is set but `milestone_reason` is absent; Phase 1d bulk-strip handles both naturally
+- Section-numbering gaps: Core spec has a visible §19→§24 gap (§20-23 appear unallocated); to be confirmed intentional via Phase 1e prose pass
+- Placeholder artifacts: **3** — MANIFEST.json.jws (1) + 2 `"status": "placeholder"` SHA256 entries inside MANIFEST.json for `soa_validate_binary` + `ui_validate_binary` (Phase 2e.1 decides disposition)
 - Test-vector placeholders: **~8** (intentional fixtures, stay)
 
 **Phase structure:**
@@ -1531,7 +1532,7 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 - 0j (day 5): Automated section-anchor stability scan wired into CI.
 
 **Phase 1 — Content refactor (days 3-10, parallel with late Phase 0):**
-- 1a: Strip 2 section-title annotations (§8.7, §14.6)
+- 1a: Strip 10 section-title M-annotations (§8.7, §11.4, §13.5, §14.5, §14.5.2, §14.5.3, §14.5.4, §14.5.5, §14.6, §18.5 — remove all `M\d+ addition[, L-XX]` suffixes). Scope revised from baseline 2 via Phase 0a.5 halt; ~4× effort increase, still fits Phase 1 window.
 - 1b: De-inline 31 L-XX references (convert to ERRATA.md citations or inline factual statements)
 - 1c: Create CHANGELOG.md (retroactive M1-M5 summary), ERRATA.md (empty template), RELEASE-NOTES.md (v1.0.0 highlights)
 - 1d: Bulk-strip `implementation_milestone` + `milestone_reason` from must-maps (234 entries)
@@ -1546,6 +1547,7 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 - 2c: Validator `main.go` prose sweep
 - 2d: License-checker clean across all 8 dep trees
 - 2e (days 13-14): MANIFEST regen with real-key JWS. Dry-run with placeholder first; then real sign. Archive ceremony artifact.
+- 2e.1 (day 13): MANIFEST validate-binary placeholder disposition — Phase 0a.5 surfaced 2 placeholder SHA256 entries (`soa_validate_binary`, `ui_validate_binary`). Three options: (A) build + pin real SHA256 (requires binaries hosted by release day), (B) retain `status: "placeholder"` with explicit normative meaning, (C) remove validate binaries from MANIFEST — they live in sibling repos, not spec artifacts. Current lean: **C** (cleanest separation; spec MANIFEST shouldn't pin binary hashes the spec doesn't own). User decision pending before Phase 2e executes.
 - 2f (days 14-16): Release orchestration script + **STAGING REGISTRY TEST-RUN against Verdaccio** — full 8-package dependency-ordered publish + install verification + teardown. MANDATORY gate per critic.
 - 2g: `docs/m6/rollback-runbook.md` — phase-by-phase decision tree + commands + 72h window awareness.
 
