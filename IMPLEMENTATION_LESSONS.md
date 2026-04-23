@@ -1038,6 +1038,49 @@ Remaining 6 skips are legit deferrals (4 M4 retags + 1 pre-budgeted + 1 platform
 
 **Pattern note:** L-53 is the first L-entry that is purely a process/governance revision with no spec edits or impl coordination. Worth recording because the decision is non-obvious from outside: a reader of a future v1.0.0 release might wonder why `GOVERNANCE.md` acknowledges single-maintainer while the M4 plan originally specified external reviewers. L-53 is the reconciliation record. The deeper lesson: plan artifacts captured BEFORE execution sometimes encode assumptions that execution surfaces as unrealistic; honest mid-flight re-scoping is better than either pretending the original plan stands OR silently skipping the gate. The gate's VALUE is what matters (four dimensions above); the FORM can adapt.
 
+### L-54 — M4 exit criteria: two-run composition (supersedes L-52 single-URL 156/0/6/0 assumption) `[editorial, in-spec @ <this-commit>]`
+
+- **Surfaced:** 2026-04-23 · validator session's first SV-ADAPTER probe pass against live adapter demo at :7701. Running `soa-validate --adapter=langgraph --impl-url=http://127.0.0.1:7701` produced 4 pass / 158 skip / 0 fail / 0 error — because the Phase 2.7 adapter demo exposes a deliberately-slim HTTP surface (Agent Card + StreamEvent emission + SV-ADAPTER-specific endpoints), NOT the full §5-§18 Core Runner surface. Non-adapter tests against the adapter port regressed by design. Validator caught the planning error before it cemented into an exit-gate check.
+
+**What L-52 asserted (incorrectly):**
+
+> Exit target: 156 = 152 Core + 4 SV-ADAPTER, with documented pass-through exceptions from the enumerated list — no surprises
+
+This framing implies a single validator invocation against a single URL produces 156 passes. That's architecturally wrong. Adapters are a wrapping layer, not a replacement: the adapter binary provides §18.5 (adapter conformance) semantics over an internal back-end Runner; it does not re-expose the full §5-§18 Core surface. An adapter port is the right target ONLY for §18.5 tests; Core tests need the Core Runner directly.
+
+**Corrected model (empirically proven by validator run):**
+
+Exit criterion is a **two-run composition**:
+
+| Run | URL | Invocation | Expected result |
+|---|---|---|---|
+| Native | Core Runner (default :7700) | `soa-validate --impl-url=<core>` | `152 pass / 0 fail / 10 skip / 0 error` (M3 baseline + 4 SV-ADAPTER deferred when `--adapter` flag absent) |
+| Adapter | Adapter demo (default :7701) | `soa-validate --adapter=langgraph --impl-url=<adapter>` | `4 pass / 0 fail / 158 skip / 0 error` (SV-ADAPTER-01..04 pass; all non-adapter tests auto-skip with `scope=adapter-only`) |
+| **Combined** | — | — | **156 pass · 0 fail · 10 exit-criterion-skip** (10 = 6 pre-existing legit deferrals + 4 SV-ADAPTER skip-in-native-mode) |
+
+Validator's `--adapter` flag auto-scopes the test set when set: non-adapter test IDs report `Skipped` with reason `scope=adapter-only; run native against Core Runner URL for these`. This is not a capability regression — it is the correct reflection of what the adapter port actually serves.
+
+**M4 exit gate interpretation:**
+
+- Both runs MUST be clean: native matches 152 pass baseline exactly, adapter produces 4/0/158/0 exactly
+- Combined pass-count = 156; release notes enumerate the two-run composition honestly
+- `release-gate.json` (or equivalent) captures both runs' per-test matrices; a single-file report is not required
+
+**Adapter-deployment note:**
+
+An operator COULD build a "gateway-style" deployment where the adapter fronts the full Core surface via passthrough proxy, allowing a single URL + invocation to satisfy both runs. That is a legitimate deployment shape and is NOT precluded by §18.5. It is simply out of scope for the Phase 2.7 demo binary, which is deliberately slim for testability. Future adapter-deployment recipes MAY document the gateway-style composition.
+
+**What did NOT change:**
+
+- §18.5.3 normative requirements (which SV-* tests an adapter MUST pass) unchanged — the set is the same; the invocation model is what L-52 got wrong
+- SV-ADAPTER-01..04 assertions unchanged
+- Test vector `test-vectors/langgraph-adapter/simple-agent-trace.json` unchanged
+- Milestone tally unchanged (total: 234 tests in must-map)
+
+**Version impact:** §19.4 editorial. No normative change. 1.0.16 (L-52) remains the current Core version; L-53 + L-54 layer on process/exit-criteria clarifications without touching spec text.
+
+**Pattern note:** L-54 is the second process-revision entry in this session (L-53 was the external-reviewer → solo-multi-env revision). Both caught a plan-artifact assumption that execution surfaced as wrong. Worth naming: **planning-artifact realism** is a distinct discipline from spec-authoring discipline. A spec is normative and forward-binding; a plan is a best-guess sequencing that must flex as reality surfaces. L-52 encoded "single URL 156/0/6/0" as a plan artifact; the spec text itself never claimed that. Validator caught the mismatch mid-execution. The lesson: when a plan's success-criterion number doesn't survive contact with the actual architecture, rescope the plan's criterion, not the architecture. Architecture is the anchor; plan numbers are adjustable descriptions of "what passing looks like."
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
