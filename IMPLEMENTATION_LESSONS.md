@@ -1081,6 +1081,87 @@ An operator COULD build a "gateway-style" deployment where the adapter fronts th
 
 **Pattern note:** L-54 is the second process-revision entry in this session (L-53 was the external-reviewer → solo-multi-env revision). Both caught a plan-artifact assumption that execution surfaced as wrong. Worth naming: **planning-artifact realism** is a distinct discipline from spec-authoring discipline. A spec is normative and forward-binding; a plan is a best-guess sequencing that must flex as reality surfaces. L-52 encoded "single URL 156/0/6/0" as a plan artifact; the spec text itself never claimed that. Validator caught the mismatch mid-execution. The lesson: when a plan's success-criterion number doesn't survive contact with the actual architecture, rescope the plan's criterion, not the architecture. Architecture is the anchor; plan numbers are adjustable descriptions of "what passing looks like."
 
+### L-55 — M4 exit reached: v1.0.0-rc.1 tagged on impl + validate `[milestone closure record]`
+
+- **Surfaced:** 2026-04-23 · all L-52 / L-53 / L-54 gates satisfied; `v1.0.0-rc.1` tags pushed to both `soa-harness-impl` and `soa-validate` remotes. Milestone four closes; milestone five begins.
+
+**What shipped in M4:**
+
+| Deliverable | Commit / artifact |
+|---|---|
+| §14.6 LangGraph Event Mapping (informative) | spec 654dc7b |
+| §18.5 Adapter Conformance (normative, 5 subsections) | spec 654dc7b |
+| SV-ADAPTER-01..04 test assertions | spec 654dc7b (must-map + Phase 7 execution_order) |
+| `test-vectors/langgraph-adapter/simple-agent-trace.json` | spec 654dc7b |
+| LangGraph adapter package (library) | impl `packages/langgraph-adapter/` |
+| LangGraph adapter demo binary | impl `soa-langgraph-adapter-demo` bin |
+| `/debug/backend-info` endpoint (loopback + demo-mode gated) | impl 2.8-era |
+| `create-soa-agent` scaffold polished | impl rc.0 → rc.2 iterations |
+| Runner public-barrel exports completed | impl rc.0 → rc.2 iterations |
+| `--adapter=<host_framework>` CLI flag | validate 9e370d7 |
+| SV-ADAPTER probe bodies | validate 0042502 |
+| `--adapter` auto-scope logic (L-54 two-run composition) | validate 610fdac |
+| SV-REG-03 session-dir isolation | validate df56f6f |
+| Publish runbook | impl `docs/m4/publish-runbook.md` |
+| Cookbook README rewrite | impl 6c1655d + fbdda76 (cookbook re-read pass per L-53) |
+| Phase 0d cross-platform dry-run telemetry | impl `docs/m4/dry-run-telemetry.md` (Re-run 1 Windows + Re-run 2 WSL2) |
+| L-52 M4 kickoff + scope freeze | spec 654dc7b |
+| L-53 solo multi-env adoption-gate revision | spec dc31839 |
+| L-54 two-run composition exit-criteria fix | spec 1184b62 |
+| L-55 this entry | spec (this commit) |
+
+**npm registry state at tag:**
+
+| Package | Version | Dist-tags |
+|---|---|---|
+| `@soa-harness/core` | 1.0.0-rc.0 | next, latest |
+| `@soa-harness/schemas` | 1.0.0-rc.0 | next, latest |
+| `@soa-harness/runner` | 1.0.0-rc.2 | next, latest (rc.0, rc.1 deprecated) |
+| `@soa-harness/langgraph-adapter` | 1.0.0-rc.2 | next, latest (rc.0, rc.1 deprecated) |
+| `create-soa-agent` | 1.0.0-rc.2 | next, latest (rc.0, rc.1 deprecated) |
+
+**Conformance at tag (empirically verified per L-54 two-run composition):**
+
+```
+native  :7700  -> 152 pass / 0 fail / 10 skip / 0 error
+adapter :7701  ->   4 pass / 0 fail / 158 skip / 0 error
+combined       -> 156 pass / 0 fail / 10 exit-criterion-skip / 0 error
+```
+
+**Cross-platform install verified (docs/m4/dry-run-telemetry.md):**
+
+- Windows 11 Pro (PowerShell, cold npx): 7.5s end-to-end, 160× headroom against 20m budget
+- WSL2 Ubuntu 24.04 (Node 22.22, npm 10.9.4): 11.8s end-to-end, 76× headroom against 15m budget
+
+**Scope surprises caught during M4 (in order of appearance):**
+
+1. Phase 0e discovered three blockers the initial plan didn't anticipate:
+   - Schema extraction required a sibling spec-repo path (fixed: vendored into `packages/schemas/vendor/`)
+   - Scaffold template used `workspace:*` protocol that breaks external `npm install` (fixed: `^1.0.0-rc.0` refs, bumped via rc.0 → rc.1)
+   - Runner public barrel missed `InMemorySessionStore` + `SessionStore` (surfaced only at scaffold boot-time; fixed in runner rc.0 → rc.1)
+2. Phase 0d re-run on WSL2 caught Linux-symlink bug in `create-soa-agent` main-guard (`fileURLToPath(import.meta.url) === process.argv[1]` false under `/usr/bin/<name>` symlink). Fixed with `realpathSync(process.argv[1])` guard; bumped rc.1 → rc.2. Windows dodged the bug via `.cmd` wrappers.
+3. Phase 2.5/2.6 deferred 3-of-4 SV-ADAPTER probes from unit-mocked to real-HTTP composition, requiring an e2e back-end-Runner test fixture.
+4. Phase 2.7 revealed runner rc.1 was cut BEFORE Phase 2.6 rebuilt the public barrel with `StreamEventEmitter` + `permissionsDecisionsPlugin` + `auditRecordsPlugin`. The adapter bound to the newer shape; published runner was broken. Republished as rc.2.
+5. SV-REG-03 regressed after runner rc.2 — root cause was validator-side probe not setting `RUNNER_SESSION_DIR`; spawned Runner inherited CWD-relative `./sessions` with 3739 accumulated files; boot-scan starved the dynamic-tool watcher below the 8s probe deadline. Validator fix: probe isolation.
+
+**What's next — M5 kickoff conditions:**
+
+- Three memory-backend tracks (sqlite + mem0 + Zep) each independently passing SV-MEM-01..08 + HR-17 against the same §8 MCP contract; spec §8.7 informative "Reference Memory Backend Implementations" addendum.
+- Scaffold default pivot: `memory-mcp-mock` → `memory-mcp-sqlite` for end-user scaffolds. Mock stays in `tools/memory-mcp-mock/` as the conformance-test fixture (independent-judge property preserved).
+- Target: `v1.0.0-rc.2` tagged on impl + validate after all three backends pass.
+- Calendar: 6-8 weeks parallelized; 10-12 weeks serial per L-52's M5 budget.
+
+**What's after M5 — M6 greenfield refactor:**
+
+- Per L-52 and L-53, M6 strips process-markers from normative artifacts: `(Normative — M\d addition, L-XX)` annotations, `implementation_milestone` / `milestone_reason` fields in must-map, `M3 baseline` / `M6` references in impl README (acknowledged debt from M4 cookbook pass), inter-section milestone breadcrumbs.
+- Move change history to standalone `CHANGELOG.md` + `ERRATA.md`.
+- Prose pass for uniform voice across sections written at different times.
+- Single `v1.0.0` tag across spec + impl + validate + three memory backends on the same day. Signed MANIFEST under real release key. Synchronized npm publish.
+
+**Version impact:** §19.4 editorial. 1.0.16 (L-52) remains the current Core normative version. L-55 is the milestone-closure record, not a normative change.
+
+**Pattern note:** L-55 closes out the M4 L-entry sequence (L-52 kickoff, L-53 gate revision, L-54 exit-criteria fix, L-55 closure). Future milestones SHOULD follow the same L-entry cadence: kickoff (lock scope + derive exit criteria) → any mid-flight revisions → closure (record what actually shipped + link the commits/tags + flag surprises). The cadence provides a navigable narrative through the lesson log without requiring a reader to chase every commit. The closure entry's value is specifically in enumerating surprises caught during execution — those surprises are the most valuable content for a future maintainer who faces similar decisions.
+
 ### L-08 — Demo-mode ephemeral self-signed `x5c` leaf `[scratched]`
 
 - **Surfaced:** 2026-04-20 · impl's demo bin generates Ed25519 + self-signed cert when `RUNNER_SIGNING_KEY` + `RUNNER_X5C` are absent
