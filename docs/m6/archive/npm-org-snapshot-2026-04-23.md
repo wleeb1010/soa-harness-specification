@@ -51,13 +51,14 @@ Also verify personal 2FA at `https://www.npmjs.com/settings/wleeb/profile`:
 - Authenticator app or WebAuthn registered
 - Recovery codes saved offline
 
-Once the browser-side check passes, add a note below with the date:
+Browser-side check verified:
 
 ```
-2FA browser-verification: <DATE>  by: <operator name>
-  org-level "Require 2FA for members":  on
-  org-level "Require 2FA for publish":  on
-  personal 2FA method:                  authenticator | webauthn
+2FA browser-verification: 2026-04-23  by: wleeb (operator)
+  org-level enforcement mode:   Required 2FA or granular access token with bypass 2FA enabled
+  (equivalent to: 2FA required for login and sensitive operations;
+   short-lived granular publish tokens may bypass 2FA for scripted publish)
+  personal 2FA method:          authenticator app
 ```
 
 ## Red flags detected
