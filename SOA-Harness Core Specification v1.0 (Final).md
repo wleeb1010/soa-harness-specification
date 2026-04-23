@@ -746,7 +746,7 @@ Each reference backend ships with an independent `soa-validate --memory-backend=
 - Custom backend authoring walkthroughs
 - Backend-migration tooling
 
-These are deferred to v1.0.x or later and deliberately scope-bounded out of §8.7 to keep the informative surface small.
+These are deferred to v1.1 or later and deliberately scope-bounded out of §8.7 to keep the informative surface small.
 
 ---
 
@@ -1240,8 +1240,8 @@ This surfaces the §12.2 idempotency rule for permission decisions as an observa
 
 **Side-effect property (normative MUST).** A successful `POST /permissions/decisions` call MUST:
 1. Append exactly one record to `/audit/permissions.log` conforming to §10.5's field set and hash-chain rule. `this_hash` equals the response body's `audit_this_hash`.
-2. Ship that record to the external WORM sink per §10.5 rules 1–5 (or, in M1 scope where external sink is deferred, write to a local append-only file substituting for the external sink).
-3. Emit a `PermissionDecision` StreamEvent on the session's `/stream/v1/:session_id` channel (§14 — emitted once §14 is shipped; until then, audit write alone suffices for conformance).
+2. Ship that record to the external WORM sink per §10.5 rules 1–5 (or, when the external sink is not configured, write to a local append-only file substituting for the external sink).
+3. Emit a `PermissionDecision` StreamEvent on the session's `/stream/v1/:session_id` channel (§14).
 
 **Forgery resistance (normative MUST).** The endpoint MUST NOT accept a decision that contradicts what the §10.3 resolver would compute. Concretely:
 - The submitted `tool` + `session.activeMode` + Tool Registry entry drive the deterministic `decision` per §10.3 steps 1–4. The endpoint **ignores** any client-supplied decision override (the request body does not even carry one) and computes the decision internally.
@@ -1713,7 +1713,7 @@ Deny lists live in `AGENTS.md`; the syntax is one tool name per line under `### 
 
 #### 11.3.1 Runtime Tool-Addition Test Hook (Normative — Testability)
 
-**Rationale.** `SV-REG-03` asserts "Tools added mid-session do not appear in in-flight pool". §11.2 covers session-start pool assembly; §11.3 covers re-registration at SI acceptance (M5). Neither path gives a validator a deterministic way to add a tool at runtime during a single M3 test execution without invoking the full self-improvement flow. This section defines a test-only env-var hook.
+**Rationale.** `SV-REG-03` asserts "Tools added mid-session do not appear in in-flight pool". §11.2 covers session-start pool assembly; §11.3 covers re-registration at SI acceptance. Neither path gives a validator a deterministic way to add a tool at runtime during a single test execution without invoking the full self-improvement flow. This section defines a test-only env-var hook.
 
 **Env var `SOA_RUNNER_DYNAMIC_TOOL_REGISTRATION=<trigger-file-path>`** — when set, conformant Runners watch the named file (fsnotify or equivalent polling) and, when a JSON-array of tool entries is written to it, invoke the §11.1 registration path with each entry. The validator writes a tool-spec JSON to this file during a test to simulate MCP dynamic registration. After the file is consumed, the Runner MUST truncate it so a subsequent write triggers another registration.
 
@@ -1723,7 +1723,7 @@ Deny lists live in `AGENTS.md`; the syntax is one tool name per line under `### 
 
 ### 11.4 Dynamic Registration Observability (Normative)
 
-**Rationale.** §11.1–§11.3 define the global Tool Registry + per-session Tool Pool + re-registration rules. Dynamic MCP registration (tools added to the registry at runtime) is M3 scope. Conformance validators need an observation surface to verify: current registered tools, pool assignments per session, and re-registration events since boot.
+**Rationale.** §11.1–§11.3 define the global Tool Registry + per-session Tool Pool + re-registration rules. Dynamic MCP registration adds tools to the registry at runtime. Conformance validators need an observation surface to verify: current registered tools, pool assignments per session, and re-registration events since boot.
 
 **Endpoint.** Every conformant Runner MUST expose:
 
@@ -1808,8 +1808,8 @@ A session file at `/sessions/<session-id>.json` MUST conform to:
 **Significant events (normative closed set).** The following operations are "significant events" for §12.2 purposes:
 1. Tool invocations that produce side-effects (MCP `tools/call`, HTTP tool calls, etc.).
 2. Permission decisions recorded via `POST /permissions/decisions` (§10.3.2) — each decision, whether AutoAllow / Prompt / Deny / CapabilityDenied / ConfigPrecedenceViolation, advances the audit chain and therefore warrants bracket-persist in the session's `workflow.side_effects[]`.
-3. Handoff events (§17) — out of M2 scope; listed for completeness.
-4. Self-improvement iterations (§9.7) — out of M2 scope; listed for completeness.
+3. Handoff events (§17) — significant in `core+handoff` profile.
+4. Self-improvement iterations (§9.7) — significant in `core+si` profile.
 
 Persistence is **bracketed** around each significant event. For each significant event the Runner MUST:
 
@@ -1979,9 +1979,9 @@ Cross-platform identity: the markers MUST fire in the same logical order on Linu
 
 **Production guard for `RUNNER_CRASH_TEST_MARKERS`:** the marker-emission env var MUST NOT be enabled on production Runners; the stderr stream could leak session identifiers to log aggregators that don't carry the required confidentiality controls. Conformance-tested Runners SHOULD refuse to start with `RUNNER_CRASH_TEST_MARKERS=1` on non-loopback interfaces.
 
-#### 12.5.4 Audit-Sink Event Channel (Normative — M2 Minimum Observability)
+#### 12.5.4 Audit-Sink Event Channel (Normative)
 
-**Rationale.** §10.5.1's three-state degradation model emits `AuditSinkDegraded`, `AuditSinkUnreachable`, `AuditSinkRecovered` as StreamEvents. Full StreamEvent transport (§14) is M3 scope — which would leave `SV-PERM-19` untestable in M2. This section defines a minimum-viable observability channel for these three event types in M2.
+**Rationale.** §10.5.1's three-state degradation model emits `AuditSinkDegraded`, `AuditSinkUnreachable`, `AuditSinkRecovered` as StreamEvents. This section defines a polling-friendly observability channel for these three event types, retained alongside the full StreamEvent transport (§14) for validators and operators that prefer long-poll over push semantics.
 
 **Endpoint.** Every conformant Runner MUST expose:
 
@@ -2012,7 +2012,7 @@ GET /audit/sink-events?after=<event_id>&limit=<n>
 
 Response schema: `schemas/audit-sink-events-response.schema.json`. Byte-identity contract: same as `/sessions/:id/state` (excluding `generated_at` from comparison).
 
-**Deprecation note.** When §14 StreamEvent transport ships (M3), this endpoint is retained as an alternate polling-friendly observability path. Validators that prefer long-poll over push semantics continue using it.
+**Relationship to §14.** §14 StreamEvent transport is the push surface; this endpoint is the parallel polling-friendly observability path for the same three AuditSink events. Validators and operators that prefer long-poll over push semantics use it.
 
 **Conformance linkage.** `SV-PERM-19` validator fetches this endpoint at each state-transition checkpoint and asserts the expected `AuditSink*` event emitted exactly once per transition.
 
@@ -2336,7 +2336,7 @@ This endpoint is the primary consumer surface for UI Gateways (see UI Integratio
 
 ### 14.5 Minimum StreamEvent Observability Channel (Normative)
 
-**Rationale.** §14.1–§14.4 define the StreamEvent closed enum, per-type payload schemas, SSE transport at `/stream/v1/{session_id}`, and OTel mapping. Full SSE transport (§14.3) is M4 scope. Many conformance tests (`SV-STR-01..04`, `SV-STR-09/10/11/15`) need an observation surface for StreamEvents that DON'T require the full SSE pipeline — they just need to READ emitted events. This section defines a polling-friendly minimum observability channel that parallels §12.5.4 (audit-sink events) but scoped to the full StreamEvent enum.
+**Rationale.** §14.1–§14.4 define the StreamEvent closed enum, per-type payload schemas, SSE transport at `/stream/v1/{session_id}`, and OTel mapping. Many conformance tests (`SV-STR-01..04`, `SV-STR-09/10/11/15`) need an observation surface for StreamEvents that DON'T require the full SSE pipeline — they just need to READ emitted events. This section defines a polling-friendly observability channel that parallels §12.5.4 (audit-sink events) but scoped to the full StreamEvent enum.
 
 **Endpoint.** Every conformant Runner MUST expose:
 
@@ -2369,13 +2369,13 @@ GET /events/recent?session_id=<session_id>&after=<event_id>&limit=<n>
 
 Pagination same pattern as `/audit/records` (§10.5.3). Byte-identity excludes `generated_at` and the `generated_at`-analog timestamps inside event payloads where the timestamp is Runner-wall-clock rather than deterministic (e.g., `emitted_at` MAY vary across re-reads if the Runner re-synthesizes from a buffer, but stored `sequence` + `event_id` MUST NOT change).
 
-**Relationship to §14.3 SSE transport.** When §14.3 SSE ships (M4), both channels coexist. Clients preferring push use `/stream/v1/{session_id}`; polling-friendly clients (including `soa-validate`) use `/events/recent`. Events emitted to either channel carry identical `event_id` + `sequence`; cross-channel ordering MUST be deterministic (a sequence value appears at most once in either channel for a session).
+**Relationship to §14.3 SSE transport.** Both channels coexist. Clients preferring push use `/stream/v1/{session_id}`; polling-friendly clients (including `soa-validate`) use `/events/recent`. Events emitted to either channel carry identical `event_id` + `sequence`; cross-channel ordering MUST be deterministic (a sequence value appears at most once in either channel for a session).
 
-**Relationship to §12.5.4 audit-sink-events channel.** §12.5.4 is narrower — returns only the three `AuditSink*` state-transition events, not the full 27-type enum. §14.5 subsumes §12.5.4 for conformance purposes (a validator polling `/events/recent?type=AuditSinkDegraded,...` gets the same data as `/audit/sink-events`). §12.5.4 is retained for compatibility with M2-era validators that bound to it before §14.5 shipped.
+**Relationship to §12.5.4 audit-sink-events channel.** §12.5.4 is narrower — returns only the three `AuditSink*` state-transition events, not the full 27-type enum. §14.5 subsumes §12.5.4 for conformance purposes (a validator polling `/events/recent?type=AuditSinkDegraded,...` gets the same data as `/audit/sink-events`). §12.5.4 is retained as the narrow AuditSink-specific channel; validators MAY bind to either endpoint.
 
 **Not-a-side-effect (MUST).** Reading `/events/recent` MUST NOT advance state, emit new events, or write audit rows.
 
-**Conformance linkage.** `SV-STR-OBS-01` (new) — schema + pagination + not-a-side-effect + full-enum coverage. SV-STR-01/02/03/04/09/10/11/15 consume this endpoint for their assertions. SV-STR-12/13/14 remain M4 (require §14.3 full SSE transport with Last-Event-ID / terminal SSE semantics).
+**Conformance linkage.** `SV-STR-OBS-01` — schema + pagination + not-a-side-effect + full-enum coverage. SV-STR-01/02/03/04/09/10/11/15 consume this endpoint for their assertions. SV-STR-12/13/14 require §14.3 full SSE transport with Last-Event-ID / terminal SSE semantics.
 
 ### 14.5.2 OTel Span Observability Channel (Normative)
 
