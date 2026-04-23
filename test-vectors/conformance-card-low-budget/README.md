@@ -34,5 +34,5 @@ Then drives a single decision with `input_tokens + projected_output_tokens > 100
 
 - Core §7 — Agent Card `tokenBudget.maxTokensPerRun` field
 - Core §13.1 — Projection algorithm
-- Core §13.2 — Mid-stream enforcement (NOT exercised by this fixture; SV-BUD-03 retagged M4)
+- Core §13.2 — Mid-stream enforcement (NOT exercised by this fixture; SV-BUD-03 covers that path separately)
 - Core §13.4 — `StopReason::BudgetExhausted`

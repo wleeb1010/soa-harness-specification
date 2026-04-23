@@ -1,4 +1,4 @@
-# LangGraph Adapter Fixture — SV-ADAPTER-03 (L-52 M4)
+# LangGraph Adapter Fixture — SV-ADAPTER-03
 
 Reference fixture for `SV-ADAPTER-03` (LangGraph Event Mapping). Pins a deterministic LangGraph `astream_events v2` trace and the expected SOA StreamEvent emission sequence under the §14.6.1 default mapping, so a conformance validator can verify an adapter's event-translation without executing a real LangGraph process.
 
@@ -22,7 +22,7 @@ A minimal LangGraph agent: one `StateGraph` with two nodes (an LLM call and a to
 - Synthetic `MemoryLoad` at session start (if adapter declares §8 Memory)
 
 Out of scope (reserved for follow-up fixtures):
-- Compaction mid-stream (would require M5 real-LLM dispatcher)
+- Compaction mid-stream (requires a real-LLM dispatcher)
 - A2A handoff (exercised by existing §17 vectors)
 - Self-improvement flow (exercised by existing §9 vectors)
 - Crash + resume path (exercised by existing §14.5.5 CrashEvent vector)

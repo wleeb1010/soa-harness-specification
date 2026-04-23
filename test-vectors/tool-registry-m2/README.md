@@ -1,6 +1,6 @@
-# M2 Tool Registry Extension Fixture
+# Tool Registry Extension Fixture — Non-Idempotent Classification
 
-Companion to `test-vectors/tool-registry/` for M2 test coverage — specifically `SV-SESS-05` (non-idempotent tool classification rule per §12.2).
+Companion to `test-vectors/tool-registry/`. Exercises `SV-SESS-05` (non-idempotent tool classification rule per §12.2).
 
 ## Why this directory exists
 
@@ -32,11 +32,11 @@ Impls MUST ship a Tool Registry loader that iterates tools at boot and enforces 
 1. **Positive assertion:** Point impl at a modified fixture that contains only `compliant_ephemeral_tool`. Impl boots clean; `/permissions/resolve?tool=compliant_ephemeral_tool` returns `Prompt`.
 2. **Negative assertion:** Point impl at a fixture containing `non_compliant_ephemeral_tool`. Impl MUST exit non-zero within 5s with `ToolPoolStale` reason=`idempotency-retention-insufficient` on stderr or boot log.
 
-The validator's `internal/subprocrunner` from M1 already supports this invocation pattern.
+The validator's `internal/subprocrunner` supports this invocation pattern.
 
 ## Relationship to the main Tool Registry fixture
 
-`test-vectors/tool-registry/tools.json` is the 8-tool 24-cell conformance matrix for `SV-PERM-01`. This M2 fixture EXTENDS that with two additional entries targeting a different rule. Implementations MAY merge the two fixtures for a single registry load in conformance-mode runs OR run them as separate invocations — the spec does not constrain the composition.
+`test-vectors/tool-registry/tools.json` is the 8-tool 24-cell conformance matrix for `SV-PERM-01`. This fixture EXTENDS that with two additional entries targeting the non-idempotent classification rule. Implementations MAY merge the two fixtures for a single registry load in conformance-mode runs OR run them as separate invocations — the spec does not constrain the composition.
 
 ## Referenced sections
 

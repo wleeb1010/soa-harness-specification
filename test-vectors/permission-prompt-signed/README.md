@@ -35,7 +35,7 @@ Validator's happy-path assertion:
 
 ## Note on the nonce
 
-The fixture's nonce (`soa-conformance-test-nonce-01`) is pinned for determinism. In production, each Prompt carries a Gateway-minted per-prompt nonce (UI §11.4.1). The conformance assertion does NOT exercise the Gateway's nonce replay cache — that's a separate UI-profile concern (M3). For the Core-profile `SV-PERM-21` live path, the fixture nonce is sufficient.
+The fixture's nonce (`soa-conformance-test-nonce-01`) is pinned for determinism. In production, each Prompt carries a Gateway-minted per-prompt nonce (UI §11.4.1). The conformance assertion does NOT exercise the Gateway's nonce replay cache — that's a separate UI-profile concern. For the Core-profile `SV-PERM-21` live path, the fixture nonce is sufficient.
 
 ## Regenerating
 

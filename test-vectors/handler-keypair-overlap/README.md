@@ -1,4 +1,4 @@
-# Handler Keypair Overlap Fixture — SV-PERM-10 (L-48 BF)
+# Handler Keypair Overlap Fixture — SV-PERM-10
 
 Pinned two-keypair fixture exercising the §10.6 24-hour rotation overlap window. Both keys MUST verify while inside the overlap; outside the window, only the current kid verifies.
 
