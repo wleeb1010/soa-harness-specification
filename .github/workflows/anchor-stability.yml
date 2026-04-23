@@ -1,0 +1,30 @@
+name: anchor-stability
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify test_id -> §X.Y anchor stability
+        run: python verify-anchor-stability.py
+
+      - name: Detect broken section anchors in must-maps
+        run: |
+          echo "Pass gate: every test in both must-maps references a section"
+          echo "anchor that exists in Core or UI spec."
+          echo ""
+          echo "This CI job is belt-and-suspenders for .git/hooks/pre-commit,"
+          echo "which runs the same check locally but can be bypassed with"
+          echo "--no-verify. Mandatory for v1.0 conformance-contract integrity."

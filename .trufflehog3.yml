@@ -1,0 +1,23 @@
+# trufflehog3 config — suppresses known-artifact high-entropy noise.
+# Generated during M6 Phase 0d (L-60). See docs/m6/credential-sweep-results.md.
+
+exclude:
+  # Signed and canonicalized artifacts: high-entropy is expected by design.
+  - pattern: ".*"
+    paths:
+      - "MANIFEST.json"
+      - "MANIFEST.json.jws"
+      - "test-vectors/**"
+      - "graphify-out/**"
+      - ".git/**"
+
+  # Hash content in spec prose — normative references, not secrets.
+  - message: "high-entropy"
+    paths:
+      - "SOA-Harness Core Specification v1.0 (Final).md"
+      - "SOA-Harness UI Integration Profile v1.0 (Final).md"
+      - "IMPLEMENTATION_LESSONS.md"
+      - "ERRATA.md"
+      - "CHANGELOG.md"
+
+severity: HIGH
