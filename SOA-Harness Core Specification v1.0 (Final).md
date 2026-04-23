@@ -186,7 +186,7 @@ A deployment MUST select exactly ONE bootstrap channel per §5.3. When a Runner 
 
 Covered by `SV-BOOT-05`.
 
-#### 5.3.3 Bootstrap Testability Env Hooks (Normative — L-43)
+#### 5.3.3 Bootstrap Testability Env Hooks (Normative)
 
 **Rationale.** `SV-BOOT-03`, `SV-BOOT-04`, `SV-BOOT-05` exercise the DNSSEC-TXT channel, the 24h revocation-poll cadence, and multi-channel split-brain detection respectively. Real DNSSEC resolvers, real 24-hour polling intervals, and real multi-channel coordination are infeasible in conformance test runs. Three env hooks enable deterministic injection.
 
@@ -437,7 +437,7 @@ The Agent Card MUST validate against the JSON Schema 2020-12 document below.
         },
         "mtlsRequired": { "type": "boolean", "default": true },
         "auditSink": { "type": "string", "format": "uri", "description": "WORM audit sink endpoint (§10.5); scheme MAY be https, s3, gs, azblob, or a site-local scheme" },
-        "data_residency": { "type": "array", "items": { "type": "string", "pattern": "^[A-Z]{2}$", "description": "ISO 3166-1 alpha-2 country code" }, "uniqueItems": true, "description": "OPTIONAL residency pinning per §10.7 step 5 (L-41). Array of ISO 3166-1 country codes. When present, Runner MUST apply the layered-defence gate and emit a ResidencyCheck audit row per tool invocation." },
+        "data_residency": { "type": "array", "items": { "type": "string", "pattern": "^[A-Z]{2}$", "description": "ISO 3166-1 alpha-2 country code" }, "uniqueItems": true, "description": "OPTIONAL residency pinning per §10.7 step 5. Array of ISO 3166-1 country codes. When present, Runner MUST apply the layered-defence gate and emit a ResidencyCheck audit row per tool invocation." },
         "coordinationEndpoint": { "type": "string", "format": "uri", "pattern": "^https://", "description": "REQUIRED when Runner runs in SOA_COORD_MODE=distributed per §12.4; points at the etcd/ZooKeeper/Redis/MCP coordination service issuing monotonic fencing tokens for clustered self-improvement acceptance." }
       }
     }
@@ -586,7 +586,7 @@ Errors: MemoryNotFound, MemoryDeletionForbidden
 
 `delete_memory_note` MUST be idempotent on `id`: a repeated call with the same `id` returns the same `tombstone_id` and `deleted_at`. The deletion MUST leave a tombstone record retaining `id`, `created_at`, `tags`, `deleted_at`, and `reason` (but not the note body). `search_memories` MUST NOT return tombstoned notes. `MemoryDeletionForbidden` is returned when the caller lacks the `delete:memory` scope.
 
-**`add_memory_note` normative behavior (L-58 clarification):**
+**`add_memory_note` normative behavior:**
 
 - **`summary`** is the lossy-compressed content to persist (the memory's working-context form). The raw conversation text that spawned a note is NOT the `summary`; the Runner computes the summary via §8.2 loading-algorithm context or §9.5 self-improvement path before invoking `add_memory_note`.
 - **`data_class`** (REQUIRED) binds the note's §10.7 classification at persistence. The MCP server MUST reject `data_class == "sensitive-personal"` with `MemoryDeletionForbidden` (reason `sensitive-class-forbidden`) — that class MUST NOT be persisted to memory in any form (§10.7.2, already-normative rule extended to the add-path).
@@ -613,7 +613,7 @@ On each Runner loop iteration (defined as one execution of §16 state 1 → stat
 - On timeout or connection failure during startup: the Runner MUST fail startup with `MemoryUnavailableStartup`. Fail-open to empty memory is NOT permitted.
 - On timeout mid-loop: the Runner MUST proceed with the last successfully loaded memory slice and emit `MemoryDegraded` on the System Event Log. A persistent failure (≥ 3 consecutive loops) MUST terminate the session with `StopReason::MemoryDegraded`.
 
-### 8.3.1 MemoryDegraded Observability (Normative — clarification for L-34)
+### 8.3.1 MemoryDegraded Observability (Normative)
 
 **Rationale.** `MemoryDegraded` is a `StopReason` (§13.4 enum) emitted when the Memory MCP server fails three consecutive calls. It is NOT a bare `StreamEvent` type in the §14.1 27-value closed enum. For external observation:
 
@@ -626,9 +626,9 @@ Do NOT interpret "MemoryDegraded StreamEvent" in any plan, test harness, or vali
 
 The Runner MUST invoke `consolidate_memories(aging_rules.consolidation_threshold)` at least once per 24 hours, or after any session accumulating ≥ 100 new notes, whichever is sooner. A dedicated consolidation process MAY perform this out-of-band.
 
-#### 8.4.1 Consolidation Trigger Test Hooks (Normative — Testability, L-40)
+#### 8.4.1 Consolidation Trigger Test Hooks (Normative — Testability)
 
-**Rationale.** `SV-MEM-05` asserts the §8.4 trigger fires within the specified window. The 24-hour arm is infeasible to exercise against real wall-clock in a conformance run; the 100-new-notes arm exercises the §8.1 `add_memory_note` write primitive (available since the spec's initial §8.1 publication — an earlier version of this rationale incorrectly described `add_memory_note` as missing from §8.1; corrected in L-56 Phase 0a tool-surface lockdown). A deterministic elapsed-time injection remains required to make `SV-MEM-05` testable against the 24-hour arm.
+**Rationale.** `SV-MEM-05` asserts the §8.4 trigger fires within the specified window. The 24-hour arm is infeasible to exercise against real wall-clock in a conformance run; the 100-new-notes arm exercises the §8.1 `add_memory_note` write primitive. A deterministic elapsed-time injection remains required to make `SV-MEM-05` testable against the 24-hour arm.
 
 **Env vars:**
 
@@ -1225,7 +1225,7 @@ This surfaces the §12.2 idempotency rule for permission decisions as an observa
   - `reason="malformed-json"` — the request body isn't parseable JSON.
   - `reason="missing-required-field"` — JSON parses but is missing `tool`, `session_id`, or `args_digest`.
   - `reason="unknown-tool"` — `tool` is not in the Tool Registry (§11); also returnable as 404 — implementations MAY choose either but MUST be consistent.
-  - `reason="pda-malformed"` — submitted `pda` field is not a parseable compact JWS (three base64url segments separated by dots). Structural/wire failure distinct from signature-invalid (which returns 201+audited per the handler_accepted path) and from pda-decision-mismatch (403; PDA parses and verifies but claims disagree with resolver). Moved here from the L-22 403 enum because semantically the client sent invalid wire bytes — an authorization check never had a parseable subject to evaluate.
+  - `reason="pda-malformed"` — submitted `pda` field is not a parseable compact JWS (three base64url segments separated by dots). Structural/wire failure distinct from signature-invalid (which returns 201+audited per the handler_accepted path) and from pda-decision-mismatch (403; PDA parses and verifies but claims disagree with resolver). Returned as 400 (not 403) because semantically the client sent invalid wire bytes — an authorization check never had a parseable subject to evaluate.
 - `401 Unauthorized` — missing or invalid bearer
 - `403 Forbidden` — authoritative closed-set reasons for this endpoint:
   - `reason="insufficient-scope"` — bearer lacks the required `permissions:decide:<session_id>` scope. Most common failure mode for callers that authenticated via POST /sessions without `request_decide_scope: true`.
@@ -1236,7 +1236,7 @@ This surfaces the §12.2 idempotency rule for permission decisions as an observa
 - `404 Not Found` — `tool` unknown or `session_id` unknown
 - `429 Too Many Requests` — rate-limit exceeded
 - `503 Service Unavailable` with body `{"error":"not-ready","reason":"<§5.4 enum>"}` — `/ready` is 503 (Runner hasn't completed boot)
-- `503 Service Unavailable` with body `{"error":"pda-verify-unavailable","reason":"pda-verify-unavailable"}` — the endpoint needs to verify a PDA (resolver output for this `(tool, session)` pair is `Prompt`) but the Runner has no PDA verification configuration loaded (no `security.trustAnchors` wired to a verify key resolver, OR the verify key resolver refuses to answer). This is a **deployment-misconfiguration** signal, not a client error. Operators MUST correct the deployment (typically: configure `resolvePdaVerifyKey` or load `security.trustAnchors` content at boot) before the endpoint can serve Prompt-resolving tools. Conformance-mode Runners MUST be started with PDA verification configured; this 503 branch exists so degenerate deployments fail visibly rather than silently accepting unsigned decisions. `pda-verify-unavailable` extends the L-22 authoritative reason enum. Returning `400` for this case is non-conformant — this is a 5xx-class server-state issue, not a malformed request.
+- `503 Service Unavailable` with body `{"error":"pda-verify-unavailable","reason":"pda-verify-unavailable"}` — the endpoint needs to verify a PDA (resolver output for this `(tool, session)` pair is `Prompt`) but the Runner has no PDA verification configuration loaded (no `security.trustAnchors` wired to a verify key resolver, OR the verify key resolver refuses to answer). This is a **deployment-misconfiguration** signal, not a client error. Operators MUST correct the deployment (typically: configure `resolvePdaVerifyKey` or load `security.trustAnchors` content at boot) before the endpoint can serve Prompt-resolving tools. Conformance-mode Runners MUST be started with PDA verification configured; this 503 branch exists so degenerate deployments fail visibly rather than silently accepting unsigned decisions. `pda-verify-unavailable` is a member of the authoritative reason enum defined here. Returning `400` for this case is non-conformant — this is a 5xx-class server-state issue, not a malformed request.
 
 **Side-effect property (normative MUST).** A successful `POST /permissions/decisions` call MUST:
 1. Append exactly one record to `/audit/permissions.log` conforming to §10.5's field set and hash-chain rule. `this_hash` equals the response body's `audit_this_hash`.
@@ -1262,7 +1262,7 @@ This surfaces the §12.2 idempotency rule for permission decisions as an observa
 - Autonomous handlers MUST NOT auto-approve high-risk actions. An Autonomous handler facing a high-risk Prompt MUST escalate to an Interactive or Coordinator handler. If none is reachable within 30 seconds the action MUST be denied.
 - Human-in-the-Loop (§19) is satisfied only when an `Interactive` handler signs the prompt decision. Coordinator and Autonomous signatures do NOT satisfy HITL for high-risk decisions; a Coordinator/Autonomous-signed Prompt on a HITL-gated action MUST reject with `403 {error:"PermissionDenied", reason:"hitl-required", detail:"autonomous-insufficient"}` (or `detail:"coordinator-insufficient"`).
 
-#### 10.4.1 Escalation State-Machine (Normative — L-49)
+#### 10.4.1 Escalation State-Machine (Normative)
 
 When the resolved control for a decision is `Prompt` AND the signing handler's role is `Autonomous` AND the tool's `risk_class ∈ {Mutating, DangerFullAccess}`, the Runner MUST:
 
@@ -1275,7 +1275,7 @@ When the resolved control for a decision is `Prompt` AND the signing handler's r
 
 The escalation state-machine applies only when resolved_control is `Prompt`; `AutoAllow`/`Deny` short-circuit before reaching this path. `Coordinator`-signed Prompt on a HITL-gated action bypasses escalation and directly rejects with `hitl-required` + `coordinator-insufficient` per §10.4 (escalation-to-Interactive is only from Autonomous; Coordinator is not a valid escalation waypoint for HITL).
 
-#### 10.4.2 Escalation Test Hooks (Normative — L-49, testability)
+#### 10.4.2 Escalation Test Hooks (Normative — testability)
 
 **Rationale.** The 30-second production timeout is infeasible for conformance runs; real Interactive-responder surfaces (UI Gateway, operator console) are not part of the Runner. Two env hooks make `SV-PERM-03` / `SV-PERM-04` deterministic, following the established §5.3.3 / §8.4.1 / §10.6.2 loopback-guarded pattern.
 
@@ -1428,7 +1428,7 @@ GET /audit/records?after=<record_id>&limit=<n>
 - `SV-AUDIT-RECORDS-02` (new) — chain integrity: validator reads all records, verifies `records[0].prev_hash == "GENESIS"` and `∀ i > 0, records[i].prev_hash == records[i-1].this_hash`.
 - `HR-14` (existing, §15.5) — tamper detection: validator reconstructs the full chain via this endpoint, **mutates** one `prev_hash` in its local copy, re-runs chain verification, asserts **failure**. Because mutation happens validator-side, this doesn't require a "tampered" endpoint on the Runner — the Runner only needs to serve the real chain faithfully.
 
-#### 10.5.4 Admin Audit Record Subtypes (Normative — L-41)
+#### 10.5.4 Admin Audit Record Subtypes (Normative)
 
 **Rationale.** §10.5–§10.5.3 describe the canonical permission-decision audit row. Three additional record types are emitted by non-permission subsystems but share the same hash-chain for integrity:
 
@@ -1444,7 +1444,7 @@ GET /audit/records?after=<record_id>&limit=<n>
 
 **Conformance linkage.** `SV-AUDIT-RECORDS-01/02` validate BOTH subtypes roundtrip through `/audit/records`. `SV-PRIV-03` asserts `SubjectSuppression` + `SubjectExport` emission on the privacy endpoints. `SV-PRIV-05` asserts `ResidencyCheck` emission on residency-gated decisions.
 
-#### 10.5.5 WORM Sink Modeling Test Hook (Normative — L-48, testability)
+#### 10.5.5 WORM Sink Modeling Test Hook (Normative — testability)
 
 **Rationale.** Production deployments back the audit chain with operator-chosen WORM storage (S3 Object Lock, Azure Immutable Blob, on-prem WORM appliance). Conformance tests cannot assume access to real WORM infrastructure. This section defines a test-only env hook that models WORM semantics in-memory so `SV-PERM-06` / `SV-PERM-07` deterministically exercise append-only + external-timestamp properties.
 
@@ -1454,13 +1454,13 @@ GET /audit/records?after=<record_id>&limit=<n>
 - Rejects mutation (`PUT /audit/records/<id>`) and deletion (`DELETE /audit/records/<id>`) with `405 Method Not Allowed`, body `{error:"ImmutableAuditSink", reason:"worm-sink-forbids-mutation"}`, and emits a `/logs/system/recent` record (category `Audit`, level `error`, code `ImmutableAuditSink`).
 - Stamps each appended record with `sink_timestamp` (RFC 3339) set by the WORM model, distinct from Runner-internal `timestamp`. Under normal operation `|sink_timestamp − timestamp| ≤ 1s`.
 
-Schema: `audit-records-response.schema.json` gains OPTIONAL `sink_timestamp` field. Hash-chain participation matches L-40 `billing_tag` (canonical-JCS-serialized when present; excluded when absent).
+Schema: `audit-records-response.schema.json` gains OPTIONAL `sink_timestamp` field. Hash-chain participation matches `billing_tag` (canonical-JCS-serialized when present; excluded when absent).
 
 **Production guard:** same pattern as §5.3.3 / §8.4.1 / §11.2.1 — MUST refuse startup with this env var set on a non-loopback interface.
 
 **Conformance linkage.** `SV-PERM-06` asserts `PUT` / `DELETE /audit/records/<id>` return `405 ImmutableAuditSink`. `SV-PERM-07` asserts `|sink_timestamp − timestamp| ≤ 1s` on a driven decision.
 
-#### 10.5.6 Retention Class Tagging (Normative — L-48)
+#### 10.5.6 Retention Class Tagging (Normative)
 
 **Rationale.** §10.7 defines retention ceilings per record category but does not normatively attach a retention class to individual audit records. `SV-PERM-16` requires per-record introspection so deployments with heterogeneous session classes verify correct propagation.
 
@@ -1474,7 +1474,7 @@ Schema: `audit-records-response.schema.json` gains OPTIONAL `retention_class` en
 
 **Conformance linkage.** `SV-PERM-16` asserts records from a DFA-granted session carry `retention_class:"dfa-365d"` and records from a ReadOnly-granted session carry `retention_class:"standard-90d"`.
 
-#### 10.5.7 Audit-Reader Token Endpoint (Normative — L-48)
+#### 10.5.7 Audit-Reader Token Endpoint (Normative)
 
 **Rationale.** Operators requiring audit-read access without any write authority MAY issue scoped reader bearers. `SV-PERM-17` asserts a reader bearer reads `/audit/*` but rejects any write.
 
@@ -1549,7 +1549,7 @@ The CRL served at `<trust-anchor-uri>/crl.json` MUST validate against the schema
 
 **Testability — clock injectability (SHOULD):** implementations SHOULD expose an injectable time source to the CRL verification path (and to all other time-dependent checks in §5.3, §6.1, and §10.6) so that conformance test vectors can deterministically exercise the three freshness states (`fresh` | `stale-but-valid` | `expired`) regardless of wall-clock time at test execution. `soa-validate` consumes `test-vectors/crl/` under a reference clock `T_ref = 2026-04-20T12:00:00Z`; a Runner that reads only `system wall-clock now()` at verify time cannot be tested against the `stale-but-valid` vector past the short window where wall-clock happens to land 60–120 minutes after the fixture's `issued_at`. Production Runners MAY fall back to wall-clock; conformance-tested Runners MUST accept a reference clock from the validator's test harness through an implementation-defined hook (environment variable, config flag, or test-only HTTP endpoint). This is a testability requirement, not a trust-boundary weakening — the injectable clock MUST NOT be reachable by untrusted principals in production deployments.
 
-#### 10.6.2 Handler Key Lifecycle Test Hooks (Normative — L-48, testability)
+#### 10.6.2 Handler Key Lifecycle Test Hooks (Normative — testability)
 
 **Rationale.** §10.6 defines handler-key rotation cadence (90-day max), compromise response (60-minute revocation + 24h retroactive flagging), and a 24h rotation overlap during which both old + new kids verify. Calendar time makes these untestable in conformance runs. Three env hooks inject time + kid state deterministically. All three follow the existing test-only env-hook pattern per §5.3.3 / §8.4.1 / §11.2.1 — MUST refuse startup with any set on a non-loopback interface.
 
@@ -1557,7 +1557,7 @@ The CRL served at `<trust-anchor-uri>/crl.json` MUST validate against the schema
 
 **`SOA_HANDLER_KEYPAIR_OVERLAP_DIR=<directory-path>`** — when set, the Runner loads multiple handler keys from the pinned directory, each with per-key manifest `{kid, issued_at, rotation_overlap_end}`. During the overlap window, both kids verify; outside it, only the current kid verifies. `SV-PERM-10` uses this with `test-vectors/handler-keypair-overlap/` and `RUNNER_TEST_CLOCK` inside the overlap window.
 
-**`RUNNER_HANDLER_CRL_POLL_TICK_MS=<milliseconds>`** — CRL refresh interval for handler-kid revocation detection. Default `3600000` (60 minutes per §10.6). Validators set a small value (e.g., 100ms) so `SV-PERM-09` observes revocation propagation within a test window. Uses the same revocation-file watcher as §5.3.3 `SOA_BOOTSTRAP_REVOCATION_FILE`; the watched file accepts either `{"publisher_kid":...}` (bootstrap per AQ) OR `{"handler_kid":...}` (handler-kid per L-48).
+**`RUNNER_HANDLER_CRL_POLL_TICK_MS=<milliseconds>`** — CRL refresh interval for handler-kid revocation detection. Default `3600000` (60 minutes per §10.6). Validators set a small value (e.g., 100ms) so `SV-PERM-09` observes revocation propagation within a test window. Uses the same revocation-file watcher as §5.3.3 `SOA_BOOTSTRAP_REVOCATION_FILE`; the watched file accepts either `{"publisher_kid":...}` (bootstrap anchor) OR `{"handler_kid":...}` (handler key).
 
 **CRL refresh observability.** On each successful refresh (whether triggered by the test hook or the production 60-minute ceiling), the Runner MUST emit a `/logs/system/recent` record with category `Config`, level `info`, code `crl-refresh-complete`, and `data.last_crl_refresh_at: <RFC 3339>`. `SV-PERM-14` polls this and asserts the interval between records ≤ `RUNNER_HANDLER_CRL_POLL_TICK_MS` (or the 60-minute ceiling in production).
 
@@ -1568,7 +1568,7 @@ The CRL served at `<trust-anchor-uri>/crl.json` MUST validate against the schema
 - `SV-PERM-14` (CRL refresh interval observability) — `/logs/system/recent` `crl-refresh-complete` records.
 - `SV-PERM-15` (retroactive SuspectDecision flagging) — see §10.6.5.
 
-#### 10.6.3 Handler Enrollment Endpoint (Normative — L-48)
+#### 10.6.3 Handler Enrollment Endpoint (Normative)
 
 **Rationale.** §10.6 requires handler keys to be issued by a trust anchor with unique `kid`s. Deployments that enroll handlers at runtime (vs. bootstrapping a fixed set via Card) need a normative enrollment endpoint. `SV-PERM-12` asserts kid-uniqueness + algorithm rejection at enrollment time.
 
@@ -1595,7 +1595,7 @@ The CRL served at `<trust-anchor-uri>/crl.json` MUST validate against the schema
 
 **Conformance linkage.** `SV-PERM-12` asserts (a) first enroll succeeds, (b) duplicate kid rejects with `HandlerKidConflict`, (c) `RS256` body rejects with `AlgorithmRejected`. `SV-PERM-03/04` enroll an `Autonomous`-role kid and sign the triggering PDA with it to drive §10.4.1 escalation.
 
-#### 10.6.4 Key-Storage Introspection (Normative — L-48)
+#### 10.6.4 Key-Storage Introspection (Normative)
 
 **Rationale.** §10.6 mandates handler private keys MUST NOT be stored on disk unencrypted. Validators cannot prove the negative via filesystem inspection. This endpoint exposes storage metadata for external verification.
 
@@ -1617,7 +1617,7 @@ The CRL served at `<trust-anchor-uri>/crl.json` MUST validate against the schema
 
 **Conformance linkage.** `SV-PERM-13` asserts `private_keys_on_disk === false`.
 
-#### 10.6.5 Retroactive SuspectDecision Flagging (Normative — L-48)
+#### 10.6.5 Retroactive SuspectDecision Flagging (Normative)
 
 **Rationale.** §10.6 requires flagging audit records signed by a compromised `kid` in the 24 hours preceding revocation. WORM semantics (§10.5) forbid mutating the original records. `SV-PERM-15` asserts the retroactive-flagging property via the same admin-row pattern as §10.5.4 subject-suppression.
 
@@ -1865,7 +1865,7 @@ The two caches MUST NOT share storage or key space. A tool idempotency hit does 
 3. Verify `tool_pool_hash` still resolves; see §11.3.
 4. For each `side_effects[i].phase`: replay `pending` with the recorded idempotency key; skip `committed`; run compensating actions for `inflight` whose tool supports it, else mark `compensated` with a `ResumeCompensationGap` note.
 
-**Trigger points (normative, added at L-29).** `resume_session` MUST be invoked at the following trigger points. Without explicit triggers the algorithm's function-level correctness is unobservable externally and the persisted-session file format becomes write-only in practice.
+**Trigger points (normative).** `resume_session` MUST be invoked at the following trigger points. Without explicit triggers the algorithm's function-level correctness is unobservable externally and the persisted-session file format becomes write-only in practice.
 
 1. **Runner startup scan.** At every Runner boot, immediately after trust bootstrap (§5.3) and before opening any public listener, the Runner MUST enumerate the session directory (§12.1 default `/sessions/` or `RUNNER_SESSION_DIR` override) and invoke `resume_session(session_id)` for every session file whose `workflow.status` is in the in-progress set `{Planning, Executing, Optimizing, Handoff, Blocked}`. Sessions whose status is terminal (`Succeeded`, `Failed`, `Cancelled`) MUST NOT be auto-resumed. Each auto-resume's outcome (success, `CardVersionDrift`, `SessionFormatIncompatible`, `ResumeCompensationGap`) MUST be recorded in the audit log.
 2. **Client reconnect.** When a session-scoped bearer is presented against `/stream/v1/<session_id>` or `/sessions/<session_id>/state` for a session_id that exists on disk but is not currently active in memory, the Runner MUST invoke `resume_session(session_id)` before serving the request. This is the lazy-hydrate path.
@@ -2058,7 +2058,7 @@ Content-Type: application/json
 ```
 
 - `session_id` — newly minted, matches the §12.1 schema's `session_id` pattern, not re-derivable from the bootstrap bearer. The Runner MUST persist the session file (§12.1) before returning 201.
-- `session_bearer` — an opaque bearer token authorizing session-scoped endpoints for exactly this `session_id`. Default-granted scopes: `stream:read:<session_id>`, `permissions:resolve:<session_id>`, `sessions:read:<session_id>`, `audit:read`. When `request_decide_scope: true` is present in the request body, the additional `permissions:decide:<session_id>` scope is also granted (per L-19). Does NOT carry `sessions:create`. `sessions:read:<session_id>` authorizes `GET /sessions/<session_id>/state` (§12.5.1) without a separate scope-grant request — the state-observability surface is a default privilege of any minted session bearer because it reads data the bearer already has access to indirectly via the same session's other endpoints.
+- `session_bearer` — an opaque bearer token authorizing session-scoped endpoints for exactly this `session_id`. Default-granted scopes: `stream:read:<session_id>`, `permissions:resolve:<session_id>`, `sessions:read:<session_id>`, `audit:read`. When `request_decide_scope: true` is present in the request body, the additional `permissions:decide:<session_id>` scope is also granted. Does NOT carry `sessions:create`. `sessions:read:<session_id>` authorizes `GET /sessions/<session_id>/state` (§12.5.1) without a separate scope-grant request — the state-observability surface is a default privilege of any minted session bearer because it reads data the bearer already has access to indirectly via the same session's other endpoints.
 - `granted_activeMode` — MUST equal `requested_activeMode` when the request was within bounds; equals the Agent Card's activeMode clamped-down only when `requested_activeMode` was provided as a value stricter than the Agent Card's maximum (this is informative, not an error; the request succeeded with a tighter mode than requested is NEVER done — if requested is looser than card it's 403).
 
 **Other responses:**
@@ -2156,7 +2156,7 @@ GET /budget/projection?session_id=<session_id>
 - Not-a-side-effect: no counters advance, no cancellation fires, no events. Byte-identity excludes `generated_at`.
 - When session has no prior turns (cold start): `p95_tokens_per_turn_over_window_w` is the cold-start baseline per §13.1; `cold_start_baseline_active: true`.
 
-**Conformance linkage.** `SV-BUD-PROJ-01` (new) — schema + projection-math correctness. `SV-BUD-01..07` live paths use this endpoint. `HR-02` (previously M3-deferred per L-14) now has its observation surface — the test exercises projection-over-budget returning `StopReason::BudgetExhausted` BEFORE any actual API call fires.
+**Conformance linkage.** `SV-BUD-PROJ-01` — schema + projection-math correctness. `SV-BUD-01..07` live paths use this endpoint. `HR-02` uses this endpoint as its observation surface — the test exercises projection-over-budget returning `StopReason::BudgetExhausted` BEFORE any actual API call fires.
 
 ---
 
