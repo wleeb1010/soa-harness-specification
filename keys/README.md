@@ -6,7 +6,7 @@ Public keys used for verifying signed artifacts distributed with SOA-Harness rel
 
 | File | Algorithm | Fingerprint (base64url SHA-256 of DER-encoded pubkey) | First used |
 |---|---|---|---|
-| `soa-release-v1.0.pub` | Ed25519 | `pV5dl4OVvpjgLhJCeFddcZPHAWK3n4v1WAPL/3rE+sA=` | v1.0.0 |
+| `soa-release-v1.0.pub` | Ed25519 | `l5TzOjMJfyyDTuEarut87i3T8KhGBV4AeLwOXo028vI=` | v1.0.0 |
 
 The fingerprint appears in `MANIFEST.json` as `publisher_kid` and binds every signed artifact in the v1.0 release bundle to this key. Verify any signed artifact against this public key following the §5.3 bootstrap protocol.
 
