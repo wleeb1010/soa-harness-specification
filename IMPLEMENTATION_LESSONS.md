@@ -1945,6 +1945,39 @@ Impl repo and validate repo ledgers are in their own git log; see "Pattern note"
 
 ---
 
+### L-62 morning-audit addendum — debt discipline + CI fix-forward
+
+Operator set policy on 2026-04-24: **no technical debt left behind.** Any issue identified during a session must be tracked as a task and resolved at the next reasonable opportunity. No silent deferral.
+
+Applied to 4 debts surfaced during the morning push + CI triage. All resolved same session:
+
+| # | Debt | Surface | Commits |
+|---|---|---|---|
+| 1 | `graphify-out/GRAPH_REPORT.md` flapped on every post-commit regen due to non-deterministic Louvain community node ordering | Validate + spec | `4d57ca7` (spec) + `0c898fa` (validate) — sort community members by (label, id) before handing to `graphify.report.generate` |
+| 2 | `create-soa-agent-demo` workflow consistently breached 120s ceiling on Windows (~190s observed); failing on every push for weeks pre-existing | Impl | `b39555f` — add `--max-time 1` to curl + reduce poll iterations 60 → 40 so curl TCP-connect timeout ~130s on Windows can't inflate total wall-clock |
+| 3 | 11 stale `unused-eslint-disable` directives in `langgraph-adapter` — noisy in every CI lint run | Impl | `29060ad` — auto-fix via `eslint src --fix`, 95/95 tests still pass |
+| 4 | Docusaurus MVP emitted 6 broken-link warnings — navbar title + footer links pointed at `/` with no landing page | Spec | `5494542` — minimal `src/pages/index.js` redirects to `/intro` |
+
+Plus three morning-triage CI fix-forwards (not strictly debt but surfaced by the push):
+
+| # | Issue | Commits |
+|---|---|---|
+| A | Lint failure in `example-provider-adapter` (`prefer-const` on `stop_reason`) — my night-shift bug, missed because per-commit gate was `test` only, not `lint` | Impl `9c4fd4a` |
+| B | Lint failure in `create-soa-agent` (`TEMPLATE_ROOT` unused var) — pre-existing from `d11a405` M5 Phase 5; surfaced because no push triggered CI between then and morning | Impl `84d2f96` |
+| C | `tasks-fingerprint` test SHA mismatch on Windows — spec checkout at pinned older commit didn't have `.gitattributes`, so Windows `autocrlf=true` rewrote Dockerfile LF → CRLF | Impl `bae42c1` — global git config `core.autocrlf=false` + `core.eol lf` before any checkout |
+
+**Debt discipline going forward (codified here):**
+
+1. When a CI failure, test flake, or quality issue is observed, IMMEDIATELY create a task with `#N` numbering in the debt ledger below.
+2. Resolve at the next reasonable opportunity — never silently defer to "someday". "Next reasonable" means: during the current session if < 30 min, or in the next session explicitly if larger.
+3. Use the per-commit gate: `pnpm -r build + pnpm -r lint + pnpm -r test` in impl; `go build + go vet + go test` in validate; `python refresh-graph.py` + `diff -q` stability check in spec/validate. Night-shift task gate was `test` only — adding lint to the standard gate from now on.
+4. L-62 addenda capture the debt fix, not just the feature. Each debt-resolving commit carries `Debt #N:` prefix in the message.
+5. Pre-existing debt surfaced by new work is equally in scope — "I didn't cause it" is not an exception.
+
+**Debt ledger (morning audit closed):** items 1, 2, 3, 4 all resolved this session. Zero outstanding.
+
+---
+
 ### L-63 — M8 kickoff: streaming dispatcher + end-user chat surface `[milestone kickoff]`
 
 - **Surfaced:** 2026-04-23 end of M7 week 4 night-shift-2. M7 weeks 1-4 closed against the exit-criteria doc (`docs/m7/exit-criteria.md`) with 3 soft-gate items deferred; M8 scope opens.
