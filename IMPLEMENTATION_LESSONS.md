@@ -2450,6 +2450,31 @@ v1.3.1's ceremony was: impl §17.2.2 enforcement → L-70 live-probe promotions 
 
 **Autonomous session boundary:** L-69 + L-70 + L-71 + L-72 were all delivered in a single continuous autonomous day-shift run post-L-68 kickoff. Total output: ~30 commits, 5 plan-evaluator gates, two coordinated releases (v1.3.0 minor + v1.3.1 patch). The day-shift autonomy memory + HARD-RULE gate + plan-evaluator gate + version-parity script all compounded to keep the cadence honest — zero post-release hotfixes, zero debt incurred.
 
+### L-73 — v1.3.2 candidate items `[kickoff-only, ordered by effort]`
+
+- **Surfaced:** 2026-04-24 evening, post-L-72 ship.
+- **Status:** `kickoff-only`. Three candidate tracks, picked off as bandwidth allows.
+
+1. **SV-A2A-15 Slice 6c — Runner-side execute hook** (new wire contract; ~2-3 commits).
+   - Add either (a) `SOA_A2A_AUTO_EXECUTE_AFTER_S` env var that schedules an accepted→executing→completed transition on a configurable cadence, OR (b) a `POST /a2a/v1/debug/advance` loopback endpoint that externally drives transitions. Pick (a) — lighter wire surface, no new endpoint.
+   - Spec touch: §17.2.2 gets a new paragraph naming the test-hook env var (loopback-guarded per §11.3.1 pattern). Plan-evaluator gate applies.
+   - Impl touch: `A2aTaskRegistry` gets a timer hook; `handleHandoffTransfer` schedules it if the env is set.
+   - Validator touch: SV-A2A-15 probe loses its "partial" label, gains the accepted→executing intermediate assertion.
+
+2. **§17.2.2 `SessionEnd(MaxTurns)` emission on timed-out transitions** (~3-4 commits).
+   - Spec check: §17.2.2 says "MUST emit `SessionEnd` with `stop_reason: 'MaxTurns'` at the boundary." For A2A-task contexts there's no normative session ID — the stub session created by `handoff.transfer` ends. Clarify what "the session" means when `handoff.transfer` is stubbed (returns synthetic `destination_session_id` but no StreamEvent stream is actually wired).
+   - Likely spec addition: §17.2.2 paragraph clarifying SessionEnd emission on the destination session associated with the task_id. Plan-evaluator gate applies — this is a new event-contract clause.
+   - Impl: hook into the existing `StreamEventEmitter` when the registry fires the synthetic timed-out transition.
+
+3. **CrewAI / AutoGen adapters** (~1-2 milestones; larger than a patch).
+   - §18.5 already lists them as permitted adapter surfaces alongside LangGraph. v1.3.2 could land CrewAI; AutoGen is a subsequent milestone.
+   - No spec change required — §18.5 is already normative for adapter conformance.
+   - Impl: new packages/crewai-adapter/ following the langgraph-adapter pattern.
+
+**Priority order (effort × value):** (1) → (2) → (3). (1) closes the SV-A2A-15 partial flag + completes L-70's intent. (2) closes the last silent §17 MUST violation. (3) broadens adapter coverage beyond LangGraph.
+
+**Out of scope for v1.3.2:** §17.2.3.2 reserved-tokens registry (v1.4+), caller-side `result_digest` attestation contract (v1.4+), mTLS x5t#S256 live-probe path (needs CA/cert-rotation test fixtures).
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
