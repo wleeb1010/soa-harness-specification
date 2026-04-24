@@ -2990,7 +2990,7 @@ Implementations that prove the emission boundary under `SV-LLM-05` MUST treat an
      - The SPKI of the caller's mTLS client certificate when the handoff is served behind mTLS. The JWT header MUST carry `x5t#S256` (RFC 7515 §4.1.8) whose value matches the SHA-256 of the DER-encoded client certificate presented at the TLS handshake.
      No other discovery mechanism is permitted; a JWT whose signing key cannot be resolved via either path MUST be rejected with `HandoffRejected` (reason `key-not-found`). (SV-A2A-11)
   3. **`jti` replay cache.** Receiver MUST reject a repeated `jti` within a retention window of `exp + 30 s = 330 s` from first observation with `HandoffRejected` (reason `jti-replay`). Cache MAY be per-connection (mTLS-scoped) or per-(`iss`,`aud`) keyed. (SV-A2A-12)
-  4. **`agent_card_etag` mismatch.** Receiver MUST fetch the caller's Agent Card at the URL declared in `sub`, compute its JWS digest, and compare with the presented `agent_card_etag`. On mismatch the receiver MUST emit `CardVersionDrift` (§24) and respond JSON-RPC error `-32051` (`HandoffRejected`). Fetched etags MAY be cached for up to 60 seconds to amortize per-request fetches. (SV-A2A-13)
+  4. **`agent_card_etag` mismatch.** Receiver MUST fetch the caller's Agent Card at the URL declared in `sub`, compute its ETag per the §17.2.4 `agent_card_etag` formula (`"\"" + hex_lowercase(SHA-256(JCS(agent-card))) + "\""`), and compare with the presented `agent_card_etag`. On mismatch the receiver MUST emit `CardVersionDrift` (§24) and respond JSON-RPC error `-32051` (`HandoffRejected`). Fetched etags MAY be cached for up to 60 seconds to amortize per-request fetches. (SV-A2A-13)
   Absence or malformation of any required claim or header MUST produce JSON-RPC error `-32002` (`AuthFailed`).
 
 ### 17.2 Methods
@@ -3089,6 +3089,51 @@ Test anchor: `SV-A2A-17` (reserved at this commit) verifies the truth-table matr
 ##### 17.2.3.1 Token registry (Informative, v1.3)
 
 v1.3 does not ship a global capability token registry. Implementations MAY coordinate via adapter-specific documentation, shared vocabulary files, or bilateral agreements. A reserved-tokens Normative successor (§17.2.3.2) lands in v1.4+ if a cross-ecosystem vocabulary emerges.
+
+#### 17.2.4 agent.describe result shape (Normative, v1.3)
+
+§17.2's methods table describes `agent.describe` as returning "Agent Card bytes + JWS"; v1.3 closes the wire-shape gap with the following normative `result` envelope.
+
+The JSON-RPC 2.0 success response's `result` member MUST be a JSON object carrying the following required fields:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `card` | object | The Agent Card as a JSON object conforming to the §6.2 schema. |
+| `jws`  | string | The detached JWS per §6.1.1 Agent Card JWS profile, signed over `JCS(card)` bytes. |
+
+**Extensibility (§19.4.1 additive-minor rule).** Receivers MUST IGNORE unknown fields on the `result` object. Future v1.3.x releases MAY add optional fields (e.g., `served_at`, `rotated_from_kid`); a v1.3.0 receiver encountering such fields MUST NOT reject the response on grounds of unknown-field presence. The wire contract is "required fields present and well-formed," not "exactly these fields and no others."
+
+**`card` (Normative).** The `card` field is carried as a JSON object directly in the transport, NOT as a stringified body or base64-encoded form. Receivers MUST validate `result.card` against `agent-card.schema.json`; schema-validation failure produces `AgentCardInvalid` (-32001) with `error.data.reason: "schema-invalid"`. This is distinct from the JWS verification failures described below.
+
+**`jws` (Normative).** `result.jws` MUST conform to §6.1.1 Agent Card JWS profile row 1, with the §17.2.4-specific invariant that the signing input IS `JCS(result.card)` (the JCS canonicalization of the object returned in this same `result`). All §6.1.1 row-1 rules (alg allowlist `EdDSA`/`ES256`/`RS256`≥3072; required `typ: soa-agent-card+jws`; required headers `alg`, `kid`, `x5c`; two-step signer resolution) apply at this surface unchanged — this subsection does not restate them.
+
+A `jws` in non-detached compact form (non-empty body segment between the two dots of `<header>.<body>.<signature>`) is malformed for the Agent Card artifact class; receivers MUST reject with `CardSignatureFailed` (reason `non-detached-jws`).
+
+**Verification order (Normative).** Receivers MUST execute, in order, halting on the first failure:
+
+1. Parse `result` as a JSON object. `result.card` absent, wrong-type, or not an object → `AgentCardInvalid` (reason `missing-or-mistyped-field`).
+2. Parse `result.jws` as a string matching the compact-detached shape `^[A-Za-z0-9_-]+\.\.[A-Za-z0-9_-]+$`. Non-detached or malformed → `CardSignatureFailed` (reason `non-detached-jws`).
+3. Validate `result.card` against `agent-card.schema.json` per §6.2. Schema failure → `AgentCardInvalid` (reason `schema-invalid`).
+4. Compute `JCS(result.card)`.
+5. Resolve signer via §6.1.1 two-step rule; verify `result.jws` over the `JCS(result.card)` bytes; failure → `CardSignatureFailed` (reason per §6.1.1 taxonomy: `alg-not-allowed`, `typ-mismatch`, `x5t-thumbprint-mismatch`, `chain-anchor-mismatch`, or `signature-invalid`).
+
+Until all five steps pass, receivers MUST NOT act on any field inside `result.card`.
+
+**Relationship to §17.1 `agent_card_etag`.** The `agent_card_etag` JWT claim consulted by §17.1 step 4 is the RFC 7232 strong-validator ETag defined as the double-quoted hex-lowercase SHA-256 of the JCS-canonical Agent Card bytes:
+
+```
+agent_card_etag = "\"" + hex_lowercase(SHA-256(JCS(agent-card))) + "\""
+```
+
+This resolves the latent ambiguity in §17.1 step 4's "compute its JWS digest" phrasing: the digest IS over the JCS input bytes, NOT over the detached-JWS string. §17.1 step 4 is clarified in the same commit to reference this formula.
+
+**Card-rotation race.** Runners MAY rotate their Agent Card atomically between successive `.well-known` and `agent.describe` requests. Receivers MUST NOT treat a brief divergence between a `.well-known/agent-card.jws` digest and a contemporaneous `agent.describe` result as a protocol failure. The normative correspondence that IS race-free and MUST hold for every individual `agent.describe` response is the per-response invariant: `JWS-verify(result.jws, JCS(result.card))` succeeds under §6.1.1's signer-resolution rules. Dual-endpoint byte-identity between `.well-known/agent-card.json` and `result.card` is a steady-state expectation, not a per-response MUST.
+
+**Cache keying (Guidance).** Receivers that cache `agent.describe` results for the purpose of avoiding round-trips SHOULD key their cache by the `(caller URL, agent_card_etag)` pair so that a stale capability surface cannot drive §17.2.3 matching decisions after a caller rotates its card. This is §17.2.4 guidance scoped to caches receivers maintain for their own optimization; §17.1's normative 60-second cache window remains the ceiling for any receiver-side caching of verification-related state.
+
+**Consistency with §17.2.3 matching.** The `a2a.capabilities` list consulted by §17.2.3 matching MUST be read from `result.card.a2a.capabilities`. Receiver-side capability decisions made from any other source — e.g., an out-of-band capability registry not reflected in the card the Runner signs — are non-conformant.
+
+Test anchor: `SV-A2A-03` is narrowed in the same must-map commit to assert the `agent.describe` result-envelope contract specifically (required fields present, correct JSON types, unknown-fields-ignored per additive-minor, the two-error-class split). Per-JWS-invariant coverage (alg allowlist, `typ`, header presence, chain resolution) remains on the existing `SV-SIGN-01..05` and `SV-CARD-01..11` anchors via composition — `SV-A2A-03` does not duplicate those assertions.
 
 ### 17.3 Errors (JSON-RPC Error Codes)
 

@@ -1540,12 +1540,12 @@
       "assertion": "Missing/expired/mis-aud JWT → AuthFailed (-32002)."
     },
     "SV-A2A-03": {
-      "name": "agent.describe",
-      "section": "§17.2",
-      "section_title": "Methods",
+      "name": "agent.describe result envelope",
+      "section": "§17.2.4",
+      "section_title": "A2A Wire Protocol — agent.describe result shape (v1.3)",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "Returns signed Card bytes + JWS."
+      "assertion": "JSON-RPC 2.0 result envelope for agent.describe conforms to §17.2.4: (a) result is a JSON object carrying required fields card (object) + jws (string); (b) unknown fields on result are IGNORED per §19.4.1 additive-minor rule (MUST NOT be rejected); (c) result.card is a JSON object (not string, not base64); (d) result.jws matches compact-detached shape ^[A-Za-z0-9_-]+\\.\\.[A-Za-z0-9_-]+$ (two dots, empty body segment); (e) schema failure on result.card → AgentCardInvalid (-32001) reason=schema-invalid, signature failure on result.jws → CardSignatureFailed (§24) with reason per §6.1.1 taxonomy; (f) the per-response invariant JWS-verify(result.jws, JCS(result.card)) succeeds under §6.1.1 signer resolution. §6.1.1 conformance (alg allowlist, typ, headers, chain-to-anchor) is covered via composition on SV-SIGN-01..05 and SV-CARD-01..11, not duplicated here."
     },
     "SV-A2A-04": {
       "name": "handoff.offer accept",
