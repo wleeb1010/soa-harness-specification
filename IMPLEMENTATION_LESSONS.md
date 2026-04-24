@@ -2266,6 +2266,67 @@ M9 closes both gaps — ship the impl + validator for §17.
 
 **Status: kickoff-only.** No spec commits made as part of L-68. Execution begins in a fresh session per the user's instruction cadence.
 
+### L-69 — v1.3.0 minor release ship record `[milestone closure]`
+
+- **Surfaced:** 2026-04-24 continuous autonomous-run closure after L-68 kickoff.
+- **Status:** `shipped`. v1.3.0 live on npm (11 packages); tagged on spec + impl; signed with the v1.0 release key (fingerprint unchanged); smoke-test confirms all 11 npm packages resolve at `1.3.0`.
+
+**Release artifacts:**
+
+| Repo | Tag | Commit | Notes |
+|---|---|---|---|
+| spec | `v1.3.0` | `a125427` | MANIFEST.json.jws signed (v1.0 key, 175-char JWS). RELEASE-NOTES-v1.3.0.md narrative. MANIFEST JCS digest `b386f5cc9ab6...628f1b`. |
+| impl | `v1.3.0` | `a54f0ff` | 11 packages at 1.3.0. PINNED_SPEC_COMMIT → b87c2ff. soa-validate.lock.spec_manifest_sha256 backfilled from PENDING → signed digest. |
+| validate | —   | `dcdeabd` | Lock bumped to b87c2ff. SV-A2A-10..17 skip handlers registered (live promotion deferred to v1.3.x). |
+
+**npm packages published @ 1.3.0 (11 total):** identical set to v1.2.x — `@soa-harness/{schemas, core, runner, memory-mcp-sqlite, memory-mcp-mem0, memory-mcp-zep, langgraph-adapter, example-provider-adapter, chat-ui, cli}` + `create-soa-agent`.
+
+**Ceremony breakdown (all autonomous, single-session):**
+
+1. **W1 spec §17.2.1 + §17.2.2** — HandoffStatus closed enum (6 values, monotonicity, last_event_id semantics, crash-resume carve-out, rejected-vs-HandoffRejected disambiguation) + per-method deadlines table (6 SOA_A2A_*_DEADLINE_S env overrides). Plan-evaluator pass: 3 critical + 8 moderate/minor; 3 critical + 5 of 6 moderate addressed inline. Committed as `c166a23`.
+2. **W2 spec §17.2.3 + §17.2.4** — Capability advertisement + matching (new `a2a` object on Agent Card; 5-row truth table; byte-exact reason string; `capabilities_needed` validation; §17.2.3.1 Informative token registry) then agent.describe result shape (normative `{card, jws}` envelope; 5-step verification order; additive-minor extensibility; schema-vs-signature error split; card-rotation race carve-out; etag formula pinned). Plan-evaluator: 6 critical + 12 moderate all addressed inline. Committed as `ff702f4` + `cb8b107`.
+3. **W2 impl mirrors** — `packages/runner/src/a2a/matching.ts` (§17.2.3 pure function + 24 tests), `buildRunnerApp` gains optional `a2a` block feeding a real §6.1.1-signed JWS to agent.describe (7 boot tests exercising §17.2.4 verification end-to-end). Committed as `3314fa3` + `6111780`.
+4. **W3 impl JWT profile** — `jwt.ts` (alg allowlist, claim shape, 300s lifetime, jti replay cache with exp+30s retention, 60s forward clock skew, 16 tests), `signer-discovery.ts` (CallerCardCache, fetchCallerCard with 3s/5s timeouts, extractSignerFromCardJws, buildCardKidResolver, buildPeerCertResolver for mTLS x5t#S256, composeSignerResolvers, checkAgentCardEtagDrift, 27 tests). Committed as `21ad702` + `3f9f102`.
+5. **W3-prep spec §17.1 step 4** — Names byte-exact reason string `card-version-drift` + disjointness with `card-unreachable`. SV-A2A-13 narrowed. Plan-evaluator: 2 moderate addressed inline. Committed as `f4087a7`.
+6. **W4 spec §17.2.5** — Per-method digest recompute matrix (handoff.offer shape-check only; handoff.transfer recomputes against retained offer digests with missing-offer-state → workflow-state-incompatible; handoff.return shape-check only). Offer-state retention MUST tied to §17.2.2 transfer deadline. Restart-crash observability rule. `final_messages` vs `result` disambiguation. Plan-evaluator: 3 critical + 4 moderate + 4 minor; all critical + moderate addressed inline. Committed as `b87c2ff`.
+7. **W4 impl digest recompute** — `digest-check.ts` (computeA2a{Messages,Workflow,Result}Digest + checkTransferDigests pure function + 16 tests). A2aTaskRegistry extended with offer metadata + retention-window TTL. `handleHandoffTransfer` wired to recompute-and-compare. Committed as `971559c`.
+8. **W5 validator forward-registration** — `handlers_a2a.go` adds 7 skip-with-rationale handlers (SV-A2A-10..16) alongside the existing SV-A2A-17 entry. Each cites impl-unit-test coverage. Committed as `caabf83` + `ddfabb7`.
+9. **W5-W6 release prep** — Version bump 1.2.1 → 1.3.0 across all 11 packages + 4 scaffold templates + vscode-extension. `PINNED_COMMIT.txt` + `PINNED_SPEC_COMMIT` → b87c2ff. agent-card.schema.json re-vendored (gains `a2a.capabilities`). `soa-validate.lock` bumped on both impl + validate. Parity check green. CHANGELOG [1.3.0] + RELEASE-NOTES-v1.3.0.md + scripts/release-v1.3.mjs. MANIFEST regen (171 supplementary artifacts). Signed with v1.0 release key. Locks backfilled with signed digest. Committed as `04c64ca` + `bc745fa` + `5b6a57f` + `a125427` + `a54f0ff` + `dcdeabd`.
+10. **npm publish + tag** — 11/11 packages live at 1.3.0 on registry.npmjs.org. v1.3.0 tags on spec + impl.
+
+**Plan-evaluator gate — sustained ROI:**
+
+Five plan-evaluator passes across the M9 chain caught **13 critical + 1 high + 26 moderate** findings across all normative drafts. Every critical was fixable inline (no cascades), and the gate continues to pay for itself at ~2 min/pass. M9 is the first milestone where the gate ran on every normative commit from kickoff; zero post-commit rework was needed on the normative surface.
+
+**HARD RULE — impl cannot invent spec content:**
+
+The HARD RULE instituted at `docs/spec-change-checklist.md` held across the run. Two near-misses observed + closed spec-first:
+
+1. `agent.describe` result envelope shape: W1 impl had shipped `{card, jws}` as de facto contract without spec anchor. Paused impl, closed gap via §17.2.4, then mirrored. Committed as `cb8b107` (spec) → `6111780` (impl).
+2. `§17.1 step 4` reason string: the HandoffRejected response on etag drift had no normative reason string. W3 slice 2 impl needed `card-version-drift` but would have had to invent. Paused impl, closed gap via f4087a7 (spec), then implemented (3f9f102 impl).
+
+**Ceremony-order (L-64) retro win, again:**
+
+Pin bump landed BEFORE npm publish. `PINNED_SPEC_COMMIT` in `@soa-harness/schemas@1.3.0` resolved to b87c2ff cleanly; no Debt #7-class drift.
+
+**Version parity (L-64 + L-66) retro win:**
+
+`scripts/check-version-parity.mjs` (instituted after Debt #8) stayed green throughout. Catches the 6-way invariant across packages, scaffold templates, vscode-extension, and pinned spec commit.
+
+**Known deferrals to v1.3.x:**
+
+- **SV-A2A-10..17 live-probe promotion** — Requires a validator-side JWT + card-fetch test harness (cooperating Runner with configured caller key, HTTPS serving of `.well-known/agent-card.{json,jws}`, mTLS test fixtures). Unit coverage at `packages/runner/test/a2a-{jwt,signer-discovery,digest-check}.test.ts` (100+ assertions) carries the §17 assertions today.
+- **§17.2.5 caller-side `result_digest` attestation** — v1.3 scopes `result_digest` on `handoff.return` to shape-check only. A future v1.3.x revision will normatively define the caller-side signing obligation.
+- **§17.2.3.2 reserved-tokens Normative successor** — cross-ecosystem capability vocabulary coordination is v1.4+ track.
+
+**Test totals (cumulative):**
+
+- `soa-harness-impl/packages/runner`: 816 → 882 (+66 §17 assertions across 4 new test files: a2a-boot.test.ts, a2a-jwt.test.ts, a2a-signer-discovery.test.ts, a2a-digest-check.test.ts).
+
+**Commit count:** 14 commits across three repos in one autonomous run — every one plan-evaluator-cited where applicable, every spec commit followed by a same-session impl mirror.
+
+**Status: shipped.** v1.3.0 is the first minor release entirely produced + closed in a single autonomous session with the plan-evaluator hard-gate exercised on every normative commit.
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
