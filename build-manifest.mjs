@@ -147,7 +147,7 @@ const placeholderSha = "0".repeat(64);
 // deferred at v1.1.0.
 const manifest = {
   spec_version: "1.0",
-  released_at: "2026-04-24T00:00:00Z",
+  released_at: "2026-04-24T12:00:00Z",
   publisher_kid: "soa-release-v1.0",
   artifacts: {
     seccomp: {

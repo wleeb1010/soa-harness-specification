@@ -1,6 +1,6 @@
 {
   "spec_version": "1.0",
-  "released_at": "2026-04-24T00:00:00Z",
+  "released_at": "2026-04-24T12:00:00Z",
   "publisher_kid": "soa-release-v1.0",
   "artifacts": {
     "seccomp": {
@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "26a1ec089cded65e2166ab8607b5112033e858272ab8c2815fcc91d69946fdd9",
+        "sha256": "d2643231cf9ea7cf2459dffb2e5ed78859b012bf15e136f3a40c34decd87b58f",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "03a322c5e06737877c87529a4fd080e80c8b5b0ff3abca0a359bbc7856d80e93",
+        "sha256": "d525f607fd36c32f10ef4226b79ca2bb1bfe54abc810cc37bcd5bb1b055e592c",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -214,7 +214,7 @@
       {
         "name": "stream-event-payloads.schema.json",
         "path": "schemas/stream-event-payloads.schema.json",
-        "sha256": "aaa2f0652acd67bd8c87ae7eee0619888ffeea2ba9f8720118ea9d0706afeb74",
+        "sha256": "afe647bf17afdcb4fd21692e4f1d8e18a43a5ecb9987a7382bf88fc0f2d98920",
         "canonicalization": "JCS-RFC-8785"
       },
       {

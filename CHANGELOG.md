@@ -6,7 +6,7 @@ Categories per entry: **Added** (new), **Changed** (modified), **Deprecated** (s
 
 ---
 
-## [1.2.0-dev] — unreleased (M8 in progress)
+## [1.2.0] — 2026-04-24
 
 Additive minor per §19.4. Streaming dispatcher + chat UI + CLI + VS Code extension stub. Everything below is wire-format-compatible with v1.0 / v1.1 conformance claims: an implementation that only supports §16.3 synchronous dispatch stays v1.0-conformant. Streaming is an opt-in capability advertised via the `ProviderAdapter.dispatchStream?()` method.
 
