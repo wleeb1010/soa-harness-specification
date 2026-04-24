@@ -3011,6 +3011,46 @@ Implementations that prove the emission boundary under `SV-LLM-05` MUST treat an
 
 All three digests are over JCS-RFC-8785-canonical bytes — not raw JSON — so whitespace and key-order differences between sender and receiver do not cause drift. Hexadecimal MUST be lowercase.
 
+#### 17.2.1 HandoffStatus enum (Normative, v1.3)
+
+§17.2's `handoff.status` result carries `status: enum` but v1.0 did not enumerate the members. v1.3 closes that gap: `status` MUST be exactly one of the six closed-enum values below. Receivers of any unknown value MUST treat the response as a protocol violation and raise `HandoffRejected` (§17.3) with `reason: "unknown-status"` — reusing -32051 rather than -32052, since the response shape is malformed at the protocol layer, not inconsistent at the state layer.
+
+| Value | Meaning | Pre-state | Terminal | `last_event_id` semantics |
+|---|---|---|---|---|
+| `accepted` | `handoff.transfer` succeeded; destination Runner has imported state, no execution has started yet. | post-`handoff.transfer` success | no | Destination session's `HandoffStart` event_id. |
+| `executing` | Destination Runner is actively processing the task. | `accepted` | no | Newest §14.1 StreamEvent emitted on the destination session. |
+| `completed` | Destination Runner finished the task AND sent `handoff.return` to the caller. | `executing` | yes | The destination session's terminal `SessionEnd`. |
+| `rejected` | `handoff.offer` was accepted but the subsequent `handoff.transfer` was refused (digest mismatch, capability mismatch, auth drift, trust-anchor mismatch). Returned only for task_ids the caller holds from a prior `handoff.offer`; if `handoff.transfer` itself returned -32051 `HandoffRejected` the caller has the error response and should not poll `handoff.status`. | post-`handoff.offer` accept + post-`handoff.transfer` refuse | yes | `null` (no destination session was created). |
+| `failed` | Destination Runner accepted the task but hit an unrecoverable execution error. Callers MUST consult the pointed-at `SessionEnd` via `last_event_id` for the precise §13.4 `stop_reason` (budget-exhausted, memory-degraded, handler-crash, etc.). | `accepted` or `executing` | yes | `SessionEnd` carrying a non-`NaturalStop` `stop_reason`. |
+| `timed-out` | Destination Runner did not produce a terminal `completed` / `failed` / `rejected` within the §17.2.2 per-method deadline. | `accepted` or `executing` | yes | The last observed §14.1 StreamEvent before the deadline fired, or the `HandoffStart` event_id if nothing was emitted. |
+
+**Runner crash + resume** (§12 bracket-persist): a destination Runner crash followed by a successful resume from checkpoint keeps the task in its prior state (`accepted` or `executing`). The `CrashEvent` (§14.1) is observable via StreamEvent streams but does NOT transition `handoff.status`; callers observing a `CrashEvent` via `last_event_id` should poll again. A crash without resume eventually transitions to `failed` via `handoff.status` once the caller's deadline fires.
+
+**Monotonicity (Normative).** Implementations MUST NOT report any state that precedes a previously-observed state in the progression. The four terminal states (`completed`, `failed`, `timed-out`, `rejected`) MUST NOT transition to any other state; a `handoff.status` call after a terminal state has been observed MUST return that same terminal state on every subsequent call for the same `task_id` until the task_id's retention window expires (see §10.5.6).
+
+**Rejected vs. HandoffRejected disambiguation.** These are separate surfaces that do not overlap:
+- `status: "rejected"` in a `handoff.status` response means: caller previously succeeded at `handoff.offer`, then `handoff.transfer` was refused; caller is NOW polling and learning the transfer failed terminally. Used primarily when `handoff.offer` and `handoff.transfer` are driven by different processes and the `handoff.transfer` error couldn't be caught by the poller.
+- JSON-RPC error -32051 `HandoffRejected` on the `handoff.transfer` call itself means: caller synchronously learned about the rejection. Caller MUST NOT subsequently poll `handoff.status` on the same `task_id` — there is no destination session to query.
+
+Test anchors for the six values are owned by the must-map rather than listed here (the prior draft's claim that SV-A2A-03 + SV-A2A-04 cover this was incorrect — those anchor `agent.describe` and `handoff.offer`). The must-map entry added alongside this spec commit reserves `SV-A2A-15` for the full transition matrix and six terminal/non-terminal assertions.
+
+#### 17.2.2 Per-method deadlines (Normative, v1.3)
+
+`handoff.status` reports `timed-out` when the destination-side task exceeds a per-method deadline. The deadlines are:
+
+| Method | Default deadline | Operator override |
+|---|---|---|
+| `agent.describe` | 5 s | `SOA_A2A_DESCRIBE_DEADLINE_S` |
+| `handoff.offer` | 5 s | `SOA_A2A_OFFER_DEADLINE_S` |
+| `handoff.transfer` | 30 s | `SOA_A2A_TRANSFER_DEADLINE_S` |
+| `handoff.status` | 3 s | `SOA_A2A_STATUS_DEADLINE_S` |
+| `handoff.return` | 10 s | `SOA_A2A_RETURN_DEADLINE_S` |
+| Destination task execution | 300 s | `SOA_A2A_TASK_DEADLINE_S` |
+
+The "destination task execution" deadline is the one that drives the `timed-out` status value. Runners serving as destinations MUST enforce it and emit `SessionEnd` with `stop_reason: "MaxTurns"` (nearest §13.4 enum match for deadline expiry) at the boundary. Callers observing `timed-out` via `handoff.status` MAY issue `handoff.return` with synthetic failure semantics if they need to signal the caller-side task state.
+
+Operator overrides apply at Runner boot via the respective env vars; values SHOULD be positive integers; absent or malformed values fall back to the defaults. Agent Cards MAY advertise non-default deadlines via a new `a2a_deadlines` object under `adapter_notes` (reserved for v1.3.x schema addition); until that schema ships, callers SHOULD assume defaults.
+
 ### 17.3 Errors (JSON-RPC Error Codes)
 
 | Code | Meaning |

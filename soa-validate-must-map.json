@@ -387,6 +387,22 @@
       "severity": "critical",
       "assertion": "messages_digest / workflow_digest / result_digest use form sha256:<64-hex-lowercase> where the hashed bytes are JCS-RFC-8785 canonical of the corresponding JSON object. Receiver recomputes and compares; mismatch → HandoffRejected(reason=digest-mismatch)."
     },
+    "SV-A2A-15": {
+      "name": "HandoffStatus enum — transition matrix",
+      "section": "§17.2.1",
+      "section_title": "A2A Wire Protocol — HandoffStatus enum (v1.3)",
+      "profile": "core+handoff",
+      "severity": "critical",
+      "assertion": "handoff.status returns status ∈ {accepted, executing, completed, rejected, failed, timed-out} (closed enum; any other value → HandoffRejected with reason=unknown-status). Transitions are monotonic: accepted → executing → {completed | failed | timed-out}, or accepted → rejected as an alternative terminal. Terminal states (completed, failed, timed-out, rejected) MUST persist across subsequent handoff.status polls until the task_id retention window expires. last_event_id semantics per §17.2.1 table: HandoffStart for accepted, newest StreamEvent for executing, SessionEnd for completed and failed, last-observed or HandoffStart for timed-out, null for rejected. Runner crashes followed by successful resume (§12 bracket-persist) do NOT transition status; the CrashEvent is StreamEvent-observable only."
+    },
+    "SV-A2A-16": {
+      "name": "A2A per-method deadlines",
+      "section": "§17.2.2",
+      "section_title": "A2A Wire Protocol — per-method deadlines (v1.3)",
+      "profile": "core+handoff",
+      "severity": "moderate",
+      "assertion": "Each §17.2 method carries a default deadline (5s describe/offer/status, 10s return, 30s transfer, 300s destination-task-execution) that the receiving Runner MUST enforce. Operator env overrides (SOA_A2A_DESCRIBE_DEADLINE_S, SOA_A2A_OFFER_DEADLINE_S, SOA_A2A_TRANSFER_DEADLINE_S, SOA_A2A_STATUS_DEADLINE_S, SOA_A2A_RETURN_DEADLINE_S, SOA_A2A_TASK_DEADLINE_S) replace the default when set to a positive integer; absent or malformed values fall back to defaults. Task-execution deadline expiry emits SessionEnd with stop_reason=MaxTurns and transitions handoff.status to timed-out."
+    },
     "SV-ENC-01": {
       "name": "UTF-8 no BOM",
       "section": "§1",
@@ -2235,7 +2251,9 @@
       "SV-A2A-11",
       "SV-A2A-12",
       "SV-A2A-13",
-      "SV-A2A-14"
+      "SV-A2A-14",
+      "SV-A2A-15",
+      "SV-A2A-16"
     ],
     "SV-PRIN": [
       "SV-PRIN-01",
@@ -3060,6 +3078,18 @@
         "SV-A2A-14"
       ]
     },
+    "§17.2.1#handoff-status-enum": {
+      "title": "A2A handoff.status closed enum + transition matrix (v1.3)",
+      "tests": [
+        "SV-A2A-15"
+      ]
+    },
+    "§17.2.2#per-method-deadlines": {
+      "title": "A2A per-method deadlines + operator env overrides (v1.3)",
+      "tests": [
+        "SV-A2A-16"
+      ]
+    },
     "§18#validator": {
       "title": "soa-validate binary + profiles",
       "tests": [
@@ -3424,6 +3454,8 @@
           "SV-A2A-12",
           "SV-A2A-13",
           "SV-A2A-14",
+          "SV-A2A-15",
+          "SV-A2A-16",
           "SV-GOV-10",
           "HR-15"
         ]
