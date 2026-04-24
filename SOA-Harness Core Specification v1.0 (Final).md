@@ -3046,10 +3046,32 @@ Test anchors for the six values are owned by the must-map rather than listed her
 | `handoff.status` | 3 s | `SOA_A2A_STATUS_DEADLINE_S` |
 | `handoff.return` | 10 s | `SOA_A2A_RETURN_DEADLINE_S` |
 | Destination task execution | 300 s | `SOA_A2A_TASK_DEADLINE_S` |
+| Destination execute hook (test-only, see §17.2.2.1) | — | `SOA_A2A_AUTO_EXECUTE_AFTER_S` |
 
 The "destination task execution" deadline is the one that drives the `timed-out` status value. Runners serving as destinations MUST enforce it and emit `SessionEnd` with `stop_reason: "MaxTurns"` (nearest §13.4 enum match for deadline expiry) at the boundary. Callers observing `timed-out` via `handoff.status` MAY issue `handoff.return` with synthetic failure semantics if they need to signal the caller-side task state.
 
 Operator overrides apply at Runner boot via the respective env vars; values SHOULD be positive integers; absent or malformed values fall back to the defaults. Agent Cards MAY advertise non-default deadlines via a new `a2a_deadlines` object under `adapter_notes` (reserved for v1.3.x schema addition); until that schema ships, callers SHOULD assume defaults.
+
+##### 17.2.2.1 Destination execute hook (Normative — Testability, v1.3.2)
+
+Runners MAY accept `SOA_A2A_AUTO_EXECUTE_AFTER_S` as a loopback-guarded test hook that schedules destination-side `HandoffStatus` transitions at a fixed cadence, enabling conformance runs to exercise the §17.2.1 transition matrix end-to-end without a real destination-side provider adapter. When set to a positive integer `N` (seconds), the receiver MUST schedule two transitions on every successful `handoff.transfer`:
+
+- From `accepted` → `executing` at the `N`-second mark after transfer acceptance, AND
+- From `executing` → `completed` at the `2N`-second mark,
+
+absent a prior explicit `handoff.return` call (which records `completed` via §17.2.1 normal path and MUST cancel any pending scheduled transition for that `task_id`). The 1:1 spacing (`N`, `2N`) gives symmetric poll windows and maximizes validator observability while keeping test latency bounded by `2N`.
+
+**Loopback-guarded startup (Normative).** Following the §11.3.1 / §10.6.2 / §11.2.1 test-hook precedent, Runners MUST refuse startup with `SOA_A2A_AUTO_EXECUTE_AFTER_S` set when the `/a2a/v1` listener binds to a non-loopback address. The guard is a boot-time check — re-binding the listener at runtime is outside v1.3.2 scope and MUST be handled via a Runner restart.
+
+**Deadline-collision guard (Normative).** Runners MUST additionally refuse startup if `2 * SOA_A2A_AUTO_EXECUTE_AFTER_S >= SOA_A2A_TASK_DEADLINE_S` (whether the latter is defaulted or operator-overridden). This guarantees both scheduled transitions fire before the §17.2.2 task-execution deadline collapses the task to `timed-out`, eliminating a class of silent hook-vs-deadline race.
+
+**Duplicate-transfer behaviour (Normative).** The hook schedules timers once per `task_id`. If the same `task_id` receives a second successful `handoff.transfer` (idempotent-accept per §17.2.5 replay clause) while the first pair of timers is still pending, the receiver MUST NOT reset or reschedule the timers — the original schedule continues undisturbed. Monotonicity (§17.2.1) locks in the first terminal state regardless of path.
+
+**Restart-crash behaviour (Normative).** Hook-scheduled transitions are NOT required to be §12 bracket-persisted. A Runner crash between `accepted` and the `2N`-mark loses the scheduled transitions; the post-restart row stays at `accepted` until the §17.2.2 task-execution deadline transitions it to `timed-out` via the normal enforcement path. This matches the §17.2.5 restart-crash observability rule for offer state.
+
+**Conformance-vs-deployment scope (Normative).** Honoring this hook is a **conformance-MUST** for Runners seeking an `SV-A2A-15` pass under the §18.5 conformance profile — a Runner that ignores the env var cannot close the `accepted → executing` intermediate-transition assertion. Production Runners MAY omit the hook implementation since it is loopback-guarded and refuses startup on non-loopback binds; Runners bundled only for deployment (no conformance claim) face no impl obligation.
+
+Test anchor: `SV-A2A-15` — this subsection closes the `accepted → executing` intermediate-transition assertion previously flagged partial in v1.3.1's live probe. The `SV-A2A-15` must-map entry is updated in the same commit to enumerate the hook-honoring assertion alongside the six observable-today assertions.
 
 #### 17.2.3 A2A capability advertisement and matching (Normative, v1.3)
 
