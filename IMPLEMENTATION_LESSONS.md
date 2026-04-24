@@ -2502,6 +2502,29 @@ v1.3.1's ceremony was: impl §17.2.2 enforcement → L-70 live-probe promotions 
 
 **Autonomous session boundary:** L-69 → L-74 delivered in one continuous autonomous run post-L-68 kickoff. Total span: ~40 commits across three repos, 6 plan-evaluator gates, three coordinated releases (v1.3.0 minor + v1.3.1 + v1.3.2 patches). Zero post-release hotfixes. Zero unresolved debt.
 
+### L-75 — v1.3.3 patch release ship record `[patch ship]`
+
+- **Surfaced:** 2026-04-24 evening, immediately after L-74 closure.
+- **Status:** `shipped`. 11 packages live on npm at 1.3.3; spec + impl tagged `v1.3.3`; GitHub releases published on both repos. No MANIFEST regen + no re-sign (spec pin unchanged at `8f8bdb4`; MANIFEST byte-identical to v1.3.2).
+
+**Release artifacts:**
+
+| Repo | Tag | Commit | Notes |
+|---|---|---|---|
+| spec | `v1.3.3` | `fb5a248` | CHANGELOG [1.3.3] + RELEASE-NOTES-v1.3.3.md + scripts/release-v1.3.3.mjs. MANIFEST unchanged. |
+| impl | `v1.3.3` | `1cc3155` | 11 packages at 1.3.3. §17.2.2 `SessionEnd(MaxTurns)` emission hook at `b2aea1d`. 896/896 tests green (+3 for Track 2). |
+| validate | —   | unchanged | No lock bump (spec pin unchanged). |
+
+**Scope:** closes the last silent §17 MUST violation — `@soa-harness/runner@1.3.3` adds opt-in `onTaskExecutionDeadline` callback on the a2a plugin. Plugin schedules an eager `setTimeout` at `handoff.transfer` accept and fires the callback at the deadline boundary when the task is still pre-terminal. `handoff.return` cancels. Consumer wires the callback to `StreamEventEmitter.emit({session_id: destination_session_id, type: "SessionEnd", payload: {stop_reason: "MaxTurns"}})`.
+
+**Ceremony delta vs v1.3.1 / v1.3.2:** v1.3.3 mirrors v1.3.1's no-re-sign pattern (impl-only patch; spec unchanged from pin point). Mitigates the v1.3.2 re-sign overhead that was required because §17.2.2.1 added new markdown.
+
+**Debt ledger:** clean. §17 now has zero silent MUST violations at the impl level. Every normative clause in §17.1, §17.2.1, §17.2.2, §17.2.2.1, §17.2.3, §17.2.4, §17.2.5, §17.3 has either a passing unit test, a live validator probe, or an explicit skip-with-rationale tied to an out-of-scope item.
+
+**L-73 closure status:** Track 2 impl-complete. Track 3 (CrewAI adapter) still open — its own milestone.
+
+**Autonomous session boundary cumulative:** L-68 → L-75 delivered in one continuous autonomous run. Total: ~45 commits across three repos, 6 plan-evaluator gates, four coordinated releases (v1.3.0 minor + v1.3.1 + v1.3.2 + v1.3.3 patches). Zero post-release hotfixes across all four. Zero unresolved debt. v1.3 arc closed modulo Track 3 and v1.4-candidate items (§17.2.3.2 tokens registry, caller-side `result_digest` attestation, mTLS x5t live-probe).
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
