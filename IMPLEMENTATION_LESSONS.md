@@ -1863,6 +1863,88 @@ No pushes. No broken commits. No destructive ops. No edits to v1.0-lts.
 - Gateway MVP — M11 (biggest single chunk)
 - Admin UI — M13
 
+### L-62 night-shift-3 addendum — polish + release-safety tooling
+
+Third session within the same night. Scope: wraparound tooling + docs that surface the M7 work to adopters without requiring deeper code changes.
+
+**Commits landed (chronological):**
+
+| Repo | SHA | Subject |
+|---|---|---|
+| impl | _(runner README)_ | `@soa-harness/runner` README gains §16.3 Dispatcher section with adopter-facing wiring example |
+| spec | `b1797ca` | (validate) `--dry-run` mode — list profile-eligible tests without executing |
+| spec | `b549847` | `docs/m7/exit-criteria.md` + L-63 M8 kickoff draft |
+| spec | `8500f3d` | `schemas/release-gate-report.schema.json` — lock the validator output shape |
+| spec | `9eff6d1` | `scripts/prerelease-check.py` + pin-drift stale-lock warning |
+| spec | _(this commit)_ | `.github/workflows/prerelease.yml` CI gate + `scripts/make-badge.py` + `docs/observability-endpoints.md` + L-62 addendum |
+
+(validate commits are duplicated here because they were part of the same backlog pass.)
+
+**Executive decisions made this session:**
+
+21. **Preflight CI gated on release-adjacent paths only.** `scripts/prerelease-check.py` is slow (regex-sweeps the tree). Decision: workflow only runs on PRs touching `docs/m7/deployment/**`, `scripts/release-*.mjs`, keys, MANIFEST, LICENSES, CHANGELOG, RELEASE-NOTES — plus `release/**` + `v1.*` branch pushes. Reasoning: noise reduction — a typo fix in `§2` doesn't need a 2-minute leaked-key scan.
+
+22. **Badge color convention.** Decision: red on fail, orange on error, yellow on >50% skip, green on majority pass. Reasoning: matches shields.io's color semantics so adopters reading their README recognize the scheme. Yellow-on-high-skip surfaces the "you think you're passing but you're not actually probing much" case — without this, a 5/170 pass + 165 skip would look fine.
+
+23. **Observability-endpoints doc is a reference, not normative.** Decision: lives in `docs/` rather than in the Core spec body. Reasoning: scannable index adopters want; spec already defines each endpoint's contract in its own §. Duplicating the normative text would create drift risk.
+
+24. **L-62 is append-only across sessions.** Decision: each session appends an addendum rather than rewriting. Reasoning: morning audit reads chronologically; three separate-but-nested addendums preserve the "what happened when" narrative.
+
+**Sync-gap scorecard (final end of night 3):**
+
+| Gap | Status |
+|---|---|
+| #1 Pin drift detector | ✓ script + CI + stale-lock warning |
+| #2 Docusaurus MVP | ✓ builds clean; deployment M11 |
+| #3 Scaffold `npm run conform` | ✓ |
+| #4 Versioned release bundle | ◐ CHANGELOG v1.1.0-dev + release-gate-report schema + preflight CI + exit-criteria doc — actual cut is post-M7 |
+| #5 `--check-pins` | ✓ |
+
+All five sync gaps have tooling in place. Gap #4 remains partial because "cut v1.1.0" is an action, not code.
+
+**Night-total stats (all three sessions combined, since user authorized the night shift):**
+
+- **24 commits** total across 3 repos
+- **spec: 12 commits** (incl. 68b34f1 §16 dispatcher + Pre-M7 baseline + Docusaurus + CHANGELOG + preflight + runbook + exit-criteria + L-62/L-63)
+- **impl: 8 commits** (pin-bump + dispatcher skeleton + HTTP routes + debug route + scaffold + PINNED_SPEC_COMMIT + CRL + example-adapter)
+- **validate: 4 commits** (pin-bump + vector + live + --check-pins + --dry-run)
+- **~1,100 tests** green across impl + validate (runner 767 + example-provider-adapter 15 + others)
+- **docker build** of reference Dockerfile smoke-tested → `/ready` 200
+- **docs-site** builds cleanly with Docusaurus 3.6.3 + webpack 5.95.0 override
+- **zero pushes** (entire night is local commits)
+- **zero broken commits** (per-commit build+test gate held)
+- **zero destructive ops** (no reset --hard, no force push, no branch deletion)
+
+**Full commit ledger (newest first, spec repo):**
+
+```
+9eff6d1 Security + hygiene preflight + pin-drift stale-lock warning
+8500f3d Add schemas/release-gate-report.schema.json (v1.1 addition)
+b549847 M7 exit-criteria doc + L-63 M8 kickoff draft
+d0cf72d L-62 night-shift-2 addendum: M7 week 4 sync-gap work record
+4592581 M7 tooling docs: CHANGELOG v1.1.0-dev + pin-bump runbook + activate CRL timer
+e6e41c5 Docs site MVP skeleton (Docusaurus) — gap #2 partial
+45f050f Pin-drift detector + daily CI check (sync gap #1)
+bfb3287 L-62: night-shift execution record for M7 weeks 0-3
+cd2e638 M7 week 2: deployment artifacts (Dockerfile + compose + systemd)
+68b34f1 M7 week 1: §16.3-.5 LLM Dispatcher + 3 schemas + SV-LLM-01..07 (v1.1 minor)
+e9608c8 Pre-M7: v1.0.0 perf baseline captured (L-61)
+9381556 Post-release tidy: expose --otp flag in release-v1.0.mjs
+```
+
+Impl repo and validate repo ledgers are in their own git log; see "Pattern note" below for summary.
+
+**Queued for morning pickup:**
+
+1. Review + sanity-check all 24 commits (operator's audit responsibility)
+2. Any fix-forward items surface as new commits on `main`
+3. When ready to ship v1.1.0: work through `docs/m7/exit-criteria.md` remaining items (MANIFEST regen + release-notes narrative + npm publish)
+4. Push to remotes for CI validation of the new `pin-drift.yml` + `prerelease.yml` workflows
+
+**Pattern note (updated):** L-62 now documents 3 night-shift addenda + a scorecard of the 24 commits. Future night shifts should continue the addendum pattern — append rather than rewrite — so operator-audit morning-read stays chronological. The "decisions made autonomously" numbering continues across all addenda: 1-11 (shift 1), 12-20 (shift 2), 21-24 (shift 3). Decision log is contiguous; commit ledger is chronological.
+
+---
+
 ### L-63 — M8 kickoff: streaming dispatcher + end-user chat surface `[milestone kickoff]`
 
 - **Surfaced:** 2026-04-23 end of M7 week 4 night-shift-2. M7 weeks 1-4 closed against the exit-criteria doc (`docs/m7/exit-criteria.md`) with 3 soft-gate items deferred; M8 scope opens.

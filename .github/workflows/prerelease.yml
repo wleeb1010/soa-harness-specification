@@ -1,0 +1,59 @@
+name: prerelease-check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      # Only gate PRs that actually touch release-adjacent surfaces.
+      # Every-PR preflight would be noise; these paths are the ones where
+      # leaks or hardening regressions actually happen.
+      - "docs/m7/deployment/**"
+      - "scripts/release-*.mjs"
+      - "scripts/prerelease-check.py"
+      - "scripts/sign-manifest.*"
+      - "keys/**"
+      - "MANIFEST.json*"
+      - "LICENSES.md"
+      - "CHANGELOG.md"
+      - "RELEASE-NOTES*.md"
+  workflow_dispatch:
+  # Also allow on release branches, which adopters may tag manually.
+  push:
+    branches:
+      - "release/**"
+      - "v1.*"
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout spec repo
+        uses: actions/checkout@v4
+        with:
+          path: spec
+
+      - name: Checkout impl repo
+        uses: actions/checkout@v4
+        with:
+          repository: wleeb1010/soa-harness-impl
+          path: soa-harness-impl
+        continue-on-error: true
+
+      - name: Checkout validate repo
+        uses: actions/checkout@v4
+        with:
+          repository: wleeb1010/soa-validate
+          path: soa-validate
+        continue-on-error: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run pre-release preflight
+        run: |
+          cd spec
+          python scripts/prerelease-check.py \
+            --impl-root ../soa-harness-impl \
+            --validate-root ../soa-validate
