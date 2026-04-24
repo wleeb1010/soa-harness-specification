@@ -2525,6 +2525,33 @@ v1.3.1's ceremony was: impl §17.2.2 enforcement → L-70 live-probe promotions 
 
 **Autonomous session boundary cumulative:** L-68 → L-75 delivered in one continuous autonomous run. Total: ~45 commits across three repos, 6 plan-evaluator gates, four coordinated releases (v1.3.0 minor + v1.3.1 + v1.3.2 + v1.3.3 patches). Zero post-release hotfixes across all four. Zero unresolved debt. v1.3 arc closed modulo Track 3 and v1.4-candidate items (§17.2.3.2 tokens registry, caller-side `result_digest` attestation, mTLS x5t live-probe).
 
+**Post-ship v1.3.3 smoke verification (2026-04-24 evening).** Fresh `npx create-soa-agent@1.3.3` → `npm install` → boot on alt ports (PORT=37700, SOA_MEMORY_MCP_PORT=38001, bypassing a stale 7700 Runner in the dev environment) succeeded end-to-end. `/version` returned `{soaHarnessVersion: "1.0", runner_version: "1.3", spec_commit_sha: "8f8bdb465fc2d6063eaabd5185728d471f1fa65f"}`; `/ready` returned `{status: "ready"}`; first audit row written. Confirms the Debt #7/#8 regression guard held through the full publish → install → boot chain for v1.3.3. Opportunistic cleanup landed at impl commit `09e8cbf` (server.ts §17.2.2.1 loopback-guard dead-code removal — zero behavioral delta; 896/896 tests still green).
+
+### L-76 — Track 3 CrewAI adapter: design decision required `[open]`
+
+- **Surfaced:** 2026-04-24 evening, while attempting to scope Track 3 execution.
+- **Status:** `open, design-blocked`. Unilateral autonomous driving is not appropriate until the adopter design decision below is made.
+
+**The design question:** `@soa-harness/langgraph-adapter` is a JavaScript npm package that wraps `@langchain/langgraph` (a JavaScript framework). CrewAI is **Python-only** — no JS/TS bindings exist. §18.5.1 permits the host framework to be any framework provided the adapter exposes the §5 HTTP surface; it does NOT require the adapter itself to be in JavaScript.
+
+Three adopter paths for a CrewAI-on-SOA-Harness deployment:
+
+1. **Ship a Python crewai-adapter** (pypi package, not npm). Adapter runs as a Python process that speaks SOA-Harness at the HTTP boundary. This matches §18.5.1 most naturally but requires setting up a second packaging ecosystem (pypi + GitHub Actions Python releases + signing equivalent for Python packages).
+
+2. **Ship a JS IPC bridge** (`packages/crewai-adapter/`) that spawns a Python Crew subprocess and translates CrewAI events to §14 StreamEvents over stdin/stdout. Stays in the npm monorepo but the integration surface is fragile (subprocess lifecycle, cross-language serialization, error propagation).
+
+3. **Defer CrewAI; do AutoGen instead.** AutoGen has experimental JS bindings (`@autogen/core`) that could be wrapped in the same pattern as `@soa-harness/langgraph-adapter`. Less user demand than CrewAI but fits the existing packaging ecosystem cleanly.
+
+**Recommendation:** option (1) if CrewAI adoption is a real user-surfaced request; option (3) if the goal is "more adapters for §18.5 coverage" and CrewAI isn't specifically required. Option (2) is the worst of both — IPC bugs + npm-only distribution limits + doesn't really demonstrate the adapter pattern beyond LangGraph.
+
+**Blocking on user direction.** A unilateral autonomous choice here is not appropriate — the packaging-ecosystem decision is strategic, not mechanical.
+
+### Remaining autonomously-shippable items
+
+- `§17.2.3.2` reserved-capability-tokens registry **structural draft** (format regex, addition process, collision policy) with an **empty initial token list**. Ships as spec-only v1.4 minor. Requires plan-evaluator gate. Specific token values need community input; structural draft can move forward without that.
+- `mTLS x5t#S256` live-probe **feasibility scoping** — determine whether a test CA + cert-rotation fixture is reasonable to build in-repo or whether this stays skip-with-rationale indefinitely. Deliverable: a short design note, not impl.
+- Post-release adoption monitoring: check npm download counts, watch GitHub issues on the published packages for adopter-surfaced bugs in the v1.3.x window. Low-effort, high-signal.
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
