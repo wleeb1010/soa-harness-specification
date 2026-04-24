@@ -25,25 +25,21 @@ When the second maintainer lands, this rule upgrades to two-of-two approvals for
 
 ## Path to multi-maintainer
 
-The project explicitly wants to grow to a working group with ≥ 3 maintainers from independent organizations. The prerequisites for that transition:
+Per the 2026-04-23 solo-operation decision, the project is **single-maintainer by choice** through at least v1.5.0 "Feature Complete (Self-Asserted)". The "multi-maintainer" aspiration is not a scheduled milestone — it remains available if circumstances change (an organic co-maintainer emerges, a foundation adopts the project, etc.) but no active work targets that transition.
 
-1. **At least one external reference implementation passes bake-off** (see `soa-validate` repo for the bake-off protocol)
-2. **At least one external adopter ships against the spec** and reports concrete implementer feedback
-3. **An independent cryptographic review** of the reference implementation's signing paths (scheduled for M9 SelfOptimizer sandbox review; broader signing-path review TBD)
+Triggers that would reopen the multi-maintainer conversation:
+- An organic 2nd-party reimplementation passes the conformance suite (would automatically earn "Bake-Off Verified" and naturally invite co-maintenance)
+- An organic co-maintainer offers sustained substantive contributions
+- A foundation (CNCF, OpenJS, LF) reaches out to adopt the project
 
-Once all three are met, the current maintainer will:
-- Rename "SOA-WG" references in the spec from aspirational to actual
-- Register `soa-harness.org` under a foundation (candidates: CNCF sandbox, OpenJS Foundation, Linux Foundation)
-- Publish a formal charter defining voting rules, release cadence, and IPR policy
+None of these are pursued actively. The project remains a single-maintainer endeavor by design.
 
 ## What "conformance" means today
 
 Two tiers, per the plan in `~/.claude/plans/`:
 
 - **"SOA-Harness v1.0 Reference Implementation"** — self-assigned by implementations that pass the full 420-test `soa-validate` suite (234 Core + 186 UI) against a pinned spec commit. The reference impl + validator shipped at v1.0.0 claim this label.
-- **"SOA-Harness v1.0 Bake-Off Verified"** — requires a second-party implementation whose `soa-validate` output converges to zero divergence. This is the label adopters should demand before relying on a conformance claim.
-
-Until a second implementation exists, no "Bake-Off Verified" claims can be published.
+- **"SOA-Harness v1.0 Bake-Off Verified"** — requires a second-party implementation whose `soa-validate` output converges to zero divergence. This is the label adopters should demand before relying on a conformance claim. **Per the solo-operation decision (2026-04-23), this tier is not actively pursued.** It remains defined in case a 2nd-party voluntarily reimplements the spec, but no roadmap milestone targets achieving it. Adopters should treat all releases as "Reference Implementation" grade until/unless a 2nd-party emerges.
 
 ## Reporting security issues
 
@@ -63,9 +59,9 @@ This document will be updated as new maintainers join. For now:
 
 - `wleeb1010` — spec author, reference implementation lead, conformance validator lead (acknowledgment of concentration risk is implicit; mitigation tracks: M9 external sandbox review + v1.0-lts 48h security SLA + adopter-concierge program for real-world feedback)
 
-## Adopter-concierge program
+## Adopter support model
 
-The project actively recruits 1-2 pilot organizations for non-production integration during M7-M11 in exchange for weekly support and roadmap influence. See `docs/m7/adopter-concierge-program.md` for eligibility and onboarding.
+Per the 2026-04-23 solo-operation decision, the project operates a **reactive organic-adopter support** model — no proactive pilot recruitment, no weekly syncs, no design-partner status. Issues filed publicly on GitHub get the 48h Critical SLA regardless of who files them. See `docs/m7/organic-adopter-support.md` for the full contract.
 
 ## License
 

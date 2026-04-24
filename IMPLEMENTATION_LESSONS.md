@@ -1626,21 +1626,25 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 - 2FA ceremony: temporarily disabled org-level "Require 2FA for publish" for pnpm -r publish, re-enabled immediately after.
 - Retrospective: two operator errors caught before impact — PowerShell `rm` destroyed first keypair pre-encryption (regenerated cleanly, no signing had occurred); npm token pasted into chat mid-setup (revoked + regenerated). Both patterns worth codifying for future rotations: use Git Bash not PowerShell for openssl workflows; never paste tokens into chat.
 
-**M7+ scope (6 milestones, 32 weeks):**
-- Pre-M7 (2 weeks): adopter-concierge kickoff, `v1.0-lts` branch cut (DONE 2026-04-23 on all 3 repos), 48h security-patch SLA formalization, external SelfOptimizer reviewer pre-commit.
+**M7+ scope (revised 2026-04-23 for solo-only operation, 28 weeks):**
+- Pre-M7 (done): `v1.0-lts` branches cut on all 3 repos, 48h Critical SLA formalized in `docs/m7/v1.0-lts-branch-policy.md`, organic-adopter support policy in `docs/m7/organic-adopter-support.md`, GOVERNANCE.md updated for solo-by-choice framing.
 - M7 (6 weeks): LLM dispatcher + Docker deploy + Docusaurus docs MVP + `SV-LLM-01..07` + `SV-COMPAT-01..04` → **v1.1.0**
-- M8 (6 weeks, parallel from wk 7): direct-to-Runner web UI + admin dashboard + CLI + VS Code ext + `SV-ADMIN-01..04` + `UV-CMD-07..10` → **v1.2.0**
-- M9 (8 weeks, parallel from wk 11): SelfOptimizer + `core+si` profile + session replay + `SV-SI-01..12` + external sandbox review → **v1.3.0**
-- M10 (10 weeks, parallel from wk 17): UI Gateway + OAuth/DPoP/WebAuthn + content-safety + tenant quotas + `SV-TENANT/CONTENT-*` → **v1.4.0**
-- M11 (8 weeks, parallel from wk 25): multi-agent conductor + tool marketplace + backup/restore + observability dashboards + migration guides → **v1.5.0 "Full Featured"**
-- Post-Launch Bake-Off (wk 12-40, decoupled): 2nd-party reimpl → "Bake-Off Verified" label when zero-divergence convergence passes.
+- M8 (6 weeks, parallel from wk 5): direct-to-Runner web UI + admin dashboard + CLI + VS Code ext + `SV-ADMIN-01..04` + `UV-CMD-07..10` → **v1.2.0**
+- M9 (6 weeks, parallel from wk 9): SelfOptimizer (**Option A — experimental feature flag**) + `core+si` profile + session replay + `SV-SI-01..12` + internal threat model doc → **v1.3.0**. Ships with `SOA_ENABLE_SI=1` env-var gate, disabled by default, loud "experimental — sandbox has not been externally reviewed" disclaimer.
+- M10 (10 weeks, parallel from wk 13): UI Gateway + OAuth/DPoP/WebAuthn + content-safety + tenant quotas + `SV-TENANT/CONTENT-*` → **v1.4.0**
+- M11 (8 weeks, parallel from wk 21): multi-agent conductor + tool marketplace + backup/restore + observability dashboards + migration guides → **v1.5.0 "Feature Complete (Self-Asserted)"**
+- **Bake-Off Verified track: DROPPED** (decision A). Label stays defined in GOVERNANCE.md as "available if a 2nd-party ever reimplements" but no scheduled work. Project remains "Reference Implementation" label indefinitely.
+- v1.0.x editorial track: continuous, bug-fix-only on `v1.0-lts` branch per 48h/5d Critical SLA.
 
-**Critic's 10 findings all incorporated** (see commit history for changes). Top three structural changes: (1) decouple Bake-Off from version schedule (8 weeks was never enough for 16-week 2nd-party impl), (2) parallelize M8↔M9↔M10↔M11 impl streams (compresses 38→32 weeks), (3) ship v1.1.0 at M7 end not M8 end (gives early adopters a version to pin).
+**Solo-operation rationale:** Operator confirmed no external reviewer, no recruited pilots, no 2nd-party partner. Timeline compresses from 32→28 weeks due to removed overhead (reviewer slack, weekly syncs). SelfOptimizer ships experimental (Option A) rather than deferred — preserves distinctive capability; operators audit at their own risk. "Full Featured" renamed to "Feature Complete (Self-Asserted)" for honesty.
 
-**User-action gates (block Pre-M7 exit):**
-1. External security reviewer identified + pre-committed for M9 §9.4+§9.7 audit
-2. 1-2 pilot adopter organizations identified for concierge program
-3. 2nd-party reimplementation partner approached for Bake-Off track (ideally identified Pre-M7 so they have 6-month head-start on the 16-week convergence work)
+**Critic's 10 findings incorporated** (prior revision). Solo-adjustment drops 3 user-action gates: external reviewer removed, pilot recruitment removed, 2nd-party outreach removed.
+
+**Remaining M7+ risks (solo-specific):**
+- CRITICAL: SelfOptimizer sandbox ships without external review → mitigated by feature-flag-off-default + disclaimer + §9 threat model doc in M9
+- HIGH: No organic adopter feedback loop → mitigated by quality of scaffold + docs + 48h issue-response SLA
+- HIGH: No cross-maintainer rigor on critical-path changes → mitigated by 48h discussion window on CRYPTO-labeled PRs (already in GOVERNANCE.md)
+- HIGH: "Feature Complete (Self-Asserted)" claim remains unverified → documented clearly in README + GOVERNANCE
 
 **Version impact:** §19.4 editorial. L-61 is the M6 closure + M7 kickoff record. No normative spec change at L-61 commit itself; first M7 normative change lands in the §16 LLM dispatcher section at M7 week 2-3.
 
