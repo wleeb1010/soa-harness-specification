@@ -2122,6 +2122,51 @@ Both `runner_version: "1.1"` and `spec_commit_sha: "2184a320..."` land correctly
 
 **Pattern note:** L-65 differs from L-64 in that it's a PATCH closure, not a MINOR closure. The ceremony was ~1/3 the work — no MANIFEST regen, no resigning, no new release notes, no new schemas to vendor. Future patch releases should follow this template: bump versions + fix code + rebuild + Verdaccio + publish + tag + release + smoke + append closure record. No signing ceremony unless the MANIFEST content actually changes.
 
+### L-66 — v1.2.0 minor release ship record `[milestone closure]`
+
+- **Surfaced:** 2026-04-24 afternoon, one continuous work burst from user message "Yeah let's add that quality gate check after spec drafts" onward.
+- **Status:** `shipped`. v1.2.0 live on npm (11 packages), tagged + released on all three GitHub repos, signed with the v1.0 release key, smoke-tested from real registry.
+
+**Release artifacts:**
+
+| Repo | Tag | Commit | Notes |
+|---|---|---|---|
+| spec | `v1.2.0` | `a0cebee` | MANIFEST.json + MANIFEST.json.jws signed (same v1.0 key). RELEASE-NOTES-v1.2.0.md narrative. |
+| impl | `v1.2.0` | `0dae1b6` | 11 packages at 1.2.0 (adds chat-ui + cli). PINNED_SPEC_COMMIT → c958bf9 (ceremony-order fix applied). |
+| validate | `v1.2.0` | `e94aa62` | Lock bumped to c958bf9. SV-LLM-05 live + SV-LLM-08/10 new + SV-COMPAT-05..08 probes. |
+
+**npm packages published @ 1.2.0 (11 total):** 9 existing packages plus `@soa-harness/chat-ui` + `@soa-harness/cli` (new in v1.2).
+
+**Ceremony breakdown:**
+
+1. **W1 spec §16.6 + §14.1.1 + §24 extensions** — spec-change plan-evaluator gate instituted and immediately paid for itself. First use surfaced 2 critical + 5 moderate spec bugs in §16.6 draft (MessageEnd.stop_reason field didn't exist in §14.1.1 schema; retry-after-first-byte was unspecified; etc.). All critical + moderate fixed inline before impl work began. See commits `3f5e82c` + `173a4e9`.
+2. **W1 impl streaming dispatcher** — `packages/runner/src/dispatch/stream.ts` (SSE plugin + InFlightRegistry + runStreamDispatch orchestrator + SequenceChecker), extended `ProviderAdapter` with optional `dispatchStream`, wired `POST /dispatch` to detect `Accept: text/event-stream` + body `stream:true` and branch to SSE, added `POST /dispatch/{correlation_id}/cancel` endpoint, extended `Dispatcher` with `recordStreamDispatch`. 9/9 new vitest tests in `dispatch-stream.test.ts`.
+3. **W1 validator SV-LLM probes** — `handlers_m7_llm.go` added `handleSVLLM05` (mid-stream cancel live probe with streamDispatch + parseSseFrame + postCancelDispatch helpers), `handleSVLLM08` (SSE framing), `handleSVLLM09` (skip with rationale), `handleSVLLM10` (sequence invariants).
+4. **W2-3 chat UI** — new `@soa-harness/chat-ui` package. ChatView + AuditTailViewer + PermissionPromptOverlay components + `useDispatchStream` hook. WCAG 2.1 AA targets (`role="log"`/`aria-live="polite"`, focus-trapped `role="dialog"`, visually-hidden `role="status"`). 3/3 vitest+jsdom tests.
+5. **W3-4 CLI** — new `@soa-harness/cli` package. `soa status` / `soa audit tail` / `soa chat` (streaming REPL) / `soa conform`. RunnerClient library export for programmatic use. 4/4 vitest tests.
+6. **W4-5 VS Code extension stub** — `tools/vscode-extension` (private; not npm-published). Runner status tree view, `soaHarness.dispatch`, `soaHarness.tailAudit`.
+7. **W5-6 conformance probes + release** — SV-COMPAT-05..08 added to must-map + validator; CHANGELOG flipped [1.2.0-dev] → [1.2.0]; RELEASE-NOTES-v1.2.0.md; MANIFEST regen + sign; Verdaccio dry-run (11/11 green); real npm publish (9 of 11 landed in first manual loop — chat-ui + cli needed a second pass per L-64 `Debt #6`-style EOTP fatigue); v1.2.0 tags + gh releases + smoke test.
+
+**Ceremony-order retro win:**
+
+The L-64 retro rule ("pin-bump `soa-validate.lock` BEFORE npm publish") was applied this cycle and it worked — v1.2.0 shipped with PINNED_SPEC_COMMIT in `@soa-harness/schemas@1.2.0` matching the lock target `c958bf9`, no drift, no `--allow-drift` required, no v1.2.1 needed for that reason.
+
+**New debts surfaced during v1.2.0 (documented for v1.2.1):**
+
+- **Debt #8** — scaffold templates still hard-code `runnerVersion: "1.1"` in 4 `start.mjs` variants. v1.2.0 smoke test: `/version` returns `runner_version: "1.1"` despite packages being `@1.2.0`. Same class as Debt #7 (stale compile-time version baked into a generated artifact). Non-blocking — semver-shaped, just off by one minor. v1.2.1 patch: bump all `runnerVersion: "1.1"` → `"1.2"` in scaffold templates. Consider adding an automated check so each minor-release cycle flips these together.
+
+**Spec-change quality gate — first-use verdict:**
+
+The gate at `docs/spec-change-checklist.md` + project `CLAUDE.md` caught 2 critical spec flaws in §16.6 that would have shipped to the impl + validator if we'd committed straight from draft. ROI on the 2-minute evaluator pass: real. Recommend continuing to invoke it for every normative section edit going forward.
+
+**What's next:**
+
+- **v1.2.1 patch** — Debt #8 (scaffold runnerVersion) + any adoption-surfaced issues inside the 72-hour monitoring window. Same-day patch template per L-65 established.
+- **M9 — v1.3.0** — real A2A wire protocol + §17 handoff flows. L-63 scope-map stays authoritative.
+- **M10/M11/M12/M13** — SelfOptimizer integration, Gateway, tool marketplace, admin UI. Per L-63 staircase.
+
+**Pattern note:** L-66 closes M8, the first milestone that integrated the spec-change plan-evaluator gate from the start. Future milestones should treat the gate as a baseline — every §N.M draft goes through it before commit, and the commit message cites the pass. Skipping it is how v1.1.0 Debt #7 happened.
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
