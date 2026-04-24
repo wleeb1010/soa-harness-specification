@@ -276,6 +276,21 @@ def main() -> int:
     detection = detect_filtered()
     tokens = {"input": 0, "output": 0}  # refresh is free
 
+    # L-62 debt-#1 fix: graphify.report.generate displays the first 8
+    # community-member nodes without sorting (report.py:113-120). That
+    # order comes from Louvain community-detection internals which aren't
+    # deterministic run-to-run, so GRAPH_REPORT.md flaps on every post-
+    # commit regen. Sort each community's node list (by label, falling
+    # back to id) before handing it off — the library iterates in order
+    # so sorted input produces stable output.
+    communities = {
+        cid: sorted(
+            members,
+            key=lambda n: (G.nodes[n].get("label", n), n) if n in G.nodes else (n, n),
+        )
+        for cid, members in communities.items()
+    }
+
     report = generate(
         G, communities, cohesion, labels, gods, surprises,
         detection, tokens, str(ROOT), suggested_questions=questions,
