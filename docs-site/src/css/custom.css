@@ -1,0 +1,24 @@
+/* Minimal theme override for the SOA-Harness docs site. */
+
+:root {
+  --ifm-color-primary: #2e5ca1;
+  --ifm-color-primary-dark: #2a5291;
+  --ifm-color-primary-darker: #284e89;
+  --ifm-color-primary-darkest: #214171;
+  --ifm-color-primary-light: #3366b1;
+  --ifm-color-primary-lighter: #376bb8;
+  --ifm-color-primary-lightest: #4d7bc0;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  --ifm-color-primary: #5a8fd8;
+  --ifm-color-primary-dark: #4181d3;
+  --ifm-color-primary-darker: #387acf;
+  --ifm-color-primary-darkest: #2d67b1;
+  --ifm-color-primary-light: #739ddd;
+  --ifm-color-primary-lighter: #7fa4df;
+  --ifm-color-primary-lightest: #a6bfeb;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
