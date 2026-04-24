@@ -4,12 +4,13 @@
 # the ceiling or /ready flips to 503 {crl-stale}. The Runner's in-process
 # scheduler (BootOrchestrator.refreshIntervalMs) handles this in nominal
 # conditions; this timer exists as a belt-and-suspenders backup that pokes
-# the Runner's (future) /crl/refresh operator endpoint on a fixed cadence.
+# the Runner's POST /crl/refresh operator endpoint on a fixed cadence.
 #
-# For v1.1 the endpoint is not yet exposed — this unit is a placeholder that
-# ships alongside the documented intent. It can be enabled once the operator
-# endpoint lands in a subsequent M7/M8 commit. Until then the in-process
-# scheduler is sole authority and this timer is a no-op safety net.
+# Requires the Runner to be wired with opts.crlRefresh set (the reference
+# start-runner wires this automatically when SOA_RUNNER_BOOTSTRAP_BEARER is
+# set). The endpoint requires admin-bearer auth — SOA_OPERATOR_BEARER must
+# be provided via the EnvironmentFile below, which operators typically
+# populate from a secrets manager at provisioning time.
 #
 # NOTE: Do NOT enable this service directly. It is fired by its matching
 # .timer unit.
@@ -23,13 +24,10 @@ After=soa-runner.service
 Type=oneshot
 User=soa
 Group=soa
-# Until the operator endpoint lands, this is a no-op that logs the heartbeat.
-# When the endpoint exists, swap this to:
-#   ExecStart=/usr/bin/curl -fsS --max-time 30 \
-#     -H "Authorization: Bearer ${SOA_OPERATOR_BEARER}" \
-#     -X POST http://127.0.0.1:7700/crl/refresh
-ExecStart=/bin/sh -c 'echo "[crl-refresh] tick at $(date -Iseconds); in-process scheduler handles actual refresh (§7.3.1). Placeholder timer — no-op until /crl/refresh operator endpoint lands."'
 EnvironmentFile=/etc/soa/runner.env
+ExecStart=/usr/bin/curl -fsS --max-time 30 \
+  -H "Authorization: Bearer ${SOA_OPERATOR_BEARER}" \
+  -X POST http://127.0.0.1:7700/crl/refresh
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=soa-runner-crl-refresh

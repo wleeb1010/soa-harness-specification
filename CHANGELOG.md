@@ -6,6 +6,74 @@ Categories per entry: **Added** (new), **Changed** (modified), **Deprecated** (s
 
 ---
 
+## [1.1.0-dev] — unreleased (M7 in progress)
+
+Additive minor per §19.4. Everything below is wire-format-compatible with v1.0 conformance claims: a v1.0 adopter does not need to change existing code to keep passing — v1.1 adds capabilities without removing anything.
+
+### Added — Core specification (§16)
+
+- **§16.3 LLM Dispatcher (Normative)** — closes the §16.1 S3 "API call" gap. Six-step MUST lifecycle (request validation → §13.1 budget pre-check BEFORE provider call → billing_tag propagation → cancellation target registration → provider-error taxonomy mapping → one audit row per dispatch). Request/response contracts pinned to three new schemas.
+- **§16.3.1 Provider Error Taxonomy (Normative)** — seven provider conditions (HTTP 429 / 401 / 5xx / network / content-filter / context-length / request-invalid) classified into seven `dispatcher_error_code` values with JSON-RPC-aligned numeric subcodes (`-32100`..`-32105`, `-32110`). Retry budget: ≤3 retries total across retryable classes.
+- **§16.4 Dispatcher Observability (Normative)** — `GET /dispatch/recent?session_id=<sid>&limit=<n>` — newest-first ring, session-bearer auth, admin-bearer override, not-a-side-effect invariant, byte-identity across reads excluding `generated_at`.
+- **§16.5 Reserved Dispatcher Test IDs (Normative)** — `SV-LLM-01..07` anchored to §16.3 / §16.3.1 / §16.4.
+
+### Added — StopReason + error catalog
+
+- **§13.4 StopReason enum** — `DispatcherError` added. Single new closed-enum member; the seven fine-grained error codes live in the `dispatcher_error_code` observability field to keep the StopReason surface tight.
+- **§24 Error Code Taxonomy** — new "Dispatcher" category with the seven JSON-RPC subcodes listed in §16.3.1.
+
+### Added — Schemas (v1.1 `$id` namespace)
+
+- `schemas/llm-dispatch-request.schema.json`
+- `schemas/llm-dispatch-response.schema.json` (allOf/if: `dispatcher_error_code` non-null iff `stop_reason` === `"DispatcherError"`)
+- `schemas/dispatch-recent-response.schema.json`
+
+### Added — Must-map
+
+- `SV-LLM-01..07` under new `SV-LLM` category, registered in phase 4 (Runtime Core) execution order.
+- Seven new `must_coverage` anchors: `§16.3#dispatcher-request`, `§16.3#dispatcher-response`, `§16.3#lifecycle-budget`, `§16.3#lifecycle-billing-tag`, `§16.3#lifecycle-cancellation`, `§16.3#lifecycle-audit`, `§16.3.1#provider-error-taxonomy`.
+
+### Added — Deployment artifacts (`docs/m7/deployment/`)
+
+- Reference `Dockerfile.runner` (multi-stage Node 22 Alpine, non-root, tini, healthcheck against `/ready`).
+- Minimal `docker-compose.yml` (Runner-only topology, loopback-only, read-only rootfs + tmpfs `/tmp`).
+- `systemd/soa-runner.service` hardened per §25.3 guidance (ProtectSystem=strict, NoNewPrivileges, RestrictSUIDSGID, MemoryDenyWriteExecute, SystemCallFilter).
+- `systemd/soa-runner-crl-refresh.{service,timer}` — hourly CRL refresh heartbeat, activates impl's new `/crl/refresh` endpoint.
+
+### Added — Tooling
+
+- `scripts/m7/bench-v1.0-baseline.mjs` — benches the v1.0 Runner across Windows / WSL2 / Linux environments; produces the pinned perf anchors for M11+ SV-PERF-* regression gates.
+- `scripts/check-pin-drift.py` — detects silent divergence between impl and validate `soa-validate.lock` files.
+- `.github/workflows/pin-drift.yml` — daily + pre-merge CI gate running the pin-drift detector.
+
+### Added — Docs site (`docs-site/`)
+
+- Docusaurus-based MVP with intro / install / getting-started / conformance-tiers + reference architecture + LLM dispatcher pages. Builds cleanly (`cd docs-site && npm install && npm run build`). Deployment + versioning deferred to M11.
+
+### Added — Reference implementation (`soa-harness-impl`)
+
+- `packages/runner/src/dispatch/` — Dispatcher class + ProviderAdapter interface + InMemoryTestAdapter + DSL for conformance fault injection. 31 unit tests covering the 6-step lifecycle + taxonomy + retry budget.
+- `POST /dispatch` + `GET /dispatch/recent` HTTP routes (plus `POST /dispatch/debug/set-behavior` admin-only for test-double fault injection; registered only when the adapter is the in-memory test-double).
+- `POST /crl/refresh` admin-bearer endpoint that drives `BootOrchestrator.refreshAllNow()`. Activates the systemd timer placeholder.
+- `GET /version` now surfaces `spec_commit_sha` (baked in at schemas build time via `PINNED_SPEC_COMMIT` export).
+- Env-driven test-double wiring in `start-runner`: `SOA_DISPATCH_ADAPTER=test-double` + `SOA_DISPATCH_TEST_DOUBLE_CONFIRM=1` + `SOA_DISPATCH_TEST_DOUBLE_BEHAVIOR=<dsl>`.
+- `create-soa-agent` templates gain `npm run conform` script + `conform.mjs` that runs `soa-validate` against the scaffolded Runner.
+
+### Added — Validator (`soa-validate`)
+
+- `SV-LLM-01..02` vector probes + `SV-LLM-03/04/06/07` live probes against the new dispatch HTTP routes. `SV-LLM-05` still skips pending streaming-mode dispatcher (M8).
+- `--check-pins` flag — reads this validator's own `soa-validate.lock` + hits `<impl>/version` to compare `spec_commit_sha`; exits 1 on drift unless `--allow-drift`.
+
+### Changed
+
+- Nothing. All v1.1 additions are additive. A v1.0 conformance claim remains valid with no code changes.
+
+### Fixed
+
+- Nothing. No errata-class corrections in v1.1 (errata continue to land on the `v1.0-lts` branch per `docs/m7/v1.0-lts-branch-policy.md`).
+
+---
+
 ## [1.0.0] — 2026-04-XX (TBD — release date filled at Phase 3)
 
 Initial production release. The specification has completed four rounds of graph-based structural audit plus external reviews. Conformance harness (`soa-validate`), reference runtime (`@soa-harness/runner`), and three reference Memory MCP backends (sqlite / mem0 / Zep) ship simultaneously under the same version tag.
