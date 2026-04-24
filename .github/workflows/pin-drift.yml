@@ -1,0 +1,47 @@
+name: pin-drift
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # Daily pin-drift check — catches cases where impl or validate bumped
+    # without coordinated spec-repo notification.
+    - cron: "17 6 * * *"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout spec repo
+        uses: actions/checkout@v4
+        with:
+          path: spec
+
+      - name: Checkout impl repo
+        uses: actions/checkout@v4
+        with:
+          repository: wleeb1010/soa-harness-impl
+          path: soa-harness-impl
+        continue-on-error: true
+
+      - name: Checkout validate repo
+        uses: actions/checkout@v4
+        with:
+          repository: wleeb1010/soa-validate
+          path: soa-validate
+        continue-on-error: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Report + gate on pin drift
+        run: |
+          cd spec
+          python scripts/check-pin-drift.py \
+            --impl-root ../soa-harness-impl \
+            --validate-root ../soa-validate \
+            --ci
