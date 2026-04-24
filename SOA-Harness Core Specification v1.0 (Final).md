@@ -3051,18 +3051,57 @@ The "destination task execution" deadline is the one that drives the `timed-out`
 
 Operator overrides apply at Runner boot via the respective env vars; values SHOULD be positive integers; absent or malformed values fall back to the defaults. Agent Cards MAY advertise non-default deadlines via a new `a2a_deadlines` object under `adapter_notes` (reserved for v1.3.x schema addition); until that schema ships, callers SHOULD assume defaults.
 
+#### 17.2.3 A2A capability advertisement and matching (Normative, v1.3)
+
+`handoff.offer` carries `capabilities_needed: string[]` — the caller's declaration of which capabilities the destination must provide in order for the transfer to make sense. v1.0 defined the request surface but did not define how the destination declares its own capability surface or how matching works. v1.3 closes that gap.
+
+**Advertisement.** A Runner that serves A2A handoffs declares its capability surface in its §6 Agent Card under a new optional `a2a` object — an A2A-scoped field grouping introduced in v1.3 that holds `a2a.capabilities: string[]` in this release and MAY grow to hold future A2A-specific fields in v1.3.x+. Each capability token is an opaque string. The Agent Card JSON Schema is updated in the same commit to declare the `a2a` property; Cards predating v1.3 that do not declare `a2a` remain valid per §19.4.1's additive-minor rule.
+
+A Runner with `a2a` absent, OR `a2a.capabilities` absent, OR `a2a.capabilities` equal to `[]` is treated identically: the Runner serves **no** A2A capabilities. These three encodings MUST produce the same matching behaviour.
+
+**`capabilities_needed` validation (Normative).** Before matching, the receiver MUST validate `capabilities_needed`:
+
+- Each entry MUST be a non-empty string. Any empty string in `capabilities_needed` is a protocol violation and the receiver MUST return `HandoffRejected` (reason `wire-incompatibility`).
+- Duplicate entries are deduplicated by the receiver before matching (order-preserving on first occurrence); this MUST NOT be observable as a rejection.
+- Receivers MAY reject with `HandoffRejected` (reason `wire-incompatibility`) if `capabilities_needed.length > 256` (soft DoS cap; caller implementations SHOULD remain well below this).
+- An empty array is legal and is explicitly handled by the matching truth table below.
+
+**Matching (Normative truth table).** The receiver's response to `handoff.offer` on capability grounds is fully determined by the pair (receiver A2A capability state, caller `capabilities_needed` state) per the table below. A receiver MAY further reject an accept-on-capability row for non-capability reasons (workload, billing-tag policy, trust policy) with `{accept:false, reason:<non-capability-reason>}`; receivers MUST NOT return -32003 `CapabilityMismatch` from any row where the capability check itself passes.
+
+| Receiver A2A state | `capabilities_needed` | Response |
+|---|---|---|
+| Serves none (absent / empty) | empty `[]` | `{accept:true}` (no capability gate) |
+| Serves none (absent / empty) | non-empty | `{accept:false, reason:"no-a2a-capabilities-advertised"}` |
+| Serves set S (non-empty) | empty `[]` | `{accept:true}` (no capability gate) |
+| Serves set S (non-empty) | non-empty, ⊆ S | `{accept:true}` (MAY reject for non-capability reason) |
+| Serves set S (non-empty) | non-empty, ⊄ S | JSON-RPC error `-32003 CapabilityMismatch` with `error.data.missing_capabilities` |
+
+The `{accept:false, reason:"no-a2a-capabilities-advertised"}` string is a normative byte-exact reason code — validators assert that exact string, not a paraphrase. The reason-code vocabulary on the `{accept:false}` surface remains otherwise open (per §17.2's `reason?` note); a closed-set rollout for other accept-false reasons lands in v1.4+ if adopter feedback warrants it.
+
+**Comparison (Normative).** Capability tokens are compared by byte equality over the UTF-8 encoding of each string. Receivers MUST NOT apply Unicode normalization (NFC, NFD, NFKC, NFKD), case folding, whitespace trimming, or any other transformation before matching. Caller and receiver coordinate on token identity out-of-band or by convention (suggested: `lowercase-hyphenated` ASCII tokens such as `summarize-document`, `extract-entities`, `translate-en-de`); the spec imposes no pattern constraint on the tokens themselves in v1.3, and implementations MUST NOT reject any well-formed string for failing such a convention.
+
+**Error data shape (Normative).** When -32003 fires from §17.2.3 matching, the JSON-RPC error object MUST include `error.data: { missing_capabilities: string[] }` listing every token from `capabilities_needed` (after deduplication) that is NOT a member of the receiver's `a2a.capabilities` set, in first-occurrence order. §17.3's error-code table is updated in the same commit to document this field.
+
+**Scope.** §17.2.3 governs capability matching at `handoff.offer` only. `handoff.transfer` MAY also return -32003 `CapabilityMismatch` if capability state drifts between offer and transfer (e.g., the destination Runner restarted and re-advertised a narrower surface); the same `error.data.missing_capabilities` contract applies.
+
+Test anchor: `SV-A2A-17` (reserved at this commit) verifies the truth-table matrix, the byte-exact `"no-a2a-capabilities-advertised"` reason string, and the `error.data.missing_capabilities` shape. The pre-existing `SV-A2A-05` is narrowed in the same must-map commit to assert only the -32003 error-code membership; trigger-condition assertions move to `SV-A2A-17`.
+
+##### 17.2.3.1 Token registry (Informative, v1.3)
+
+v1.3 does not ship a global capability token registry. Implementations MAY coordinate via adapter-specific documentation, shared vocabulary files, or bilateral agreements. A reserved-tokens Normative successor (§17.2.3.2) lands in v1.4+ if a cross-ecosystem vocabulary emerges.
+
 ### 17.3 Errors (JSON-RPC Error Codes)
 
-| Code | Meaning |
-|---|---|
-| -32000 | AgentUnavailable |
-| -32001 | AgentCardInvalid |
-| -32002 | AuthFailed |
-| -32003 | CapabilityMismatch |
-| -32050 | HandoffBusy |
-| -32051 | HandoffRejected |
-| -32052 | HandoffStateIncompatible |
-| -32060 | TrustAnchorMismatch |
+| Code | Meaning | Error data (v1.3+) |
+|---|---|---|
+| -32000 | AgentUnavailable | — |
+| -32001 | AgentCardInvalid | — |
+| -32002 | AuthFailed | — |
+| -32003 | CapabilityMismatch | `{ missing_capabilities: string[] }` when emitted from §17.2.3 matching; first-occurrence-ordered after dedup. |
+| -32050 | HandoffBusy | — |
+| -32051 | HandoffRejected | — |
+| -32052 | HandoffStateIncompatible | — |
+| -32060 | TrustAnchorMismatch | — |
 
 ### 17.4 State Transfer Scope
 

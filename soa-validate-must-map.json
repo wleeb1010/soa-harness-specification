@@ -403,6 +403,14 @@
       "severity": "moderate",
       "assertion": "Each §17.2 method carries a default deadline (5s describe/offer/status, 10s return, 30s transfer, 300s destination-task-execution) that the receiving Runner MUST enforce. Operator env overrides (SOA_A2A_DESCRIBE_DEADLINE_S, SOA_A2A_OFFER_DEADLINE_S, SOA_A2A_TRANSFER_DEADLINE_S, SOA_A2A_STATUS_DEADLINE_S, SOA_A2A_RETURN_DEADLINE_S, SOA_A2A_TASK_DEADLINE_S) replace the default when set to a positive integer; absent or malformed values fall back to defaults. Task-execution deadline expiry emits SessionEnd with stop_reason=MaxTurns and transitions handoff.status to timed-out."
     },
+    "SV-A2A-17": {
+      "name": "A2A capability advertisement and matching",
+      "section": "§17.2.3",
+      "section_title": "A2A Wire Protocol — capability advertisement and matching (v1.3)",
+      "profile": "core+handoff",
+      "severity": "critical",
+      "assertion": "§17.2.3 truth-table matrix observable end-to-end: (a) Agent Card a2a absent, a2a.capabilities absent, or a2a.capabilities=[] are semantically identical ('serves no A2A capabilities'); (b) capabilities_needed=[] against any receiver state → {accept:true} on capability grounds; (c) capabilities_needed non-empty against 'serves none' → {accept:false, reason:\"no-a2a-capabilities-advertised\"} (byte-exact reason string); (d) capabilities_needed ⊆ a2a.capabilities → capability check passes (receiver MAY still reject for non-capability reasons but MUST NOT return -32003); (e) capabilities_needed ⊄ a2a.capabilities → JSON-RPC error -32003 CapabilityMismatch with error.data.missing_capabilities: string[] being the tokens in capabilities_needed not in a2a.capabilities, first-occurrence-ordered after dedup. Tokens compared byte-exact over UTF-8; no Unicode normalization, case folding, or whitespace trimming applied. Empty-string entries in capabilities_needed MUST return HandoffRejected reason=wire-incompatibility. Receivers MAY reject capabilities_needed.length>256 with HandoffRejected reason=wire-incompatibility."
+    },
     "SV-ENC-01": {
       "name": "UTF-8 no BOM",
       "section": "§1",
@@ -1548,12 +1556,12 @@
       "assertion": "Well-formed offer accepted with {accept:true}."
     },
     "SV-A2A-05": {
-      "name": "handoff.offer reject",
+      "name": "handoff.offer capability-mismatch error-code",
       "section": "§17.2",
       "section_title": "Methods",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "CapabilityMismatch returns -32003."
+      "assertion": "When §17.2.3 matching determines a capability mismatch, the receiver returns JSON-RPC error -32003 (CapabilityMismatch). This entry asserts only the error-code membership; trigger conditions and error.data shape are asserted by SV-A2A-17."
     },
     "SV-A2A-06": {
       "name": "handoff.transfer success",
@@ -2253,7 +2261,8 @@
       "SV-A2A-13",
       "SV-A2A-14",
       "SV-A2A-15",
-      "SV-A2A-16"
+      "SV-A2A-16",
+      "SV-A2A-17"
     ],
     "SV-PRIN": [
       "SV-PRIN-01",
