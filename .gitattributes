@@ -1,0 +1,41 @@
+# Normalize line endings to LF everywhere that matters.
+# Stops the CRLF-replacement warnings on Windows commits and keeps the
+# MANIFEST + schema + JCS byte-stability invariants from being perturbed
+# by a cross-platform checkout.
+
+* text=auto eol=lf
+
+# JCS canonicalization relies on exact byte shape; these MUST stay LF.
+*.json                text eol=lf
+*.jws                 text eol=lf
+*.md                  text eol=lf
+*.py                  text eol=lf
+*.mjs                 text eol=lf
+*.ts                  text eol=lf
+*.js                  text eol=lf
+*.go                  text eol=lf
+*.yaml                text eol=lf
+*.yml                 text eol=lf
+*.toml                text eol=lf
+*.service             text eol=lf
+*.timer               text eol=lf
+Dockerfile*           text eol=lf
+
+# Shell scripts on Linux / macOS must be LF.
+*.sh                  text eol=lf
+*.bash                text eol=lf
+
+# Binary — don't touch.
+*.png                 binary
+*.jpg                 binary
+*.jpeg                binary
+*.gif                 binary
+*.pdf                 binary
+*.zip                 binary
+*.tar                 binary
+*.gz                  binary
+*.ico                 binary
+*.woff                binary
+*.woff2               binary
+*.ttf                 binary
+*.otf                 binary
