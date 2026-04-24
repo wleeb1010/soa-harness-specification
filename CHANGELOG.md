@@ -6,6 +6,22 @@ Categories per entry: **Added** (new), **Changed** (modified), **Deprecated** (s
 
 ---
 
+## [1.2.1] — 2026-04-24
+
+Patch release — editorial-class per §19.4. No spec changes. Fixes a scaffold-template wiring bug (Debt #8 from L-66) where `create-soa-agent` scaffolded Runners reported `runner_version: "1.2"` correctly in the field but `/version` still emitted "1.1" because the scaffold hard-codes `runnerVersion` across four `start.mjs` templates and we missed bumping it from the v1.1.1 patch set.
+
+### Fixed — Reference implementation (`soa-harness-impl`)
+
+- **`create-soa-agent` scaffold templates** — all four variants (`runner-starter`, `runner-starter-mem0`, `runner-starter-zep`, `runner-starter-none`) now hard-code `runnerVersion: "1.2"` instead of stale `"1.1"`. Fresh `npx create-soa-agent@1.2.1` produces a Runner whose `/version` correctly self-identifies as 1.2.x. Debt #8 closed.
+- Scaffold `package.json` deps bumped to `^1.2.1` across all variants.
+
+### Spec artifacts — unchanged from v1.2.0
+
+- `MANIFEST.json` / `MANIFEST.json.jws` byte-identical to v1.2.0. The v1.2.0 signed release bundle remains authoritative for v1.2.1 (pin target `c958bf9`). No re-signing ceremony.
+- `PINNED_SPEC_COMMIT` in `@soa-harness/schemas@1.2.1` stays at `c958bf9` — pure impl patch.
+
+---
+
 ## [1.2.0] — 2026-04-24
 
 Additive minor per §19.4. Streaming dispatcher + chat UI + CLI + VS Code extension stub. Everything below is wire-format-compatible with v1.0 / v1.1 conformance claims: an implementation that only supports §16.3 synchronous dispatch stays v1.0-conformant. Streaming is an opt-in capability advertised via the `ProviderAdapter.dispatchStream?()` method.
