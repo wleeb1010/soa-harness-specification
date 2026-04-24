@@ -28,12 +28,14 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
 
 HERE = Path(__file__).resolve().parent
 SPEC_ROOT = HERE.parent
+DEFAULT_STALE_DAYS = 30
 
 
 def load_lock(path: Path) -> dict[str, Any] | None:
@@ -50,6 +52,7 @@ def load_lock(path: Path) -> dict[str, Any] | None:
 def summarize(name: str, lock: dict[str, Any]) -> dict[str, str]:
     pin = lock.get("spec_commit_sha", "?")
     status = lock.get("spec_manifest_status", "?")
+    pin_date = lock.get("spec_commit_date", "?")
     # Find the bump entry whose bumped_to == current pin. pin_history
     # is append-ish but not strictly chronological — the entry that
     # produced the *current* pin is what we want.
@@ -66,9 +69,25 @@ def summarize(name: str, lock: dict[str, Any]) -> dict[str, str]:
         "repo": name,
         "pin": pin,
         "pin_short": pin[:12],
+        "pin_date": pin_date,
         "manifest_status": status,
         "last_reason_head": first_line,
     }
+
+
+def age_in_days(pin_date_str: str) -> int | None:
+    """Return days since pin_date (UTC), or None when unparseable."""
+    if not pin_date_str or pin_date_str == "?":
+        return None
+    # Accept both YYYY-MM-DD and full ISO-8601.
+    try:
+        d = date.fromisoformat(pin_date_str[:10])
+    except ValueError:
+        try:
+            d = datetime.fromisoformat(pin_date_str.replace("Z", "+00:00")).astimezone(timezone.utc).date()
+        except (ValueError, TypeError):
+            return None
+    return (date.today() - d).days
 
 
 def main() -> int:
@@ -77,6 +96,8 @@ def main() -> int:
     parser.add_argument("--validate-root", type=Path, default=SPEC_ROOT.parent / "soa-validate")
     parser.add_argument("--ci", action="store_true", help="Exit non-zero on drift (for CI gates).")
     parser.add_argument("--allow-drift", action="store_true", help="Report drift but exit 0 even in CI mode.")
+    parser.add_argument("--stale-days", type=int, default=DEFAULT_STALE_DAYS,
+                        help=f"Warn when a pin's spec_commit_date is older than N days. Default {DEFAULT_STALE_DAYS}. Warning only — does not fail CI.")
     args = parser.parse_args()
 
     impl_lock = load_lock(args.impl_root / "soa-validate.lock")
@@ -109,6 +130,18 @@ def main() -> int:
     # Divergence check
     pins = {s["repo"]: s["pin"] for s in summaries}
     unique_pins = set(pins.values())
+
+    # Stale-lock check — warning only, doesn't affect exit code.
+    stale = []
+    for s in summaries:
+        age = age_in_days(s["pin_date"])
+        if age is not None and age > args.stale_days:
+            stale.append((s["repo"], s["pin_short"], s["pin_date"], age))
+    if stale:
+        print(f"\nWARNING: {len(stale)} pin(s) older than {args.stale_days} days:")
+        for repo, pin_short, pin_date, age in stale:
+            print(f"    {repo} pin {pin_short} (date {pin_date}, {age} days old)")
+        print("  Consider coordinating a pin-bump — see docs/pin-bump-runbook.md.")
 
     if len(unique_pins) <= 1:
         print("\nOK - no drift; all present siblings pin to the same spec commit.")
