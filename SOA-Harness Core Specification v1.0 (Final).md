@@ -2243,7 +2243,7 @@ The inlined schemas below constitute `stream-event-payloads.schema.json`. Every 
     "SessionStart":   { "type": "object", "required": ["agent_name","agent_version","card_version"], "properties": { "agent_name":{"type":"string"},"agent_version":{"type":"string"},"card_version":{"type":"string"},"resumed":{"type":"boolean","default":false} }, "additionalProperties": false },
     "SessionEnd":     { "type": "object", "required": ["stop_reason"], "properties": { "stop_reason":{"type":"string"},"final_event_id":{"type":"string"} }, "additionalProperties": false },
     "MessageStart":   { "type": "object", "required": ["message_id","role"], "properties": { "message_id":{"type":"string"},"role":{"type":"string","enum":["user","assistant","tool","system"]} }, "additionalProperties": false },
-    "MessageEnd":     { "type": "object", "required": ["message_id"], "properties": { "message_id":{"type":"string"},"usage":{"type":"object"} }, "additionalProperties": false },
+    "MessageEnd":     { "type": "object", "required": ["message_id"], "properties": { "message_id":{"type":"string"},"usage":{"type":"object"},"stop_reason":{"type":"string"},"dispatcher_error_code":{"type":["string","null"]} }, "additionalProperties": false },
     "ContentBlockStart": { "type": "object", "required": ["block_id","content_type"], "properties": { "block_id":{"type":"string"},"content_type":{"type":"string","enum":["text","tool_use","thinking"]} }, "additionalProperties": false },
     "ContentBlockDelta": { "type": "object", "required": ["block_id","delta"], "properties": { "block_id":{"type":"string"},"delta":{"type":"string"} }, "additionalProperties": false },
     "ContentBlockEnd":   { "type": "object", "required": ["block_id"], "properties": { "block_id":{"type":"string"} }, "additionalProperties": false },
@@ -2910,8 +2910,8 @@ Semantics:
 
 1. **Optional at the type level.** An adapter MAY provide only `dispatch` (sync). Such an adapter does not advertise streaming.
 2. **Byte-for-byte event emission.** Every item yielded from the iterable MUST validate against `stream-event.schema.json` — i.e. it is one of the 27-value closed enum defined in §14.1. No other event shape is permitted.
-3. **Abort semantics.** When the supplied `AbortSignal` fires, the adapter MUST stop yielding new `ContentBlockDelta` events before the next delta is emitted. The adapter MAY yield a terminal `ContentBlockEnd` + `MessageEnd` pair after the abort to close any half-open block; after that pair, the adapter MUST stop iterating. Adapters that cannot abort cleanly MUST surface the abort as `DispatcherError` with `dispatcher_error_code = DispatcherAdapterError`.
-4. **One adapter call per dispatch.** Exactly as in synchronous mode, the dispatcher invokes `dispatchStream` at most once per logical request. Retries (rate-limit, 5xx, network) restart the stream from scratch after a fresh adapter call; partial streams from a prior attempt MUST NOT leak into a retried stream.
+3. **Abort semantics.** When the supplied `AbortSignal` fires, the adapter MUST stop yielding new `ContentBlockDelta` events before the next delta is emitted. The adapter MUST emit a terminal `MessageEnd`, and MUST emit a `ContentBlockEnd` first if any block was open at the moment of abort (required for the §16.6.3 block-nesting invariant to hold). After that terminal pair, the adapter MUST stop iterating. Adapters that cannot abort cleanly MUST surface the abort as `DispatcherError` with `dispatcher_error_code = DispatcherAdapterError`; the dispatcher then emits a synthetic `MessageEnd` on the adapter's behalf so the sequence invariants are preserved at the wire.
+4. **One adapter call per dispatch, with bounded retry window.** Exactly as in synchronous mode, the dispatcher invokes `dispatchStream` at most once per logical request. Dispatcher-layer retries (rate-limit, 5xx, network per §16.3.1) fire ONLY before the first StreamEvent has been yielded from the adapter — once any event has been flushed to the SSE wire the bytes cannot be rewound, so subsequent adapter failures MUST surface as a synthetic terminal `MessageEnd` with `stop_reason = "DispatcherError"` and the matching `dispatcher_error_code`, NOT as a retried stream. Partial streams from a pre-first-yield retry MUST NOT leak into the next attempt.
 
 #### 16.6.2 HTTP surface — `POST /dispatch` with `Accept: text/event-stream`
 
@@ -2929,9 +2929,13 @@ When the incoming HTTP request carries `Accept: text/event-stream` AND the reque
 
    `event.type` is the `type` field of the StreamEvent (e.g. `MessageStart`, `ContentBlockDelta`). `JCS(event)` is the RFC 8785-canonicalized JSON of the full event object — the same bytes that feed `schemas/stream-event.schema.json` validation. The trailing blank line MUST be present (SSE frame delimiter).
 
-4. **Terminate the stream.** After the terminal `MessageEnd` event, the Runner MUST emit one additional SSE comment-line `: stream-done\n\n` and then close the TCP connection. Clients MAY treat either the comment or the connection close as the termination signal.
+4. **Terminate the stream.** After the terminal `MessageEnd` event, the Runner MUST close the TCP connection. The Runner SHOULD emit an additional SSE comment-line `: stream-done\n\n` immediately before the close as a belt-and-suspenders termination hint for clients whose SSE parser keys off comment lines; TCP close is the SSE-native termination signal and the authoritative one, so clients MUST NOT require the comment.
 
 When `Accept: text/event-stream` is NOT present — regardless of the body's `stream` field — the Runner MUST produce the synchronous response defined in §16.3 (HTTP `200` with `llm-dispatch-response.schema.json` body). This keeps §16.3 adopters byte-compatible with v1.0 even when their request payloads opt into `stream: true`.
+
+When `Accept: text/event-stream` IS present but the body's `stream` field is explicitly `false`, the Runner MUST produce the synchronous §16.3 response with `Content-Type: application/json` — the Accept header expresses client *capability*, the body field expresses client *intent*, and intent wins. This removes the Accept-yes / stream-false ambiguity that would otherwise fork implementations.
+
+`DispatcherStreamUnsupported` audit rows (the 406 path from step 1 above) are real dispatch rows and count toward `/audit/tail` volume; operators aware of the misconfiguration-amplification risk MAY wire a §14.5.3 backpressure-style rate limit specifically for the streaming-mismatch path. The retention-class of these rows follows the session's `granted_activeMode` per §10.5.6 — same rule as any other dispatch row.
 
 #### 16.6.3 StreamEvent sequence invariants
 
@@ -2940,7 +2944,7 @@ A streamed dispatch's event sequence MUST satisfy the following invariants (all 
 1. **Envelope.** Exactly one `MessageStart` opens the stream; exactly one `MessageEnd` closes it.
 2. **Block nesting.** Between `MessageStart` and `MessageEnd`, content blocks nest: `ContentBlockStart` → `ContentBlockDelta*` → `ContentBlockEnd`. Blocks MUST NOT overlap. `ContentBlockDelta` events outside an open block are a protocol violation.
 3. **Monotonic sequence.** StreamEvents carry the usual §14.1 `sequence` field; streaming mode preserves strict per-session monotonicity exactly as synchronous mode does.
-4. **Terminal `stop_reason`.** `MessageEnd.stop_reason` MUST be a value of the §13.4 closed enum. Streaming-specific values: `NaturalStop` on clean completion; `UserInterrupt` on an abort triggered by a §10.3 `PermissionDecision` or explicit cancellation endpoint; `DispatcherError` with matching `dispatcher_error_code` on adapter-surfaced failures.
+4. **Terminal `stop_reason`.** `MessageEnd.stop_reason` MUST be a value of the §13.4 closed enum. Streaming-specific mappings: `NaturalStop` on clean completion; `UserInterrupt` on an abort triggered by a §10.3 `PermissionDecision` or explicit cancellation endpoint; `DispatcherError` with matching `dispatcher_error_code` on adapter-surfaced failures; `BudgetExhausted` when §13.2 mid-stream budget enforcement fires between delta boundaries; `MemoryDegraded` when the three-consecutive-Memory-failure rule (§8.3) trips during delta processing. Any other value from §13.4 is permissible but requires an adapter- or Runner-side rationale documented per §18.5.4 deviation process.
 5. **Audit row.** Exactly one `/audit/tail` row is produced per streamed dispatch, exactly as in §16.3 synchronous mode. The row's `dispatcher_error_code` is `null` on `UserInterrupt` (cancellation is not an error) and non-null on `DispatcherError`.
 
 #### 16.6.4 Mid-stream cancellation (SV-LLM-05)
@@ -2948,7 +2952,13 @@ A streamed dispatch's event sequence MUST satisfy the following invariants (all 
 `SV-LLM-05` is the streaming cancellation test. A live-path Runner MUST satisfy:
 
 1. **Trigger.** A `UserInterrupt` is raised by either (a) a `PermissionDecision` that denies the in-flight dispatch, or (b) a POST to the cancellation endpoint defined below.
-2. **Cancellation endpoint.** Runners MUST expose `POST /dispatch/{correlation_id}/cancel` with session-bearer auth. The endpoint returns `202 Accepted` with body `{ "cancelling": true }` and fires the abort signal on the in-flight `dispatchStream` iterator.
+2. **Cancellation endpoint.** Runners MUST expose `POST /dispatch/{correlation_id}/cancel` with session-bearer auth (same scope as `POST /dispatch` itself — a bearer that owns the session that owns the dispatch). Responses:
+   - `202 Accepted` with body `{ "cancelling": true }` when a matching in-flight dispatch exists and the abort signal fires on the `dispatchStream` iterator.
+   - `404 Not Found` with body `{ "error": "no-in-flight-dispatch" }` when no dispatch matching that `correlation_id` is in flight (already completed, never started, or already cancelled and released).
+   - `400 Bad Request` on a malformed `correlation_id` (fails the §16.3 request-schema `cor_[A-Za-z0-9]{16,}` pattern).
+   - Rate limit: 120 req/min per bearer, same convention as `POST /dispatch`.
+
+   The endpoint is idempotent under the 404-on-already-cancelled rule: a second cancel of the same `correlation_id` after the dispatch has terminated returns 404, not an error. Clients MUST NOT treat 404 as a cancellation failure — it indicates the dispatch is no longer cancellable (which is the terminal state the cancel wants to drive toward).
 3. **Emission boundary.** After the abort signal fires, the Runner MUST NOT emit any further `ContentBlockDelta` events for the in-flight dispatch. The Runner MAY emit one terminal `ContentBlockEnd` (if a block was open) and MUST emit `MessageEnd` with `stop_reason = "UserInterrupt"`.
 4. **Audit.** The dispatch's `/audit/tail` row carries `stop_reason = "UserInterrupt"` and `dispatcher_error_code = null`. The row's hash-chain linkage is identical to §16.3 audit rules.
 

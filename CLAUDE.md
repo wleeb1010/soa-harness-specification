@@ -21,6 +21,22 @@ Prefer MCP queries over `Grep`/`Read` for:
 2. Check if the section has a test ID mapping in `soa-validate-must-map.json` or `ui-validate-must-map.json`
 3. If the edit affects wire format, versioned behavior, or security invariants, it's a `§19.4` major/minor bump — flag it explicitly
 
+## Before committing any normative section (HARD GATE)
+
+**MANDATORY:** After drafting but BEFORE `git commit`, run the plan-evaluator skill against the draft. This is not a nice-to-have — it's a hard gate defined in `docs/spec-change-checklist.md`.
+
+The evaluator returns findings in four categories (assumptions, core truths, stress-test, structural challenges). Act on them:
+
+- **Critical** → fix before committing.
+- **Moderate** → fix if cheap; otherwise address in a follow-up commit against the same PR before merge.
+- **Minor** → note in the commit message or the associated `L-NN` entry.
+
+The commit message MUST cite the evaluator pass (e.g., "plan-evaluator pass: verdict 'targeted fixes', 2 critical addressed inline, 3 moderate addressed inline, 5 minor deferred to L-67").
+
+**Why:** L-64 Debt #7 (v1.1.0 → v1.1.1 same-day patch) is the concrete cost of skipping this gate. A 2-minute evaluator pass would have caught the release-ceremony-ordering flaw. See `docs/spec-change-checklist.md` for the full rationale and the list of when this applies vs when it's optional.
+
+This rule applies to all spec authors, human or AI. Future Claude sessions: do NOT skip this step, even if the change "seems small". Every skip is a potential Debt #N.
+
 ## Authoritative files (do not reverse-engineer)
 
 - `SOA-Harness Core Specification v1.0 (Final).md` — core normative
