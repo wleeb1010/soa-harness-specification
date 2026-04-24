@@ -1617,6 +1617,35 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 - **Re-examined:** Already covered by existing rules. §6.1.1 + §5.3 require the `x5c` chain to terminate at a `security.trustAnchors` SPKI; a self-signed leaf passes ONLY if the operator has explicitly installed that leaf's SPKI as an anchor. So the demo is conformant iff its `initial-trust.json` anchors the self-signed leaf, and non-conformant otherwise. No new normative text needed — the existing chain-to-anchor rule already makes the demo-mode safety property enforceable.
 - **Resolution:** not a spec gap. The "loud warning" aspect is an adopter-UX recommendation → folds into L-06 / L-07's deployment-patterns doc if anywhere.
 
+### L-61 — M6 close + M7 kickoff: v1.0.0 shipped, full-featured roadmap begins `[milestone closure + post-v1 plan]`
+
+- **Surfaced:** 2026-04-23 · M6 shipped. v1.0.0 live: 8 npm packages at 1.0.0 (`@soa-harness/*` + `create-soa-agent`), signed MANIFEST.json.jws with Ed25519 release key (fingerprint `l5TzOjMJfyyDTuEarut87i3T8KhGBV4AeLwOXo028vI=`), tags pushed on all 3 repos, GitHub releases cut per repo, fresh-install smoke pass on Windows + WSL2 + Ubuntu proxy (Node 22.22.2). Post-launch discovery: 19 gaps remain between "Reference Implementation" (today) and "Full Featured Production-Deployable" (target). M7+ roadmap planned via plan-ultimate flow.
+
+**v1.0.0 release details:**
+- Commits: spec `59116bb` (MANIFEST regen) + `10692f6` (real JWS sign); impl `24bb16f` (v1.0 bump + archive); validate `a3eb014` (README v1.0).
+- 2FA ceremony: temporarily disabled org-level "Require 2FA for publish" for pnpm -r publish, re-enabled immediately after.
+- Retrospective: two operator errors caught before impact — PowerShell `rm` destroyed first keypair pre-encryption (regenerated cleanly, no signing had occurred); npm token pasted into chat mid-setup (revoked + regenerated). Both patterns worth codifying for future rotations: use Git Bash not PowerShell for openssl workflows; never paste tokens into chat.
+
+**M7+ scope (6 milestones, 32 weeks):**
+- Pre-M7 (2 weeks): adopter-concierge kickoff, `v1.0-lts` branch cut (DONE 2026-04-23 on all 3 repos), 48h security-patch SLA formalization, external SelfOptimizer reviewer pre-commit.
+- M7 (6 weeks): LLM dispatcher + Docker deploy + Docusaurus docs MVP + `SV-LLM-01..07` + `SV-COMPAT-01..04` → **v1.1.0**
+- M8 (6 weeks, parallel from wk 7): direct-to-Runner web UI + admin dashboard + CLI + VS Code ext + `SV-ADMIN-01..04` + `UV-CMD-07..10` → **v1.2.0**
+- M9 (8 weeks, parallel from wk 11): SelfOptimizer + `core+si` profile + session replay + `SV-SI-01..12` + external sandbox review → **v1.3.0**
+- M10 (10 weeks, parallel from wk 17): UI Gateway + OAuth/DPoP/WebAuthn + content-safety + tenant quotas + `SV-TENANT/CONTENT-*` → **v1.4.0**
+- M11 (8 weeks, parallel from wk 25): multi-agent conductor + tool marketplace + backup/restore + observability dashboards + migration guides → **v1.5.0 "Full Featured"**
+- Post-Launch Bake-Off (wk 12-40, decoupled): 2nd-party reimpl → "Bake-Off Verified" label when zero-divergence convergence passes.
+
+**Critic's 10 findings all incorporated** (see commit history for changes). Top three structural changes: (1) decouple Bake-Off from version schedule (8 weeks was never enough for 16-week 2nd-party impl), (2) parallelize M8↔M9↔M10↔M11 impl streams (compresses 38→32 weeks), (3) ship v1.1.0 at M7 end not M8 end (gives early adopters a version to pin).
+
+**User-action gates (block Pre-M7 exit):**
+1. External security reviewer identified + pre-committed for M9 §9.4+§9.7 audit
+2. 1-2 pilot adopter organizations identified for concierge program
+3. 2nd-party reimplementation partner approached for Bake-Off track (ideally identified Pre-M7 so they have 6-month head-start on the 16-week convergence work)
+
+**Version impact:** §19.4 editorial. L-61 is the M6 closure + M7 kickoff record. No normative spec change at L-61 commit itself; first M7 normative change lands in the §16 LLM dispatcher section at M7 week 2-3.
+
+**Pattern note:** L-61 follows the L-52/L-56/L-60 milestone-kickoff cadence. Distinctive shape: M7+ is the FIRST milestone sequence that operates against a public, versioned, adopter-visible release (v1.0.0 shipped). Risk profile shifts from "ship the spec correctly" (M1-M6) to "evolve the spec additively without breaking adopters" — every future change routes through `docs/errata-policy.md` editorial/minor/major decision tree. The `v1.0-lts` branch exists precisely so adopters who don't want to track main get predictable security fixes.
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.

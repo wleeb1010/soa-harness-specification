@@ -1,6 +1,6 @@
 # SOA-Harness Governance
 
-**Status as of 2026-04-20: single-maintainer project.** This document exists to state that plainly rather than hide behind a "working group" facade.
+**Status as of 2026-04-23: single-maintainer project; v1.0.0 shipped.** This document exists to state that plainly rather than hide behind a "working group" facade.
 
 ## Current state
 
@@ -29,7 +29,7 @@ The project explicitly wants to grow to a working group with ≥ 3 maintainers f
 
 1. **At least one external reference implementation passes bake-off** (see `soa-validate` repo for the bake-off protocol)
 2. **At least one external adopter ships against the spec** and reports concrete implementer feedback
-3. **An independent cryptographic review** of the reference implementation's signing paths (planned for M5)
+3. **An independent cryptographic review** of the reference implementation's signing paths (scheduled for M9 SelfOptimizer sandbox review; broader signing-path review TBD)
 
 Once all three are met, the current maintainer will:
 - Rename "SOA-WG" references in the spec from aspirational to actual
@@ -40,20 +40,32 @@ Once all three are met, the current maintainer will:
 
 Two tiers, per the plan in `~/.claude/plans/`:
 
-- **"SOA-Harness v1.0 Reference Implementation"** — self-assigned by implementations that pass the full 213-test `soa-validate` suite against a pinned spec commit. Available immediately after an implementation reaches full coverage.
+- **"SOA-Harness v1.0 Reference Implementation"** — self-assigned by implementations that pass the full 420-test `soa-validate` suite (234 Core + 186 UI) against a pinned spec commit. The reference impl + validator shipped at v1.0.0 claim this label.
 - **"SOA-Harness v1.0 Bake-Off Verified"** — requires a second-party implementation whose `soa-validate` output converges to zero divergence. This is the label adopters should demand before relying on a conformance claim.
 
 Until a second implementation exists, no "Bake-Off Verified" claims can be published.
 
 ## Reporting security issues
 
-Until a formal security-disclosure process exists, report privately via GitHub Security Advisories on this repo. The current maintainer will acknowledge within 72 hours.
+Report privately via GitHub Security Advisories on the affected repo. Per `docs/m7/v1.0-lts-branch-policy.md`:
+
+| Severity | Acknowledge within | Patch released within |
+|---|---|---|
+| Critical (RCE / auth bypass / data exfil / data loss) | 48 hours | 5 business days |
+| High (compliance divergence / severe UX regression) | 7 calendar days | 14 calendar days |
+| Medium (doc or metadata correctness) | 30 calendar days | Next scheduled patch |
+
+Critical patches ship on the `v1.0-lts` branch as v1.0.Z editorial releases and are cherry-picked forward to `main` if applicable.
 
 ## Contributors
 
 This document will be updated as new maintainers join. For now:
 
-- `wleeb1010` — spec author, reference implementation lead, conformance validator lead (acknowledgment of concentration risk is implicit; mitigation is M5 independent review)
+- `wleeb1010` — spec author, reference implementation lead, conformance validator lead (acknowledgment of concentration risk is implicit; mitigation tracks: M9 external sandbox review + v1.0-lts 48h security SLA + adopter-concierge program for real-world feedback)
+
+## Adopter-concierge program
+
+The project actively recruits 1-2 pilot organizations for non-production integration during M7-M11 in exchange for weekly support and roadmap influence. See `docs/m7/adopter-concierge-program.md` for eligibility and onboarding.
 
 ## License
 
