@@ -82,7 +82,19 @@ function parseArgs(argv) {
 }
 
 function run(cmd, opts = {}) {
-  return execSync(cmd, { stdio: "pipe", encoding: "utf8", ...opts }).trim();
+  // execSync returns null when stdio is "inherit" (child output went to
+  // parent TTY, not captured), so trim() would throw. Default to empty
+  // string in that case — callers that use this via tryRun() treat
+  // "no throw + empty stdout" as success.
+  //
+  // This is an editorial back-port of the null-safe fix that originally
+  // landed in release-v1.1.mjs (L-64 Debt #6). The same latent bug
+  // existed here; it didn't fire during v1.0's Verdaccio dry-run
+  // presumably because the pnpm version at that time didn't trigger
+  // the null-return path, but re-running this script on a newer
+  // toolchain would have crashed.
+  const r = execSync(cmd, { stdio: "pipe", encoding: "utf8", ...opts });
+  return r == null ? "" : String(r).trim();
 }
 
 function tryRun(cmd, opts = {}) {
