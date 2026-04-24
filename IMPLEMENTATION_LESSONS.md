@@ -2550,7 +2550,34 @@ Three adopter paths for a CrewAI-on-SOA-Harness deployment:
 
 - `§17.2.3.2` reserved-capability-tokens registry **structural draft** (format regex, addition process, collision policy) with an **empty initial token list**. Ships as spec-only v1.4 minor. Requires plan-evaluator gate. Specific token values need community input; structural draft can move forward without that.
 - `mTLS x5t#S256` live-probe **feasibility scoping** — determine whether a test CA + cert-rotation fixture is reasonable to build in-repo or whether this stays skip-with-rationale indefinitely. Deliverable: a short design note, not impl.
-- Post-release adoption monitoring: check npm download counts, watch GitHub issues on the published packages for adopter-surfaced bugs in the v1.3.x window. Low-effort, high-signal.
+- ~~Post-release adoption monitoring~~ — executed 2026-04-24 evening; see L-77.
+
+### L-77 — Post-v1.3.x adoption-signal snapshot `[monitoring, clean]`
+
+- **Surfaced:** 2026-04-24 evening, post-L-76.
+- **Status:** `clean`. v1.3.x releases reaching real adopters; no adopter-surfaced issues in the 72-hour monitoring window per L-65's pattern.
+
+**npm weekly downloads (point-in-time snapshot at L-77 commit):**
+
+| Package | Weekly downloads |
+|---|---|
+| `@soa-harness/runner` | 522 |
+| `create-soa-agent` | 666 |
+| `@soa-harness/schemas` | 162 |
+| `@soa-harness/core` | 146 |
+| `@soa-harness/memory-mcp-sqlite` | 59 |
+| `@soa-harness/chat-ui`, `@soa-harness/cli` | below npm-api-reporting threshold (introduced v1.2.0) |
+
+**Published version chain (sanity check):** `1.2.1 → 1.3.0 → 1.3.1 → 1.3.2 → 1.3.3` is continuous across every core package; no skipped intermediate versions, no missing entries. The Debt #7/#8 regression-guard class (stale `PINNED_SPEC_COMMIT` / scaffold `runnerVersion` drift) held through all four v1.3.x releases — no adopter complaints of mismatch, no `/version`-shape regression reports.
+
+**GitHub issues (open, both main repos):**
+
+- `wleeb1010/soa-harness-impl`: zero open issues.
+- `wleeb1010/soa-harness-specification`: zero open issues.
+
+**Adopter-surface implication.** 500+ weekly `@soa-harness/runner` downloads and 600+ weekly `create-soa-agent` scaffolds, paired with zero reported issues, supports the adopter-hygiene invariant that the release pipeline (plan-evaluator + HARD-RULE + version-parity + ceremony-order) is holding. Post-release hotfix count for the entire v1.3.x arc: **zero**.
+
+**Monitoring cadence going forward:** re-run this snapshot on the next release cycle (v1.3.4 / v1.4.0 ship record) or at week-of-month cadence if no release fires. Baseline is established.
 
 ## Authoring notes
 
