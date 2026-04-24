@@ -6,6 +6,31 @@ Categories per entry: **Added** (new), **Changed** (modified), **Deprecated** (s
 
 ---
 
+## [1.3.1] — 2026-04-24
+
+Patch release — editorial-class per §19.4.1. No spec changes; spec pin stays at `b87c2ff`. Closes a silent v1.3.0 §17.2.2 conformance gap in the reference Runner + promotes seven validator probes from skip to live.
+
+### Fixed — Reference implementation (`soa-harness-impl`)
+
+- **§17.2.2 task-execution deadline enforcement.** v1.3.0 shipped the reference Runner without enforcing the §17.2.2 MUST ("Runners serving as destinations MUST enforce it" on the 300 s default / `SOA_A2A_TASK_DEADLINE_S`-overridden deadline). v1.3.1 patches the gap: `A2aTaskRegistry` now synthesizes `timed-out` on every `handoff.status` read for pre-terminal rows whose `acceptedAtS + taskExecutionDeadlineS` has elapsed. Computed-on-read pattern (no background timers; no race with `handoff.return` arriving post-deadline). `SessionEnd(stop_reason=MaxTurns)` emission per §17.2.2 remains a deferred item (session-layer infra — v1.3.2 candidate).
+- **`A2aTaskRegistry` constructor** gains `taskExecutionDeadlineS` option (default 300), wired from `resolveA2aDeadlines().task_execution_s` so `SOA_A2A_TASK_DEADLINE_S` env override propagates end-to-end. `record()` takes an optional `acceptedAtS` arg; `get()` takes an optional `nowS` arg to opt into deadline synthesis. Six new unit tests cover the boundary + terminal-lock-in + nowS-omission + synthesized-last_event_id-preservation behaviors.
+
+### Changed — Conformance validator (`soa-validate`)
+
+- **SV-A2A-03/04/10/11/12/13/14/15/16/17 promoted to live probes** (9 of 10 fully-live; SV-A2A-15 partial-live per its observable-today scope). L-70 delivered all six slices across the post-v1.3.0 day shift. SV-A2A-15's accepted→executing intermediate transition remains not-observable until a Runner-side execute hook lands (Slice 6c, queued for v1.3.2).
+- **Live probes gated on runtime env** so existing conformance runs stay green under default configuration: bearer-mode probes require `SOA_A2A_BEARER`; JWT-mode probes require `SOA_A2A_AUDIENCE` + `SOA_A2A_PROBE_CALLER_KEY_PEM` + `SOA_A2A_PROBE_CALLER_KID`; the deadline probe reads `SOA_A2A_PROBE_DEADLINE_SLEEP_S` (default 4 s) and requires the Runner under test to be booted with `SOA_A2A_TASK_DEADLINE_S=<small>`.
+
+### Package versions (11 total + 1 private)
+
+All 11 npm packages bump `1.3.0` → `1.3.1` (parity per L-64's 6-way check even when only one package changed functionally). Scaffold `@soa-harness/*` dep ranges bump `^1.3.0` → `^1.3.1`. Scaffold `runnerVersion: "1.3"` unchanged (major.minor stable across patch releases). Private `tools/vscode-extension` bumps `1.3.0` → `1.3.1`.
+
+### Spec artifacts — unchanged from v1.3.0
+
+- `MANIFEST.json` / `MANIFEST.json.jws` byte-identical to v1.3.0's signed bundle. The v1.0 release key signature on `MANIFEST.json.jws` remains valid; no re-signing ceremony. `soa-validate.lock` `spec_manifest_sha256` stays at `b386f5cc9ab6...628f1b` on both impl + validate sides.
+- `PINNED_SPEC_COMMIT` in `@soa-harness/schemas@1.3.1` stays at `b87c2ff` — pure impl patch.
+
+---
+
 ## [1.3.0] — 2026-04-24
 
 Minor release — additive-minor per §19.4.1. Closes the M9 Agent2Agent (§17) profile with six coordinated spec additions, a schema extension, seven new / narrowed must-map assertions, and a ceremony-ordered pin bump across three repos.
