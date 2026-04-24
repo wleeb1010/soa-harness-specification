@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://soa-harness.org/schemas/v1.1/release-gate-report.schema.json",
+  "title": "SOA-Harness v1.1 `soa-validate` release-gate Report",
+  "description": "Normative schema for the JSON document emitted at `--out <path>` by `soa-validate` (default path `release-gate.json`). Adopter tooling (CI gates, dashboards, badge generators) can validate against this schema rather than reading undocumented fields. Shape is backwards-compatible across v1.1.x — fields can be added (additionalProperties: true by design) but never removed or re-typed.",
+  "type": "object",
+  "required": [
+    "tool",
+    "version",
+    "profile",
+    "impl_url",
+    "live_path_enabled",
+    "declared_adapter_mode",
+    "memory_backend",
+    "total",
+    "passed",
+    "failed",
+    "skipped",
+    "errored",
+    "results"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "tool": {
+      "type": "string",
+      "const": "soa-validate",
+      "description": "Literal identifier. Allows multi-tool release-gate aggregators to key by tool."
+    },
+    "version": {
+      "type": "string",
+      "description": "soa-validate CLI version string. Typically matches a Git tag on the validate repo."
+    },
+    "profile": {
+      "type": "string",
+      "enum": ["core", "core+si", "core+handoff", "full", "ui"],
+      "description": "Conformance profile under which the run was executed."
+    },
+    "impl_url": {
+      "type": "string",
+      "description": "Base URL of the implementation Runner that was probed. Empty string when the run was vector-only."
+    },
+    "live_path_enabled": {
+      "type": "boolean",
+      "description": "True when SOA_IMPL_URL / --impl-url reached a responding Runner and live probes executed. False = vector-only run."
+    },
+    "declared_adapter_mode": {
+      "type": "string",
+      "description": "§18.5.5 --adapter flag value (langgraph | crewai | autogen | langchain-agents | custom). Empty string = native Runner mode."
+    },
+    "memory_backend": {
+      "type": "string",
+      "description": "§8.7 --memory-backend flag value (mock | sqlite | mem0 | zep | custom). Labels the run; does not change test selection."
+    },
+    "total": { "type": "integer", "minimum": 0 },
+    "passed": { "type": "integer", "minimum": 0 },
+    "failed": { "type": "integer", "minimum": 0 },
+    "skipped": { "type": "integer", "minimum": 0 },
+    "errored": { "type": "integer", "minimum": 0 },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "section", "profile", "severity", "status", "seconds"],
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Test ID (e.g. SV-BUD-01, HR-12, SV-LLM-07, SV-ADAPTER-02).",
+            "pattern": "^[A-Z][A-Z-]*-[0-9A-Z-]+$"
+          },
+          "name": { "type": "string" },
+          "section": {
+            "type": "string",
+            "description": "Spec section (§X.Y) or descriptor the test anchors against."
+          },
+          "profile": {
+            "type": "string",
+            "enum": ["core", "core+si", "core+handoff", "full", "ui"]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "moderate", "minor"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pass", "fail", "skip", "error"]
+          },
+          "seconds": { "type": "number", "minimum": 0 },
+          "message": { "type": "string" },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["path", "status", "message"],
+              "additionalProperties": true,
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "enum": ["vector", "live"],
+                  "description": "Which surface produced this evidence. Vector path checks static artifacts; live path exercises a running Runner."
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["pass", "fail", "skip", "error"]
+                },
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
