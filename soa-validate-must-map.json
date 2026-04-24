@@ -55,6 +55,7 @@
     "SV-BUD-PROJ": "Budget projection observability (§13.5).",
     "SV-REG-OBS": "Tool Registry observability (§11.4).",
     "SV-STR-OBS": "Minimum StreamEvent observability channel (§14.5).",
+    "SV-LLM": "LLM Dispatcher: request/response contract, budget pre-check, billing-tag propagation, cancellation, audit chain, provider-error taxonomy, /dispatch/recent observability (§16.3 + §16.3.1 + §16.4 + §16.5, v1.1 M7).",
     "SV-ADAPTER": "Adapter conformance: Card injection, permission interception, LangGraph event mapping, audit forwarding (§18.5 + §14.6, M4 L-52)."
   },
   "tests": {
@@ -1880,6 +1881,62 @@
       "severity": "critical",
       "assertion": "Two successive GET /budget/projection?session_id=<sid> calls against a quiescent session return byte-identical bodies when generated_at is excluded. Token counters unchanged, no cancellation fired, no audit rows."
     },
+    "SV-LLM-01": {
+      "name": "Dispatch request schema validation",
+      "section": "§16.3",
+      "section_title": "LLM Dispatcher",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "A dispatcher request validates against schemas/llm-dispatch-request.schema.json. Round-trip one valid request + three negatives (missing model, invalid billing_tag, budget_ceiling_tokens ≤ 0) — the dispatcher returns DispatcherError with dispatcher_error_code DispatcherRequestInvalid (§24 -32110) on all three; the valid request proceeds."
+    },
+    "SV-LLM-02": {
+      "name": "Dispatch response schema validation",
+      "section": "§16.3",
+      "section_title": "LLM Dispatcher",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "A synchronous-mode dispatch response validates against schemas/llm-dispatch-response.schema.json. usage.input_tokens + usage.output_tokens are non-negative integers. stop_reason is a member of the §13.4 closed enum including DispatcherError. When stop_reason is DispatcherError, dispatcher_error_code is non-null; otherwise it is null."
+    },
+    "SV-LLM-03": {
+      "name": "Budget pre-check before provider call",
+      "section": "§16.3",
+      "section_title": "LLM Dispatcher",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "With budget_ceiling_tokens=1 and a fixture adapter that records every provider network attempt, the dispatcher returns stop_reason='BudgetExhausted' with usage all zero, and zero provider-adapter calls fire. §13.1 projection gate MUST run before any network activity."
+    },
+    "SV-LLM-04": {
+      "name": "billing_tag propagation to OTel + audit",
+      "section": "§16.3",
+      "section_title": "LLM Dispatcher",
+      "profile": "core",
+      "severity": "moderate",
+      "assertion": "After a successful dispatch, GET /dispatch/recent and GET /audit/tail both return rows carrying the identical billing_tag that was passed in the dispatch request. Divergence raises BillingTagMismatch; the test asserts the non-divergent path."
+    },
+    "SV-LLM-05": {
+      "name": "Mid-stream cancellation at ContentBlockDelta boundary",
+      "section": "§16.3",
+      "section_title": "LLM Dispatcher",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "With a fixture adapter streaming N≥5 ContentBlockDelta events, the Runner fires UserInterrupt after event 2. No ContentBlockDelta is emitted after the interrupt boundary; stop_reason is 'UserInterrupt'; the dispatch audit row records dispatcher_error_code=null (cancellation is not an error)."
+    },
+    "SV-LLM-06": {
+      "name": "Dispatch audit row presence + hash chain",
+      "section": "§16.3",
+      "section_title": "LLM Dispatcher",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "Every dispatch — success, cancellation, or DispatcherError — produces exactly one row in /audit/tail whose prev_hash correctly links into the §10.5 chain. Three dispatches produce three rows; no dispatches without rows; no rows without dispatches."
+    },
+    "SV-LLM-07": {
+      "name": "Provider error taxonomy mapping",
+      "section": "§16.3.1",
+      "section_title": "Provider Error Taxonomy",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "A fixture adapter injects each of the seven §16.3.1 conditions (429 rate-limit, 401 auth, 5xx, network/TLS/DNS, content-filter refusal, context-length exceeded, request-invalid). The dispatcher maps each to the correct dispatcher_error_code + §24 subcode. Retryable conditions (rate-limit, 5xx, network) make at most 3 retries then fail; non-retryable (auth, content-filter, ctx-length, request-invalid) make zero retries."
+    },
     "SV-REG-OBS-02": {
       "name": "Tool Registry not-a-side-effect invariant",
       "section": "§11.4",
@@ -2217,6 +2274,15 @@
     ],
     "SV-STR-OBS": [
       "SV-STR-OBS-01"
+    ],
+    "SV-LLM": [
+      "SV-LLM-01",
+      "SV-LLM-02",
+      "SV-LLM-03",
+      "SV-LLM-04",
+      "SV-LLM-05",
+      "SV-LLM-06",
+      "SV-LLM-07"
     ],
     "SV-ADAPTER": [
       "SV-ADAPTER-01",
@@ -2842,6 +2908,48 @@
         "SV-A2A-08"
       ]
     },
+    "§16.3#dispatcher-request": {
+      "title": "LLM dispatcher request contract (v1.1)",
+      "tests": [
+        "SV-LLM-01"
+      ]
+    },
+    "§16.3#dispatcher-response": {
+      "title": "LLM dispatcher response contract (v1.1)",
+      "tests": [
+        "SV-LLM-02"
+      ]
+    },
+    "§16.3#lifecycle-budget": {
+      "title": "Dispatcher budget pre-check before provider call (v1.1)",
+      "tests": [
+        "SV-LLM-03"
+      ]
+    },
+    "§16.3#lifecycle-billing-tag": {
+      "title": "Dispatcher billing_tag propagation to OTel + audit (v1.1)",
+      "tests": [
+        "SV-LLM-04"
+      ]
+    },
+    "§16.3#lifecycle-cancellation": {
+      "title": "Dispatcher mid-stream cancellation at ContentBlockDelta boundary (v1.1)",
+      "tests": [
+        "SV-LLM-05"
+      ]
+    },
+    "§16.3#lifecycle-audit": {
+      "title": "Dispatcher audit-row presence + hash chain (v1.1)",
+      "tests": [
+        "SV-LLM-06"
+      ]
+    },
+    "§16.3.1#provider-error-taxonomy": {
+      "title": "Dispatcher provider error taxonomy mapping (v1.1)",
+      "tests": [
+        "SV-LLM-07"
+      ]
+    },
     "§17#a2a": {
       "title": "A2A wire protocol",
       "tests": [
@@ -3142,7 +3250,14 @@
           "SV-MEM-STATE-02",
           "SV-BUD-PROJ-02",
           "SV-REG-OBS-02",
-          "SV-STR-OBS-01"
+          "SV-STR-OBS-01",
+          "SV-LLM-01",
+          "SV-LLM-02",
+          "SV-LLM-03",
+          "SV-LLM-04",
+          "SV-LLM-05",
+          "SV-LLM-06",
+          "SV-LLM-07"
         ]
       },
       {

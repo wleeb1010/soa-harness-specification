@@ -2117,6 +2117,7 @@ StopReason := NaturalStop
             | ToolPoolStale
             | SelfImproveLockBusy
             | Crash
+            | DispatcherError
 ```
 
 ### 13.5 Budget Projection Observability (Normative)
@@ -2710,7 +2711,7 @@ Every HR-\* test has canonical input fixtures shipped with `soa-validate`.
 
 1. **S1 Input** — Receive user input OR A2A handoff payload OR resume checkpoint.
 2. **S2 Context Assembly** — Load memory slice (§8.2), compact if triggered (§13 + §6.2 `compaction.triggerTokens`).
-3. **S3 Model Request** — Projection (§13.1); API call.
+3. **S3 Model Request** — Projection (§13.1); dispatch to the LLM adapter per §16.3.
 4. **S4 Tool Detection** — Parse tool calls from stream.
 5. **S5 Execute** — For each tool: permission (§10.3) → PreToolUse → tool → PostToolUse → audit + stream + persist (§15.4).
 6. **S6 Terminate or Loop** — Evaluate `StopReason`; if none, back to S3.
@@ -2739,6 +2740,154 @@ Notes on the table:
 3. **Self-improvement during budget exhaustion** — SI iterations consume a dedicated budget (MUST be ≤ 10% of `maxTokensPerRun` unless the Agent Card sets `self_improvement.budget`). Exhaustion emits `SelfImprovementRejected` (reason `BudgetExhausted`) via StreamEvent and logs `SelfImprovementAborted` to the audit trail; no partial accept.
 4. **Compaction during streaming** — Compaction MUST NOT run while a `ContentBlockDelta` sequence is open. It is deferred to the next `MessageEnd`. If triggered mid-stream, the Runner emits `CompactionDeferred`.
 5. **Workflow state transfer in handoff** — Transferred: conversation messages, Workflow State (`task_id`, `status == Handoff`, `side_effects` where `phase == committed` only), billing tag, correlation IDs. NOT transferred: Memory MCP content, session file location, audit `prev_hash`. See §17.4.
+
+### 16.3 LLM Dispatcher (Normative)
+
+**Rationale.** §16.1 Step S3 "Model Request" is where a turn actually consults an LLM. The v1.0 spec did not define the boundary between the Runner and the LLM adapter, leaving a gap that implementations filled inconsistently — budget checks fired before OR after the provider call; billing tags were propagated OR lost; mid-stream cancellation worked on some adapters and not others. This section closes the gap by specifying a dispatcher contract that every conformant Runner uses to invoke any provider.
+
+**The dispatcher is not a provider.** It is an interface + lifecycle. OpenAI, Anthropic, a local llama.cpp server, a corporate proxy — each is a provider adapter behind the same dispatcher. v1.0 (now v1.1 with this section) does NOT enumerate providers. v1.1 adopters ship ONE adapter; multi-provider routing (failover, A/B) is explicitly out of scope through v1.6.
+
+**Dispatcher placement in the turn pipeline.** The dispatcher is invoked exactly once per §16.1 S3, between projection check (§13.1) and tool-call detection (S4). It is NOT invoked during S5 tool execution — tool dispatch is a separate concern (§11 registry + §15 hooks). Dispatcher and tool executor share NO state beyond the current turn's `session_id` and `billing_tag`.
+
+**Request contract.**
+
+- Schema: `schemas/llm-dispatch-request.schema.json`.
+- Required fields: `session_id`, `turn_id`, `model`, `messages[]`, `budget_ceiling_tokens`, `billing_tag`, `correlation_id`, `idempotency_key`.
+- Optional fields: `tools[]` (for providers that accept native tool definitions — adapters MAY map Runner's §11 registry into provider-native format), `stream` (default `true`), `stop_sequences[]`, `temperature`, `top_p`, `max_output_tokens`.
+- `model` is a free-form string. Provider-specific model IDs, vendor-pinned aliases, and adapter-internal routing keys are all acceptable values. The spec makes no claim about valid `model` strings — that is a per-adapter contract.
+- `idempotency_key` MUST be stable across retries of the SAME logical request (i.e., adapter-level retry within one dispatcher call MUST reuse the key). Adapters that communicate with providers supporting idempotency tokens MUST propagate the key.
+
+**Response contract.**
+
+- Synchronous mode (`stream: false`): schema `llm-dispatch-response.schema.json`.
+- Streaming mode (`stream: true`): emits StreamEvents (`MessageStart`, `ContentBlockStart`, `ContentBlockDelta`, `ContentBlockEnd`, `MessageEnd`) per §14.1, exactly one `MessageStart` and one `MessageEnd` per dispatch, regardless of provider-level chunk boundaries. Intermediate provider state MUST NOT leak through this boundary.
+- Synchronous response body:
+
+```json
+{
+  "dispatch_id": "dsp_...",
+  "session_id": "ses_...",
+  "turn_id": "trn_...",
+  "content_blocks": [ { "type": "text", "text": "..." } ],
+  "tool_calls": [
+    { "id": "call_...", "name": "...", "arguments": { } }
+  ],
+  "usage": {
+    "input_tokens": 1234,
+    "output_tokens": 567,
+    "cached_tokens": 100,
+    "cache_accounting_ratio": 0.1
+  },
+  "stop_reason": "NaturalStop",
+  "latency_ms": 842,
+  "provider_request_id": "…opaque…",
+  "provider": "example-adapter",
+  "model_echo": "example-model-id",
+  "billing_tag": "tenant-a/env-prod",
+  "correlation_id": "cor_...",
+  "generated_at": "<RFC 3339>"
+}
+```
+
+- `cache_accounting_ratio` defaults to `0.10` per §13.3 unless the provider advertises a different ratio via adapter metadata.
+- `provider` and `model_echo` exist for observability and audit only. The Runner MUST NOT key routing decisions off `provider`; routing is the adapter's internal concern.
+
+**Lifecycle (MUST, ordered).**
+
+1. Dispatcher MUST validate the request against `llm-dispatch-request.schema.json` before any provider call. Schema failure returns `DispatcherError` with dispatcher error code `-32110` (request-invalid) per §24.
+2. Dispatcher MUST check the §13.1 projection BEFORE any provider call. If `projected_tokens + projection_headroom > budget_ceiling_tokens`, dispatcher returns a synthetic response with `stop_reason: "BudgetExhausted"`, `usage: { input_tokens: 0, output_tokens: 0, cached_tokens: 0 }`, no `tool_calls`, no `content_blocks`, no provider call fired. `SV-LLM-03` verifies this happens BEFORE provider network activity.
+3. Dispatcher MUST propagate `billing_tag` into adapter metadata (provider-native when available, adapter-layer otherwise) AND into the OTel span emitted per §14.2 for this dispatch. Divergence between the dispatcher's `billing_tag` and the session's §13.3 tag raises `BillingTagMismatch`.
+4. Dispatcher MUST register itself as the cancellation target for `turn_id`. Mid-stream cancellation (§13.2) MUST interrupt the in-flight provider call at or before the next `ContentBlockDelta` boundary. Adapters whose provider does not support streaming cancellation MUST close the underlying HTTP/gRPC stream and discard any buffered response — partial content MUST NOT leak as `ContentBlockDelta` after cancellation is acknowledged.
+5. Dispatcher MUST map provider-level errors into the §16.3.1 taxonomy BEFORE surfacing to the Runner. The Runner never sees raw provider error shapes.
+6. Dispatcher MUST record exactly one dispatch audit row (hash-chained per §10.5) per request, regardless of success, cancellation, retry, or failure. The audit row carries `dispatch_id`, `session_id`, `turn_id`, `billing_tag`, `usage`, `stop_reason`, `dispatcher_error_code` (null on success), and `provider_request_id` (nullable for retries that never reached a provider).
+
+**Non-goals for v1.1 dispatcher.**
+
+- Multi-provider routing (failover, A/B, cost-minimizing selection) — adopters pick one adapter per Runner; multi-adapter is a v1.2+ extension.
+- Response caching — providers' native prompt caching is honored via `usage.cached_tokens`; dispatcher does NOT run its own cache.
+- Request coalescing / batching — each §16.1 S3 fires exactly one dispatcher call.
+- Fine-tuning, model deployment, or any adapter-CP-level workflow — out of scope entirely; these are provider-console concerns.
+
+### 16.3.1 Provider Error Taxonomy (Normative)
+
+| Provider condition | Dispatcher behavior | `DispatcherError.dispatcher_error_code` | §24 code |
+|---|---|---|---|
+| HTTP 429 rate limit | Exponential backoff with jitter; ≤ 3 retries; final fail → `DispatcherError` | `ProviderRateLimited` | `-32100` |
+| HTTP 401 / 403 authentication | NO retry; fail closed → `DispatcherError` | `ProviderAuthFailed` | `-32101` |
+| HTTP 5xx | Exponential backoff with jitter; ≤ 3 retries; final fail → `DispatcherError` | `ProviderUnavailable` | `-32102` |
+| Network timeout / DNS / TLS / TCP reset | Exponential backoff with jitter; ≤ 3 retries; final fail → `DispatcherError` | `ProviderNetworkFailed` | `-32103` |
+| Provider-side content filter / safety refusal | NO retry; surface `content_blocks` carrying refusal text when available; `stop_reason: "DispatcherError"` | `ContentFilterRefusal` | `-32104` |
+| Context-length exceeded (provider signals request too large) | NO retry at dispatcher layer; surface to Runner so §13 compaction can decide to compact and re-dispatch | `ContextLengthExceeded` | `-32105` |
+| Dispatcher request-schema validation failure | NO retry; surface immediately | `DispatcherRequestInvalid` | `-32110` |
+| Dispatcher cancellation at Runner's request | Clean close; record audit row with `dispatcher_error_code: null`, `stop_reason: "UserInterrupt"` | *(not an error)* | *(n/a)* |
+
+Retry budgets apply to the **dispatcher call as a whole** — 3 retries total across rate-limit, 5xx, and network conditions; switching between those conditions does NOT reset the counter. Retry-After headers, where present, override jitter-based backoff.
+
+`DispatcherError` is a single StopReason per §13.4 (minor-bump addition). The six `dispatcher_error_code` values above are observability detail — they live in the dispatch audit row and the `dispatch/recent` response, not as StopReason enum members. This keeps the StopReason closed set tight.
+
+### 16.4 Dispatcher Observability (Normative)
+
+**Rationale.** §16.3 defines the dispatcher contract. Conformance tests (`SV-LLM-01..07`) and operational triage (billing reconciliation, provider-health dashboards, content-filter incident forensics) need a read-only window into recent dispatch activity. Standard observability-endpoint pattern (§10.3.1 / §10.5.2 / §13.5).
+
+**Endpoint.** Every conformant Runner that exposes a dispatcher MUST expose:
+
+```
+GET /dispatch/recent?session_id=<session_id>&limit=<int, default 50, max 500>
+```
+
+- Scope: `sessions:read:<session_id>`. 120 rpm. TLS 1.3 or loopback plain.
+- Response schema: `schemas/dispatch-recent-response.schema.json`.
+- Response body (200):
+
+```json
+{
+  "session_id": "ses_...",
+  "dispatches": [
+    {
+      "dispatch_id": "dsp_...",
+      "turn_id": "trn_...",
+      "provider": "example-adapter",
+      "model_echo": "example-model-id",
+      "stop_reason": "NaturalStop",
+      "dispatcher_error_code": null,
+      "usage": {
+        "input_tokens": 1234,
+        "output_tokens": 567,
+        "cached_tokens": 100
+      },
+      "latency_ms": 842,
+      "billing_tag": "tenant-a/env-prod",
+      "correlation_id": "cor_...",
+      "provider_request_id": "…opaque…",
+      "started_at": "<RFC 3339>",
+      "completed_at": "<RFC 3339>"
+    }
+  ],
+  "runner_version": "1.1",
+  "generated_at": "<RFC 3339>"
+}
+```
+
+- Not-a-side-effect: no retries fire, no audit rows written, no events emitted. Byte-identity excludes `generated_at`.
+- Ordering: newest first by `started_at`.
+- `model_echo` is informational — operators rotating models want to see which echoed model produced which latency distribution.
+- Runners that do not yet expose a dispatcher (early-milestone deployments) MUST return `404 Not Found` on this endpoint rather than an empty list — absence is observable.
+
+**Conformance linkage.** `SV-LLM-01..07` reserved at §16.5 below. `SV-LLM-06` uses `/dispatch/recent` + `/audit/tail` as its observation surfaces to verify dispatch audit rows are hash-chained into the §10.5 chain.
+
+### 16.5 Reserved Dispatcher Test IDs (Normative)
+
+Implementations MUST anchor the following test IDs against §16.3 and §16.4 behavior. Test bodies live in `soa-validate` / `ui-validate` per §18.
+
+| Test ID | Exercises | MUST anchor |
+|---|---|---|
+| `SV-LLM-01` | `llm-dispatch-request.schema.json` validation — round-trip valid + three negative cases (missing `model`, invalid `billing_tag`, `budget_ceiling_tokens ≤ 0`) | §16.3 request contract |
+| `SV-LLM-02` | `llm-dispatch-response.schema.json` validation — synchronous response shape, including `usage` and `stop_reason` enum membership | §16.3 response contract |
+| `SV-LLM-03` | Budget pre-check BEFORE provider call. Fixture dispatcher with instrumented adapter records whether a provider call fired; test drives `budget_ceiling_tokens = 1` and asserts ZERO provider-adapter calls fired AND `stop_reason == "BudgetExhausted"` | §16.3 lifecycle step 2 |
+| `SV-LLM-04` | `billing_tag` propagation to OTel span + audit row. Test asserts `dispatch/recent` and `audit/tail` both carry the same tag | §16.3 lifecycle step 3 |
+| `SV-LLM-05` | Mid-stream cancellation at `ContentBlockDelta` boundary. Runner fires `UserInterrupt`; test asserts no `ContentBlockDelta` is emitted after the `PermissionDecision` (interrupt boundary); `stop_reason == "UserInterrupt"` | §16.3 lifecycle step 4 |
+| `SV-LLM-06` | Dispatch audit row presence + hash chain. Every dispatch (success, cancellation, DispatcherError) produces exactly one row in `/audit/tail` whose `prev_hash` links correctly | §16.3 lifecycle step 6 |
+| `SV-LLM-07` | Provider-error taxonomy mapping. Test harness injects each of the 7 provider conditions and asserts the dispatcher maps to the correct `dispatcher_error_code` + `stop_reason` per §16.3.1 | §16.3.1 |
 
 ---
 
@@ -3125,8 +3274,21 @@ Note: `PermissionPrompt` is a StreamEvent type, not an error code (§14.1); earl
 **Config**: `ConfigOverride`
 **Version**: `VersionNegotiationFailed`
 **Privacy**: `SubjectSuppression`
+**Dispatcher** *(v1.1 addition, §16.3.1)*: `DispatcherError` (single StopReason; dispatcher_error_code carried in audit row + `/dispatch/recent`)
 
-A full JSON catalog is published at `https://soa-harness.org/errors/v1.0.json`.
+The dispatcher subcodes are numeric JSON-RPC-aligned codes rather than string names, mirroring the `-32050` HandoffBusy convention:
+
+| dispatcher_error_code | Subcode | Meaning |
+|---|---|---|
+| `ProviderRateLimited`      | `-32100` | Provider 429, retries exhausted |
+| `ProviderAuthFailed`       | `-32101` | Provider 401/403, no retry |
+| `ProviderUnavailable`      | `-32102` | Provider 5xx, retries exhausted |
+| `ProviderNetworkFailed`    | `-32103` | Network/TLS/DNS/TCP-reset, retries exhausted |
+| `ContentFilterRefusal`     | `-32104` | Provider-side safety refusal |
+| `ContextLengthExceeded`    | `-32105` | Provider signaled request too large |
+| `DispatcherRequestInvalid` | `-32110` | Dispatcher request failed its schema |
+
+A full JSON catalog is published at `https://soa-harness.org/errors/v1.0.json` (v1.1 extension catalog at `.../errors/v1.1.json`).
 
 ### 24.1 UI-Surface Mappings (Informative)
 
