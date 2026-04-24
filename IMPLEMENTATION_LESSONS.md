@@ -2327,6 +2327,40 @@ Pin bump landed BEFORE npm publish. `PINNED_SPEC_COMMIT` in `@soa-harness/schema
 
 **Status: shipped.** v1.3.0 is the first minor release entirely produced + closed in a single autonomous session with the plan-evaluator hard-gate exercised on every normative commit.
 
+### L-70 — v1.3.x live-probe promotion kickoff `[milestone kickoff]`
+
+- **Surfaced:** 2026-04-24, immediately following L-69 ship closure.
+- **Status:** `kickoff-only`. Execution queued for next work session.
+
+**Motivation:** v1.3.0 ships SV-A2A-10..17 as skip-with-rationale handlers in the validator (commit `ddfabb7`). Unit-level coverage at `soa-harness-impl/packages/runner/test/a2a-{jwt,signer-discovery,digest-check}.test.ts` (100+ assertions) carries the §17 assertions today, but the validator conformance surface is the normative interop gate — claims of §17 conformance for a third-party Runner require a live-probe that actually calls `POST /a2a/v1` and asserts the on-wire response shapes match §17.2/§17.2.3/§17.2.4/§17.2.5.
+
+**Scope (six-slice plan, each ~1 week, with L-68 kill-criteria pattern):**
+
+1. **Slice 1 — SV-A2A-03 + SV-A2A-04 + SV-A2A-17 bearer-mode live probes.** Simplest to land first: use the W1 bearer-mode auth path (no JWT infra needed). Probe flow: GET `.well-known/agent-card.json` → validate envelope + extract `a2a.capabilities` → POST `/a2a/v1` `agent.describe` via bearer → assert result shape (SV-A2A-03) → POST `/a2a/v1` `handoff.offer` with various `capabilities_needed` payloads → assert truth-table outcomes (SV-A2A-17) + accept path (SV-A2A-04). Env vars: `SOA_A2A_URL` (optional; defaults to `${SOA_IMPL_URL}/a2a/v1`) + `SOA_A2A_BEARER` (required). Target: 3 live flips.
+2. **Slice 2 — SV-A2A-14 offer-then-transfer digest recompute live probe.** Extends slice 1: send `handoff.offer` with advertised digests → send matching `handoff.transfer` → assert 200 accept. Send second transfer with tampered messages → assert `HandoffRejected(digest-mismatch)`. Target: 1 live flip.
+3. **Slice 3 — SV-A2A-15 transition-matrix live probe.** Full offer→transfer→status→return loop with polling asserting the 6-value enum + monotonicity. Requires the destination Runner to actually transition state (stub execute that completes immediately). Target: 1 live flip + companion impl work for the `executing → completed` transition.
+4. **Slice 4 — SV-A2A-10 + SV-A2A-12 JWT slice-1 live probes.** Requires the Runner under test to be configured with the §17.1 JWT profile (vs bearer). Test harness publishes a caller Agent Card at a reachable URL so the Runner can resolve the JWT signing key. Probes: alg allowlist violation → bad-alg; replayed jti → jti-replay. Target: 2 live flips.
+5. **Slice 5 — SV-A2A-11 + SV-A2A-13 JWT slice-2 live probes.** Extends slice 4: signing-key discovery (Agent-Card-kid path; mTLS peer-cert path out of scope without real TLS test fixtures), agent_card_etag drift (rotate caller card between initial fetch and second request, assert `card-version-drift` reason on wire). Target: 2 live flips.
+6. **Slice 6 — SV-A2A-16 deadline live probe + release.** Boot Runner with `SOA_A2A_TASK_DEADLINE_S=2`, submit a long-running handoff, assert `timed-out` status + `SessionEnd(MaxTurns)` emission within deadline + tolerance. Target: 1 live flip. Release as v1.3.1 minor-patch with L-71 ship record.
+
+**Combined target:** 10 live flips across SV-A2A-03/04/10/11/12/13/14/15/16/17. SV-A2A-01 (mTLS required) + SV-A2A-02 (generic JWT validation) stay skip — they overlap with SV-A2A-10/11/12 more scoped coverage.
+
+**Kill criteria:**
+
+- If mTLS peer-cert path proves infeasible without a self-hosted CA + test-TLS-cert rotation infrastructure → scope SV-A2A-11 to Agent-Card-kid-only live coverage, leave mTLS path at skip with explicit rationale.
+- If any slice's test harness requires more than 2 days of fixture plumbing → reduce that slice to unit-level coverage only and defer live promotion to v1.3.2.
+
+**Pre-L-70 checklist (verify before Slice 1):**
+
+- v1.3.0 live on npm + tagged on all three repos (done ✓)
+- Validator SV-A2A-10..17 handlers forward-registered (done ✓ at commit `ddfabb7`)
+- `soa-validate --check-pins` succeeds against a running v1.3.0 Runner (pending)
+- v1.3.0 npm install + `npx create-soa-agent@1.3.0` smoke confirmed the scaffold + pin (done ✓ — PINNED_SPEC_COMMIT in @soa-harness/schemas@1.3.0 tarball verified at b87c2ff post-publish)
+
+**Pattern reminder:** plan-evaluator gate continues to apply to any §17 normative touch during v1.3.x. Live-probe promotion itself is NOT a spec change (must-map assertions are already normative), so slices 1-6 do not require plan-evaluator passes — but impl changes that back live probes (e.g., slice 3's `executing → completed` transition) DO require the HARD RULE's spec-first discipline if they expose a new wire contract.
+
+**Version impact:** live-probe promotion is `core+handoff` profile conformance tightening — no normative text changes. Ship as v1.3.1 per §19.4.1 editorial-class patch-release.
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
