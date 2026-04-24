@@ -380,12 +380,12 @@
       "assertion": "Receiver fetches caller's Agent Card at sub URL, computes ETag per the §17.2.4 agent_card_etag formula (double-quoted hex SHA-256 of JCS(agent-card)) and compares to the presented agent_card_etag JWT claim. On mismatch: (a) emit CardVersionDrift §24 event; (b) respond JSON-RPC error -32051 HandoffRejected with error.data.reason byte-exact 'card-version-drift'. Disjoint from card-unreachable (step 2): card-version-drift applies only when the fetch succeeds and the ETag differs; fetch failures remain card-unreachable. Etag cache ≤ 60 s."
     },
     "SV-A2A-14": {
-      "name": "A2A digest canonicalization",
-      "section": "§17.2",
-      "section_title": "A2A Wire Protocol",
+      "name": "A2A digest canonicalization + per-method recompute",
+      "section": "§17.2.5",
+      "section_title": "A2A Wire Protocol — digest recompute obligations (v1.3)",
       "profile": "core+handoff",
       "severity": "critical",
-      "assertion": "messages_digest / workflow_digest / result_digest use form sha256:<64-hex-lowercase> where the hashed bytes are JCS-RFC-8785 canonical of the corresponding JSON object. Receiver recomputes and compares; mismatch → HandoffRejected(reason=digest-mismatch)."
+      "assertion": "Per §17.2.5 per-method matrix: (a) handoff.offer — messages_digest and workflow_digest MUST shape-check as sha256:<64-hex-lowercase>; receivers MUST NOT attempt recompute (data not on wire). (b) handoff.transfer — receivers that retained the prior offer's (messages_digest, workflow_digest) MUST compute SHA-256(JCS(messages)) and SHA-256(JCS(workflow)) and compare to the advertised values; mismatch → HandoffRejected reason=digest-mismatch; missing offer state → HandoffRejected reason=workflow-state-incompatible. (c) handoff.return — result_digest MUST shape-check; no wire recompute (no result object on handoff.return params; final_messages is a wire convenience and is NOT a projection of result). Offer-state retention: receivers that accept an offer MUST retain (task_id, messages_digest, workflow_digest) until the transfer is processed or the §17.2.2 handoff.transfer deadline (30s default) elapses. All digests use JCS-RFC-8785 canonical bytes and sha256:<64-hex-lowercase> shape."
     },
     "SV-A2A-15": {
       "name": "HandoffStatus enum — transition matrix",

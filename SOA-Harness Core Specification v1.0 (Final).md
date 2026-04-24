@@ -3090,6 +3090,26 @@ Test anchor: `SV-A2A-17` (reserved at this commit) verifies the truth-table matr
 
 v1.3 does not ship a global capability token registry. Implementations MAY coordinate via adapter-specific documentation, shared vocabulary files, or bilateral agreements. A reserved-tokens Normative successor (§17.2.3.2) lands in v1.4+ if a cross-ecosystem vocabulary emerges.
 
+#### 17.2.5 Digest recompute obligations (Normative, v1.3)
+
+§17.2's "receivers MUST recompute and compare" rule on the three digest fields (`messages_digest`, `workflow_digest`, `result_digest`) applies where both the declared digest and the underlying data are co-transmitted on the wire. The three A2A methods have distinct obligations:
+
+| Method | Digest field | Shape check | Receiver recompute | Rejection on digest mismatch | Rejection on missing offer state |
+|---|---|---|---|---|---|
+| `handoff.offer` | `messages_digest`, `workflow_digest` | MUST | MUST NOT — data not on wire | n/a | n/a |
+| `handoff.transfer` | (advertised on prior offer) | n/a on this method (digests already shape-checked at offer) | MUST when offer state retained — `SHA-256(JCS(messages))` and `SHA-256(JCS(workflow))` compared to the offer's advertised values | `HandoffRejected` (reason `digest-mismatch`) | `HandoffRejected` (reason `workflow-state-incompatible`) |
+| `handoff.return` | `result_digest` | MUST | MUST NOT — no `result` object on wire | n/a | n/a |
+
+**Offer-state retention (Normative).** Receivers that return `{accept: true}` on a `handoff.offer` MUST retain `(task_id, messages_digest, workflow_digest)` in state (in-memory or durable) until either (a) the corresponding `handoff.transfer` is processed or (b) the §17.2.2 `handoff.transfer` deadline elapses (30 s default, operator-overridable via `SOA_A2A_TRANSFER_DEADLINE_S`). Retention beyond the deadline is not required; transfers arriving after the deadline for a task whose offer state has been released MUST reject with `HandoffRejected` (reason `workflow-state-incompatible`).
+
+**Restart-crash observability.** Offer state is NOT required to be §12 bracket-persisted; a receiver that crashes between `handoff.offer` and `handoff.transfer` and loses in-memory offer state MUST reject the subsequent transfer with `HandoffRejected` (reason `workflow-state-incompatible`) — this is indistinguishable on the wire from a first-seen transfer and is by design. Receivers requiring transfer-survivability across restart MAY pin offer state to their §12 bracket; v1.3 does not mandate this.
+
+**`final_messages` vs `result` on `handoff.return`.** The `final_messages` field in `handoff.return` params is a wire convenience carrying the conversational tail of the destination session for logging, audit, and caller-side display. It is NOT a projection of `result` and does NOT participate in `result_digest` computation — `result` is the caller-side `{artifacts?, final_state?, signals?}` object, held on the caller side and NOT transmitted on `handoff.return`. The wire contract for `result_digest` on this method is shape-check only; the semantic binding between the digest and the caller's produced result is a caller-side obligation that a future §17.2 revision will normatively address (noted here so the current gap is explicit rather than implied).
+
+**Replay of `handoff.transfer`.** Replay protection on the transport layer is handled by §17.1 step 3 `jti`-replay; this subsection does not redefine it. A receiver observing a duplicate `handoff.transfer` after successfully processing the first for the same `task_id` MAY respond with the prior `{destination_session_id, accepted_at}` result (idempotent accept) or reject with `HandoffRejected` (reason `workflow-state-incompatible`); both are conformant.
+
+Test anchor: `SV-A2A-14` is narrowed in the same must-map commit to the per-method matrix above; three sub-assertions replace the prior single "receiver recomputes and compares" claim.
+
 #### 17.2.4 agent.describe result shape (Normative, v1.3)
 
 §17.2's methods table describes `agent.describe` as returning "Agent Card bytes + JWS"; v1.3 closes the wire-shape gap with the following normative `result` envelope.
