@@ -92,7 +92,12 @@ function parseArgs(argv) {
 }
 
 function run(cmd, opts = {}) {
-  return execSync(cmd, { stdio: "pipe", encoding: "utf8", ...opts }).trim();
+  // execSync returns null when stdio is "inherit" (child output went to
+  // parent TTY, not captured), so trim() would throw. Default to empty
+  // string in that case — callers that use this via tryRun() treat
+  // "no throw + empty stdout" as success.
+  const r = execSync(cmd, { stdio: "pipe", encoding: "utf8", ...opts });
+  return r == null ? "" : String(r).trim();
 }
 
 function tryRun(cmd, opts = {}) {
