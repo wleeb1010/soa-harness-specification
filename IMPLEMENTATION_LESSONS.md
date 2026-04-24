@@ -2211,6 +2211,61 @@ curl -s -H "Authorization: Bearer demo-bootstrap-bearer-replace-me" http://127.0
 
 **Pattern note:** L-67 closes the v1.2.1 patch cycle. v1.2.x is now at v1.2.1 HEAD with no open debts in the L-66 → L-67 ledger. L-68 will open against M9 (§17 A2A wire protocol, v1.3.0).
 
+### L-68 — M9 kickoff: Agent2Agent (§17) wire protocol impl + validator probes `[milestone kickoff]`
+
+- **Surfaced:** 2026-04-24 end of M8 same-day ship (v1.2.0 + v1.2.1 both live). User: "Resolve debt move into the next phase."
+- **Status:** planning-only — no code commits; M9 execution begins next session.
+
+**What already exists at v1.2.1:**
+
+§17 is spec-defined and populated in the must-map:
+- §17.1 Endpoint and Transport (JSON-RPC 2.0 over `https://<origin>/a2a/v1`, mTLS + JWT auth with 4 normative JWT profile rules, signing-key discovery)
+- §17.2 Methods (5 normative: `agent.describe`, `handoff.offer`, `handoff.transfer`, `handoff.status`, `handoff.return`) with digest canonicalization (sha256:hex over JCS).
+- §17.3 Error Code Taxonomy (JSON-RPC subcodes −32040..−32053 for HandoffBusy, HandoffRejected, HandoffStateIncompatible, TrustAnchorMismatch, CardVersionDrift, AuthFailed)
+- §17.4 State Transfer Scope
+- §17.5 Test Vectors (SV-A2A-01..14 already in must-map, ~59 references across assertions + category lists)
+
+**What doesn't exist at v1.2.1:**
+
+- `packages/runner/src/a2a/` — no directory. A2A isn't wired into the reference runtime.
+- `internal/testrunner/handlers_a2a.go` — no SV-A2A handlers on the validator side (they're in must-map as vector-only or skip).
+
+M9 closes both gaps — ship the impl + validator for §17.
+
+**M9 scope per L-63 revision 4:**
+
+- **6 weeks** (calendar weeks 39-44 of the M7+ arc)
+- **Release:** `v1.3.0`
+- **New test ID flips expected:** SV-A2A-01..14 skip → live (14 probes). Maybe a couple new SV-A2A-15..17 if implementation surfaces missing normative hooks during build.
+
+**M9 gate sequence (proposed):**
+
+1. **Week 1 — A2A plumbing.** `packages/runner/src/a2a/`: JSON-RPC 2.0 server (`/a2a/v1` endpoint), mTLS + JWT middleware, the 5 handoff methods as no-op handlers returning structured responses. Validator gets `handlers_a2a.go` stub that can assert wire-format correctness without expecting full handoff semantics yet.
+2. **Week 2 — Session state transfer (§17.4).** Serialize session state on `handoff.transfer`, deserialize + resume on the callee side. Requires §12 bracket-persist hook so in-flight session state doesn't drop during transfer.
+3. **Week 3 — JWT profile invariants (§17.1).** Replay cache for `jti`, `agent_card_etag` freshness check, signing-key discovery via card URL + x5t SPKI matching.
+4. **Week 4 — Digest canonicalization (§17.2).** JCS canonicalization of messages + workflow + result objects, sha256 hex comparison, mismatch → `HandoffRejected(digest-mismatch)`.
+5. **Week 5 — Validator probes.** SV-A2A-01..14 live implementations against the wired impl. Probe fixtures under `test-vectors/a2a-handoff/`.
+6. **Week 6 — Conformance + release.** v1.3.0 coordinated release: MANIFEST regen (additions: possibly new schemas for a2a-handoff-envelope + handoff-status-response), sign, Verdaccio, publish, tag, gh release, smoke, L-69 closure.
+
+**Kill criteria:**
+
+- If real mTLS setup proves too complex for a 6-week milestone (certificate chain validation across platforms, Windows cert store quirks) → ship v1.3.0 with mTLS-optional (bearer-only fallback for dev/test) and flag full mTLS conformance as v1.3.1.
+- If session state transfer hits cross-session race conditions (two concurrent handoffs of the same session) → document the single-session-per-handoff constraint normatively in §17.4 and ship.
+
+**Pre-M9 checklist (to verify before starting M9 week 1):**
+
+- v1.2.1 released (done ✓)
+- Pin-drift check green on both siblings against the v1.2.1 spec tag
+- `soa-validate --check-pins` succeeds against a running v1.2.1 Runner
+- No open Debt ledger items from L-66/L-67 (clean slate ✓)
+- Spec-change plan-evaluator gate applied to every §17 edit (now mandatory per docs/spec-change-checklist.md)
+
+**Version impact:** §19.4 minor (v1.2 → v1.3). Additive only — existing v1.0/v1.1/v1.2 conformance claims unchanged.
+
+**Pattern note:** L-68 is the first kickoff written after the spec-change plan-evaluator gate became mandatory. Every §17 edit during M9 will run through plan-evaluator before commit — no exceptions. L-66 + L-67 (M8) demonstrated the gate catches real bugs cheap; M9 continues the pattern.
+
+**Status: kickoff-only.** No spec commits made as part of L-68. Execution begins in a fresh session per the user's instruction cadence.
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
