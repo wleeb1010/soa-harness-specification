@@ -6,6 +6,26 @@ Categories per entry: **Added** (new), **Changed** (modified), **Deprecated** (s
 
 ---
 
+## [1.3.3] — 2026-04-24
+
+Patch release — editorial-class per §19.4.1. No spec changes; spec pin stays at `8f8bdb4`. Ships the last silent §17 MUST violation closure: `@soa-harness/runner` now emits `SessionEnd(stop_reason=MaxTurns)` on the destination session when the §17.2.2 task-execution deadline elapses without `handoff.return`.
+
+### Fixed — Reference implementation (`soa-harness-impl`)
+
+- **§17.2.2 `SessionEnd(MaxTurns)` emission.** v1.3.1 closed the deadline-enforcement MUST (computed-on-read timed-out synthesis); v1.3.2 added the §17.2.2.1 execute hook. v1.3.3 closes the companion MUST that §17.2.2 also requires: `Runners serving as destinations MUST ... emit SessionEnd with stop_reason: "MaxTurns" at the boundary`. `@soa-harness/runner@1.3.3` implements this via an opt-in `onTaskExecutionDeadline` callback on `a2aPlugin`. The plugin schedules an eager `setTimeout` at `handoff.transfer` accept and fires the callback at the deadline boundary if the task is still pre-terminal. `handoff.return` cancels the pending timer. Consumer callbacks are error-swallowed — computed-on-read status synthesis still guarantees `timed-out` reads regardless of callback behavior.
+- The `A2aPluginOptions.onTaskExecutionDeadline` callback is opt-in. Adopters wire it to their `StreamEventEmitter` to get wire-emitted `SessionEnd` events; omitting it preserves v1.3.2 behavior (deadline-enforcement via computed-on-read synthesis only, no stream event).
+
+### Package versions
+
+All 11 packages bump `1.3.2` → `1.3.3`. Scaffold deps bump `^1.3.2` → `^1.3.3`. Scaffold `runnerVersion: "1.3"` unchanged (major.minor stable across patch releases). `tools/vscode-extension` bumps `1.3.2` → `1.3.3`.
+
+### Spec artifacts — unchanged from v1.3.2
+
+- `MANIFEST.json` / `MANIFEST.json.jws` byte-identical to v1.3.2's signed bundle. The v1.0 release key signature remains valid; no re-signing ceremony. `soa-validate.lock.spec_manifest_sha256` stays at `4bd9e208f5b4b3...c687c67` on both impl + validate sides.
+- `PINNED_SPEC_COMMIT` in `@soa-harness/schemas@1.3.3` stays at `8f8bdb4` — pure impl patch.
+
+---
+
 ## [1.3.2] — 2026-04-24
 
 Patch release — closes the SV-A2A-15 accepted→executing partial-scope flag from v1.3.1. Adds a new `§17.2.2.1 Destination execute hook` Normative-Testability subsection with a loopback-guarded env var that schedules synthetic destination-side transitions for conformance testing. Additive-normative; existing adopters see zero behavioral change.
