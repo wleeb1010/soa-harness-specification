@@ -1626,7 +1626,25 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 - 2FA ceremony: temporarily disabled org-level "Require 2FA for publish" for pnpm -r publish, re-enabled immediately after.
 - Retrospective: two operator errors caught before impact — PowerShell `rm` destroyed first keypair pre-encryption (regenerated cleanly, no signing had occurred); npm token pasted into chat mid-setup (revoked + regenerated). Both patterns worth codifying for future rotations: use Git Bash not PowerShell for openssl workflows; never paste tokens into chat.
 
-**M7+ scope (revised 2026-04-23 for solo-only operation + A2A impl + comprehensive admin UI + all 23 evaluator findings, 37 weeks / ~9 months):**
+**M7+ scope (revision 4, 2026-04-23, all 10 evaluator findings + 4 structural challenges applied, 39 weeks / ~9 months):**
+
+**Revision 4 changes (on top of revision 3):**
+- **M13 extended 8 → 10 weeks** (Finding #4 — was too dense; 10 admin areas + 16 a11y + load + E2E + docs can't fit in 8 wk). Calendar: 37 → 39 wk.
+- **Buffer split** (Finding #7): 1 wk after M10 (wk 19) + 1 wk mid-M11 between Gateway impl and perf benchmarks (wk 27). Same total slack, redistributed to protect M11's 12-wk marathon.
+- **SV-COMPAT budget corrected** (Finding #1): realistic per-release add is 8-10 tests (compat + new capability); total ~60 new test IDs by v1.6.0 (not 28 compat alone). Velocity budget documented honestly: "~4-6 net new capability tests + ~4-6 compat tests = 8-12 per release."
+- **v1.0.0 perf baseline capture** added as **Pre-M7 task** (Finding #9): 1-2 days, stored at `docs/m7/v1.0-perf-baseline.md`. All SV-PERF-* tests compare against this anchor.
+- **v1.6.0 renamed** (Finding #6): "Reference Implementation Feature-Parity Target" instead of "Feature Complete (Self-Asserted)". Doesn't claim completeness; does claim feature-parity with the spec's scope.
+- **M11 first-X events staggered** (Finding #10): key-rotation drill moves from M11 to late M10 (wk 17-18); real-IdP integration in early M11 (wk 22-23); Gateway load test in late M11 (wk 30-31). Failure of any one doesn't compound.
+- **Real-IdP local fallback** (Finding #5): mandatory docker-compose Keycloak fixture at `test-vectors/idp-local-keycloak/`. `SV-AUTH-IDP-01..04` never skip; remote-IdP variant (`SV-AUTH-IDP-05..08`) may skip if endpoint unreachable.
+- **A2A interop disclosure** (Finding #2): v1.3.0 RELEASE-NOTES.md template carries "A2A impl is self-conformant; interop with external agents unvalidated" caveat. §17 header updated similarly.
+- **Seccomp CVE watcher automated** (Finding #3): GitHub Action scheduled quarterly; checks current kernel-baseline seccomp hashes against upstream CVE feeds. Escape valve: if maintainer inactive >2 quarters, §9.7 header auto-downgrades trust-class to "experimental". No silent rot.
+- **M7 minimal docker-compose.yml** (Finding #8): shipped with Runner only at M7 (not production-topology). Full helm chart + Gateway-shaped compose land at M11. Bridges the M8-M10 orchestration gap for users.
+- **Release-day overhead budgeted** (Structural A): 3 days per milestone baked into each M7-M13 scope explicitly (was implicit; ~18 days total now visible).
+- **ERRATA-skip escape** (Structural B): v1.0-lts CI check allows PR-title tag `[skip-errata]` for tooling-only changes + reviewer justification. Prevents over-rigid enforcement on formatting-only patches.
+- **Kill criteria per milestone** (Structural C): each milestone carries explicit "if X fails, ship v1.Y without Z feature and defer to v1.Y+1" clauses. No silent slippage; abort paths are written.
+- **LTS Fridays batching** (Structural D): v1.0.x editorial work batched to Fridays only to reduce context-switching cost. M7-M13 work runs Mon-Thu. Schedule makes cognitive cost of parallel LTS track explicit.
+
+
 
 **Evaluator-driven changes applied in this revision:**
 - **Swapped M9↔M10:** A2A (now M9) before SelfOptimizer (now M10). Conductor depends on A2A; ordering matters.
