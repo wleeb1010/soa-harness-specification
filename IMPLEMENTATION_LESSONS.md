@@ -2062,6 +2062,66 @@ Plus three morning-triage CI fix-forwards (not strictly debt but surfaced by the
 3. npm 2FA policy on granular tokens is sticky at creation time. Either (a) verify tokens work by running a dry-run against real npm before ceremony, or (b) plan for the manual-publish-with-browser-click fallback as Plan B.
 4. CDN propagation lag is real on new packages — the first-ever version of a new package name can take ~45s to appear in `npm view`, even though direct version-URL access returns 200 immediately. Poll via `npm view`, don't bail on the first 404.
 
+### L-65 — v1.1.1 patch release: Debt #7 resolution `[patch ship]`
+
+- **Surfaced:** 2026-04-24, same day as v1.1.0 ship. Operator said "always be adding value, when one thing finishes it's on to the next" — patched the three debts from L-64 morning (Debt #5/#6/#7) back-to-back in one continuous work burst.
+- **Status:** `shipped`. v1.1.1 is live on npm, tagged + released on all three GitHub repos, smoke-tested from the real registry.
+
+**Release artifacts:**
+
+| Repo | Tag | Commit | Notes |
+|---|---|---|---|
+| spec | `v1.1.1` | `44ed0db` | CHANGELOG [1.1.1] entry + scripts/release-v1.1.1.mjs. MANIFEST bytes unchanged from v1.1.0 — no resigning. |
+| impl | `v1.1.1` | `860c780` | 9 packages bumped to 1.1.1; PINNED_SPEC_COMMIT → 2184a32; 4 scaffold template start.mjs files wire governance.pinnedSpecCommit. |
+| validate | `v1.1.1` | `baa137e` | Snapshot tag (.gitattributes debt fix). No validator code change. |
+
+**npm packages published @ 1.1.1:** same 9 as v1.1.0.
+
+**Debts closed in this same burst (not just Debt #7):**
+
+- **Debt #5 (impl + validate `.gitattributes`):** landed before v1.1.1 prep. Impl `5009173`, validate `baa137e`.
+- **Debt #6 (port null-safe `run()` to release-v1.0.mjs):** editorial backport. Spec `f9514e6`.
+- **Debt #7 (PINNED_SPEC_COMMIT + scaffold wiring):** landed via the v1.1.1 release itself. Impl `860c780`, spec `44ed0db`.
+
+**Debts still open post-L-65:** none from the L-64 ledger. Clean slate.
+
+**What was actually wrong with v1.1.0 that v1.1.1 fixes:**
+
+v1.1.0's `@soa-harness/schemas@1.1.0` carried `PINNED_SPEC_COMMIT = "68b34f181bcf..."` — the M7-week-1 internal commit, NOT the v1.1.0 spec tag target at `2184a320...`. Downstream: validator's `soa-validate.lock` pinned at `2184a32`, but the Runner's `GET /version` (when wired) reported `68b34f1`. `--check-pins` hit drift and needed `--allow-drift` to unblock.
+
+Root cause was release-ceremony ordering — we bumped `soa-validate.lock` AFTER `npm publish`. The npm-published tarballs froze PINNED_SPEC_COMMIT at the pre-ceremony state. By the time the locks caught up to the v1.1.0 tag, the npm side couldn't retroactively change.
+
+Separately, all four `create-soa-agent` scaffold templates (`runner-starter`, `runner-starter-mem0`, `runner-starter-zep`, `runner-starter-none`) didn't pass `governance.pinnedSpecCommit` at all, so a fresh-scaffolded Runner's `/version` response was missing the `spec_commit_sha` field entirely. v1.1.1 fixes both — schemas exports the correct pin AND the scaffold wires it through.
+
+**End-to-end verification (from real npm, post-ship):**
+
+```bash
+npx create-soa-agent@1.1.1 smoke-agent --demo
+cd smoke-agent && npm install && node ./start.mjs &
+curl -s -H "Authorization: Bearer demo-bootstrap-bearer-replace-me" http://127.0.0.1:7700/version
+# → {"soaHarnessVersion":"1.0","supported_core_versions":["1.0"],
+#    "runner_version":"1.1","generated_at":"...",
+#    "spec_commit_sha":"2184a320595c578477246911aae7c8099a9d2fb9"}
+```
+
+Both `runner_version: "1.1"` and `spec_commit_sha: "2184a320..."` land correctly. Debt #7 fully closed.
+
+**Ceremony diff from v1.1.0 (what was smoother this time):**
+
+1. **No MANIFEST regen / no resigning** — pure impl-side patch. The v1.1.0 signed MANIFEST remains authoritative for v1.1.1 (same pin target 2184a32, same vendored schemas).
+2. **Verdaccio dry-run still caught what matters** — 9/9 green in staging before real publish, no script bugs surfaced this round.
+3. **npm 2FA gate still enforced** — granular token with 2FA-disabled setting at creation time still hit `EOTP` on real publish. Same fallback as v1.1.0: operator ran a manual PowerShell foreach loop with per-package browser-click authorization. 9 publishes, ~90 seconds wall time including clicks.
+4. **CDN propagation lag was shorter** — all 9 packages appeared on `npm view` within ~10s of publish completion this time (vs ~45s for example-provider-adapter at v1.1.0, which was brand new).
+
+**Retro vs L-64 retro items:**
+
+1. ✅ "Pin-bump `soa-validate.lock` BEFORE npm publish" — NOT applicable for v1.1.1 because the v1.1.0 lock bump was already at `2184a32`. Future 1.1.x patches that bring NEW normative spec content will need to follow this rule — 1.1.1 got a free pass because it's pure impl cleanup with no new spec content.
+2. ✅ "Always run Verdaccio dry-run" — done.
+3. ✅ "Plan for manual-publish-with-browser-click fallback" — used it, worked cleanly.
+4. ✅ "Poll `npm view` for CDN propagation" — built into the smoke loop.
+
+**Pattern note:** L-65 differs from L-64 in that it's a PATCH closure, not a MINOR closure. The ceremony was ~1/3 the work — no MANIFEST regen, no resigning, no new release notes, no new schemas to vendor. Future patch releases should follow this template: bump versions + fix code + rebuild + Verdaccio + publish + tag + release + smoke + append closure record. No signing ceremony unless the MANIFEST content actually changes.
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
