@@ -1,0 +1,103 @@
+# systemd unit for the SOA-Harness Runner (reference).
+#
+# Assumes @soa-harness/runner@1.1+ was installed globally via pnpm:
+#   sudo pnpm add -g @soa-harness/runner
+#
+# Or adjust ExecStart to point at your installation path.
+#
+# Install:
+#   sudo cp soa-runner.service /etc/systemd/system/
+#   sudo cp soa-runner-crl-refresh.service /etc/systemd/system/
+#   sudo cp soa-runner-crl-refresh.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now soa-runner.service
+#   sudo systemctl enable --now soa-runner-crl-refresh.timer
+#
+# Verify:
+#   sudo systemctl status soa-runner
+#   curl -fsS http://127.0.0.1:7700/ready
+#   sudo journalctl -u soa-runner -f
+
+[Unit]
+Description=SOA-Harness Runner
+Documentation=https://github.com/wleeb1010/soa-harness-specification
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+# soa is a dedicated system user created by your provisioning (useradd -r -s /sbin/nologin soa).
+User=soa
+Group=soa
+
+# Runner configuration — adopter supplies these paths.
+Environment=NODE_ENV=production
+Environment=RUNNER_PORT=7700
+Environment=RUNNER_AUDIT_DIR=/var/lib/soa-runner/audit
+Environment=RUNNER_CARD_PATH=/etc/soa/agent-card.json
+Environment=RUNNER_TRUST_PATH=/etc/soa/initial-trust.json
+Environment=RUNNER_TOOLS_PATH=/etc/soa/tools.json
+
+# Bootstrap bearer lives in an operator-managed EnvironmentFile with mode 0600.
+# If this file is missing, the service fails to start — do NOT inline secrets
+# in the unit file.
+EnvironmentFile=/etc/soa/runner.env
+
+ExecStart=/usr/bin/node /usr/lib/node_modules/@soa-harness/runner/dist/bin/start-runner.js
+Restart=on-failure
+RestartSec=5s
+
+# Graceful shutdown — Runner handles SIGTERM by draining in-flight dispatches
+# before exit. 30s matches the Core §9 self-improvement lock timeout.
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+
+# ─── Security hardening per Core §25.3 guidance ────────────────────────────
+
+# Filesystem
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/soa-runner/audit
+StateDirectory=soa-runner/audit
+StateDirectoryMode=0750
+
+# Network
+PrivateNetwork=false
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+IPAddressDeny=any
+# Adopters whose Runner makes outbound calls (CRL fetch, LLM provider via
+# dispatcher) MUST add explicit IPAddressAllow entries for their endpoints.
+
+# Capabilities
+CapabilityBoundingSet=
+AmbientCapabilities=
+NoNewPrivileges=true
+
+# Kernel surface
+PrivateDevices=true
+ProtectClock=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+
+# Memory
+MemoryDenyWriteExecute=true
+RestrictSUIDSGID=true
+
+# Process
+UMask=0027
+
+# ─── Logging ────────────────────────────────────────────────────────────────
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=soa-runner
+
+[Install]
+WantedBy=multi-user.target

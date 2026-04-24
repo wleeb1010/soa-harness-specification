@@ -1,0 +1,78 @@
+# Minimal Runner-only compose topology per L-61 evaluator Finding #8.
+#
+# This is M7 scope — just the Runner, no Gateway, no Redis, no memory-MCP
+# backend. Gateway-shaped compose with OAuth/DPoP/WebAuthn + Redis replay
+# cache lands in M11 when the Gateway is real. For M7 the goal is:
+# "adopter can `docker compose up` and get a signed Agent Card served."
+#
+# To run:
+#   cd docs/m7/deployment
+#   # Bake these files into the build context first (one-shot):
+#   cp /path/to/your/agent-card.json ./agent-card.json
+#   cp /path/to/your/initial-trust.json ./initial-trust.json
+#   cp /path/to/your/tools.json ./tools.json
+#   # Or set BUILD_CARD_PATH etc. env to override via .env
+#   docker compose up --build
+#
+# Teardown:
+#   docker compose down -v  # the -v drops the audit volume too — DO NOT do
+#                            # this in production or you lose session history
+#
+# Production adopters: copy this file, pin the image to a digest from your
+# registry, set operator bearers via a secrets manager, and REMOVE the
+# wildcard CORS (not set here — Gateway owns CORS in real deployments).
+
+services:
+  soa-runner:
+    build:
+      context: ../../..
+      dockerfile: docs/m7/deployment/Dockerfile.runner
+    image: soa-runner:1.1-dev
+    # Adopters typically override with a pinned digest: ghcr.io/your-org/soa-runner@sha256:...
+    container_name: soa-runner
+    ports:
+      # Loopback-only bind by default — exposing :7700 to the LAN is an
+      # M11 Gateway concern. If you need remote access right now, terminate
+      # TLS at a reverse proxy on the same host.
+      - "127.0.0.1:7700:7700"
+    volumes:
+      # Agent Card + trust anchors are read-only. Adopter supplies these.
+      - ./agent-card.json:/etc/soa/agent-card.json:ro
+      - ./initial-trust.json:/etc/soa/initial-trust.json:ro
+      - ./tools.json:/etc/soa/tools.json:ro
+      # Audit log + session state survive container restarts. Named volume
+      # so `docker compose down` without -v preserves it.
+      - soa-audit:/var/lib/soa-runner/audit
+    environment:
+      NODE_ENV: production
+      RUNNER_PORT: "7700"
+      RUNNER_AUDIT_DIR: /var/lib/soa-runner/audit
+      RUNNER_CARD_PATH: /etc/soa/agent-card.json
+      RUNNER_TRUST_PATH: /etc/soa/initial-trust.json
+      RUNNER_TOOLS_PATH: /etc/soa/tools.json
+      # Bootstrap bearer — in production this MUST come from a secrets
+      # manager, NOT from a literal in this file. Shown here so the demo
+      # command is copy-pasteable.
+      SOA_BOOTSTRAP_BEARER: ${SOA_BOOTSTRAP_BEARER:-change-me-in-production}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "--timeout=2", "http://127.0.0.1:7700/ready"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+    # Drop unused capabilities — Runner needs none of these beyond its own
+    # network + filesystem I/O.
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      # /tmp is writable for short-lived operations (ajv compile caches,
+      # temp JSON staging). Audit dir is the only persistent write surface
+      # and it's a volume.
+      - /tmp:size=64m,mode=1777
+
+volumes:
+  soa-audit:
+    # Named volume — survives `docker compose down`. Use `down -v` only in
+    # disposable environments.

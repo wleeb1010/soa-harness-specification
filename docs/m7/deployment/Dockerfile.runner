@@ -1,0 +1,92 @@
+# SOA-Harness Runner — reference Dockerfile.
+#
+# This is the M7-week-2 deployment artifact per L-61 / evaluator Finding #8.
+# Not a production image — adopters copy + pin to their own registry, bake
+# their agent card + trust anchors into a build step, and set env vars at
+# orchestrator level. See docs/m7/deployment/README.md.
+#
+# Design choices:
+#   - Multi-stage: builder compiles TS; runtime ships only dist/ + prod deps
+#   - Base: node:22-alpine + tini (PID-1 signal forwarder; Runner handles
+#     SIGTERM by draining in-flight dispatches before exit)
+#   - Non-root: uid 10001 runs the Runner; audit dir chowned at runtime
+#   - No node-gyp toolchain in final image (pnpm deploy strips native deps
+#     if adopters add them later; default Runner has none)
+#
+# Build:
+#   docker build -f docs/m7/deployment/Dockerfile.runner \
+#     -t soa-runner:1.1-dev .
+#
+# Run:
+#   docker run --rm -p 7700:7700 \
+#     -v $(pwd)/agent-card.json:/etc/soa/agent-card.json:ro \
+#     -v $(pwd)/initial-trust.json:/etc/soa/initial-trust.json:ro \
+#     -v soa-audit:/var/lib/soa-runner/audit \
+#     -e RUNNER_CARD_PATH=/etc/soa/agent-card.json \
+#     -e RUNNER_TRUST_PATH=/etc/soa/initial-trust.json \
+#     -e RUNNER_AUDIT_DIR=/var/lib/soa-runner/audit \
+#     soa-runner:1.1-dev
+
+# ─── Stage 1: builder ──────────────────────────────────────────────────────
+FROM node:22-alpine AS builder
+
+WORKDIR /build
+
+# pnpm via corepack (shipped with Node 22)
+RUN corepack enable && corepack prepare pnpm@10 --activate
+
+# Only the manifests first, for better layer cache hits on lockfile changes
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
+COPY packages/core/package.json ./packages/core/
+COPY packages/schemas/package.json ./packages/schemas/
+COPY packages/runner/package.json ./packages/runner/
+
+RUN pnpm install --frozen-lockfile --filter @soa-harness/runner...
+
+# soa-validate.lock is read by @soa-harness/schemas's prebuild step to
+# discover the pinned spec commit. COPY it BEFORE sources so the schema
+# build doesn't walk up and error.
+COPY soa-validate.lock ./soa-validate.lock
+
+# Now copy sources + build
+COPY packages/core ./packages/core
+COPY packages/schemas ./packages/schemas
+COPY packages/runner ./packages/runner
+
+RUN pnpm --filter @soa-harness/runner... build
+
+# Prune to production-only deps for the runtime stage. --legacy flag
+# restores pre-pnpm-v10 behavior of deploying without injected workspace
+# packages (we don't use inject-workspace-packages=true in this repo).
+RUN pnpm --filter @soa-harness/runner deploy --prod --legacy /prod
+
+# ─── Stage 2: runtime ──────────────────────────────────────────────────────
+FROM node:22-alpine AS runtime
+
+# tini as PID 1 so SIGTERM gets forwarded to Node; Node handles drain
+RUN apk add --no-cache tini ca-certificates && \
+    addgroup -g 10001 soa && \
+    adduser -D -u 10001 -G soa -s /sbin/nologin soa && \
+    mkdir -p /var/lib/soa-runner/audit /etc/soa && \
+    chown -R soa:soa /var/lib/soa-runner /etc/soa
+
+WORKDIR /app
+COPY --from=builder --chown=soa:soa /prod /app
+
+USER soa
+
+EXPOSE 7700
+
+# Default env — override at docker run / compose / orchestrator level
+ENV NODE_ENV=production \
+    RUNNER_PORT=7700 \
+    RUNNER_AUDIT_DIR=/var/lib/soa-runner/audit \
+    RUNNER_CARD_PATH=/etc/soa/agent-card.json \
+    RUNNER_TRUST_PATH=/etc/soa/initial-trust.json
+
+# Healthcheck hits /ready — §5.4 probe. 503 until boot completes; 200 after.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -q -O- --timeout=2 http://127.0.0.1:7700/ready || exit 1
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["node", "./node_modules/@soa-harness/runner/dist/bin/start-runner.js"]

@@ -1,0 +1,25 @@
+# Timer for the CRL refresh heartbeat per Core §7.3.1.
+#
+# The §7.3.1 stale ceiling is 2 hours. This timer fires every hour so we
+# have >1h margin before the ceiling in the case where the in-process
+# scheduler mis-fires (unlikely but load-bearing; matches the impl's own
+# 1h refreshIntervalMs default).
+#
+# Enable:
+#   sudo systemctl enable --now soa-runner-crl-refresh.timer
+
+[Unit]
+Description=Hourly CRL refresh trigger for SOA-Harness Runner
+Requires=soa-runner.service
+
+[Timer]
+# First tick: 5 minutes after boot (give the Runner time to come up)
+OnBootSec=5min
+# Repeat: every hour. Persistent=true ensures a missed tick fires on next boot.
+OnUnitActiveSec=1h
+Persistent=true
+AccuracySec=1min
+Unit=soa-runner-crl-refresh.service
+
+[Install]
+WantedBy=timers.target
