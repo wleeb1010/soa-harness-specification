@@ -12,6 +12,7 @@ L-64 Debt #7 (release-ceremony-order flaw that shipped with v1.1.0 and required 
 - Any new or modified schema under `schemas/`.
 - Any new `SV-*` or `UV-*` test ID, or any change to `soa-validate-must-map.json` / `ui-validate-must-map.json`.
 - Any new error code added to `§24 Error Code Taxonomy`.
+- **Any spec edit prompted by impl work that exposed a spec gap (see Hard Rule below).**
 
 **Optional:**
 - Editorial-class changes (typos, link fixes, wording clarifications with no normative shift).
@@ -19,6 +20,29 @@ L-64 Debt #7 (release-ceremony-order flaw that shipped with v1.1.0 and required 
 - Internal documentation files (`docs/`, `IMPLEMENTATION_LESSONS.md`) that don't change the normative surface.
 
 When in doubt, run the gate. It takes ~2 minutes.
+
+## HARD RULE — impl work cannot invent spec content
+
+**When impl code must make a design decision the spec doesn't normatively specify — picking enum values, inventing field names, choosing default behavior, selecting error reasons not in §24 — STOP impl work. Close the spec gap FIRST with a plan-evaluator pass, then let impl mirror the normative values.**
+
+This rule is non-negotiable. Drift between spec and impl is the leading cause of post-ship errata (v1.1.0 Debt #7 scaffold-side `PINNED_SPEC_COMMIT` drift, v1.2.1 Debt #8 scaffold `runnerVersion` drift, and M9 W1 `A2aHandoffStatusEnum` inventing 7 values §17.2 never enumerated).
+
+**Sequence when an impl-initiated gap is exposed:**
+
+1. **Pause the impl commit.** Keep un-committed code local; stash or revert any committed drift.
+2. **Draft the spec addition** (new subsection, new schema, new enum member list, new default-behavior rule).
+3. **Run plan-evaluator on the draft.**
+4. **Commit the spec change** with evaluator citation.
+5. **Resume impl**, mirroring the normative values exactly.
+
+**How to recognize this case while writing impl:**
+
+- You're writing `type X = "a" | "b" | "c"` — is `{a, b, c}` specified by the spec? If not, STOP.
+- You're picking a field name that isn't in the spec's schema or prose — STOP.
+- You're choosing a default value or fallback behavior the spec leaves open — STOP.
+- "STOP" means: don't commit, don't continue building on the invented contract. Go close the spec first.
+
+Applies to TypeScript, Go, Python, schema JSON, fixture files — anywhere that could be read as establishing a normative contract once shipped.
 
 ## The gate
 

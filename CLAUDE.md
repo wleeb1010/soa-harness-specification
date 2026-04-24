@@ -21,6 +21,18 @@ Prefer MCP queries over `Grep`/`Read` for:
 2. Check if the section has a test ID mapping in `soa-validate-must-map.json` or `ui-validate-must-map.json`
 3. If the edit affects wire format, versioned behavior, or security invariants, it's a `§19.4` major/minor bump — flag it explicitly
 
+## HARD RULE — impl work cannot invent spec content
+
+When writing impl code for `soa-harness-impl` or `soa-validate`, if you must make a design decision the spec doesn't normatively specify — pick enum values, invent field names, choose default behavior, select error reasons — **STOP**. Do not commit impl that establishes a de facto contract through shipped bytes.
+
+Instead:
+1. Close the spec gap first (new subsection, new enum member list, new default rule).
+2. Run plan-evaluator on the spec draft (same gate as below).
+3. Commit the spec change with evaluator citation.
+4. Then resume impl, mirroring the normative values.
+
+This rule is why `docs/spec-change-checklist.md` extends the plan-evaluator gate to impl-initiated drift. Precedent: v1.1.0 Debt #7 (scaffold `PINNED_SPEC_COMMIT` drift), v1.2.1 Debt #8 (scaffold `runnerVersion` drift), M9 W1 `A2aHandoffStatusEnum` (invented 7 values §17.2 never listed). Every time we let impl invent, we ship debt.
+
 ## Before committing any normative section (HARD GATE)
 
 **MANDATORY:** After drafting but BEFORE `git commit`, run the plan-evaluator skill against the draft. This is not a nice-to-have — it's a hard gate defined in `docs/spec-change-checklist.md`.
