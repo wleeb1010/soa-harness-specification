@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "bench": "v1.0-baseline",
+  "env_label": "Env B — WSL2 Ubuntu on /mnt/c (NTFS via 9P)",
+  "started_at": "2026-04-24T02:30:36.302Z",
+  "completed_at": "2026-04-24T02:31:08.988Z",
+  "node_version": "v22.22.1",
+  "platform": "linux",
+  "arch": "x64",
+  "os_release": "6.6.87.2-microsoft-standard-WSL2",
+  "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+  "cpu_count": 32,
+  "total_mem_gb": 31.2,
+  "impl_root": "/mnt/c/Users/wbrumbalow/Documents/Projects/soa-harness-impl",
+  "warmup_runs": 3,
+  "measured_runs": 10,
+  "metrics": {
+    "agent_card_sign_in_process": {
+      "p50_ms": 0.086,
+      "p95_ms": 0.129,
+      "min_ms": 0.078,
+      "max_ms": 0.555,
+      "sample_count": 10000,
+      "ops_per_sec_approx": 11627.9
+    },
+    "agent_card_endpoint_in_process": {
+      "p50_ms": 0.017,
+      "p95_ms": 0.034,
+      "min_ms": 0.014,
+      "max_ms": 2.615,
+      "sample_count": 10000,
+      "ops_per_sec_approx": 58823.5
+    },
+    "agent_card_endpoint_http": {
+      "p50_ms": 0.074,
+      "p95_ms": 0.125,
+      "min_ms": 0.064,
+      "max_ms": 2.249,
+      "sample_count": 10000,
+      "ops_per_sec_approx": 13513.5
+    },
+    "jcs_streamevent": {
+      "p50_ms": 0.004,
+      "p95_ms": 0.005,
+      "min_ms": 0.003,
+      "max_ms": 0.399,
+      "sample_count": 100000,
+      "ops_per_sec_approx": 250000
+    },
+    "sha256_2kb": {
+      "p50_ms": 0.001,
+      "p95_ms": 0.001,
+      "min_ms": 0.001,
+      "max_ms": 6.055,
+      "sample_count": 100000,
+      "ops_per_sec_approx": 1000000
+    },
+    "cold_boot": {
+      "median_ms": 2.783,
+      "min_ms": 2.501,
+      "max_ms": 4.213,
+      "sample_count": 10
+    },
+    "rss_idle_mb": 273.3
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "bench": "v1.0-baseline",
+  "env_label": "Env A — Windows 11 native",
+  "started_at": "2026-04-24T02:29:52.877Z",
+  "completed_at": "2026-04-24T02:29:59.206Z",
+  "node_version": "v22.19.0",
+  "platform": "win32",
+  "arch": "x64",
+  "os_release": "10.0.26200",
+  "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+  "cpu_count": 32,
+  "total_mem_gb": 63.7,
+  "impl_root": "C:\\Users\\wbrumbalow\\Documents\\Projects\\soa-harness-impl",
+  "warmup_runs": 3,
+  "measured_runs": 10,
+  "metrics": {
+    "agent_card_sign_in_process": {
+      "p50_ms": 0.071,
+      "p95_ms": 0.096,
+      "min_ms": 0.064,
+      "max_ms": 0.384,
+      "sample_count": 10000,
+      "ops_per_sec_approx": 14084.5
+    },
+    "agent_card_endpoint_in_process": {
+      "p50_ms": 0.017,
+      "p95_ms": 0.021,
+      "min_ms": 0.016,
+      "max_ms": 2.149,
+      "sample_count": 10000,
+      "ops_per_sec_approx": 58823.5
+    },
+    "agent_card_endpoint_http": {
+      "p50_ms": 0.14,
+      "p95_ms": 0.206,
+      "min_ms": 0.121,
+      "max_ms": 5.219,
+      "sample_count": 10000,
+      "ops_per_sec_approx": 7142.9
+    },
+    "jcs_streamevent": {
+      "p50_ms": 0.005,
+      "p95_ms": 0.005,
+      "min_ms": 0.004,
+      "max_ms": 0.271,
+      "sample_count": 100000,
+      "ops_per_sec_approx": 200000
+    },
+    "sha256_2kb": {
+      "p50_ms": 0.002,
+      "p95_ms": 0.002,
+      "min_ms": 0.001,
+      "max_ms": 13.429,
+      "sample_count": 100000,
+      "ops_per_sec_approx": 500000
+    },
+    "cold_boot": {
+      "median_ms": 2.758,
+      "min_ms": 2.45,
+      "max_ms": 5.288,
+      "sample_count": 10
+    },
+    "rss_idle_mb": 218.3
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "bench": "v1.0-baseline",
+  "env_label": "Env B (npm) — WSL2 Ubuntu native ext4, @soa-harness/*@1.0.0 from npm",
+  "started_at": "2026-04-24T02:33:20.993Z",
+  "completed_at": "2026-04-24T02:33:26.455Z",
+  "node_version": "v22.22.1",
+  "platform": "linux",
+  "arch": "x64",
+  "os_release": "6.6.87.2-microsoft-standard-WSL2",
+  "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+  "cpu_count": 32,
+  "total_mem_gb": 31.2,
+  "impl_source": "npm-registry@1.0.0",
+  "warmup_runs": 3,
+  "measured_runs": 10,
+  "metrics": {
+    "agent_card_sign_in_process": {
+      "p50_ms": 0.086,
+      "p95_ms": 0.123,
+      "min_ms": 0.08,
+      "max_ms": 0.573,
+      "sample_count": 10000,
+      "ops_per_sec_approx": 11627.9
+    },
+    "agent_card_endpoint_in_process": {
+      "p50_ms": 0.017,
+      "p95_ms": 0.036,
+      "min_ms": 0.014,
+      "max_ms": 3.346,
+      "sample_count": 10000,
+      "ops_per_sec_approx": 58823.5
+    },
+    "agent_card_endpoint_http": {
+      "p50_ms": 0.075,
+      "p95_ms": 0.123,
+      "min_ms": 0.064,
+      "max_ms": 2.548,
+      "sample_count": 10000,
+      "ops_per_sec_approx": 13333.3
+    },
+    "jcs_streamevent": {
+      "p50_ms": 0.004,
+      "p95_ms": 0.005,
+      "min_ms": 0.003,
+      "max_ms": 0.361,
+      "sample_count": 100000,
+      "ops_per_sec_approx": 250000
+    },
+    "sha256_2kb": {
+      "p50_ms": 0.001,
+      "p95_ms": 0.001,
+      "min_ms": 0.001,
+      "max_ms": 0.039,
+      "sample_count": 100000,
+      "ops_per_sec_approx": 1000000
+    },
+    "cold_boot": {
+      "median_ms": 2.754,
+      "min_ms": 2.435,
+      "max_ms": 4.001,
+      "sample_count": 10
+    },
+    "rss_idle_mb": 283
+  }
+}
