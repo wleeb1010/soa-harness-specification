@@ -2167,6 +2167,50 @@ The gate at `docs/spec-change-checklist.md` + project `CLAUDE.md` caught 2 criti
 
 **Pattern note:** L-66 closes M8, the first milestone that integrated the spec-change plan-evaluator gate from the start. Future milestones should treat the gate as a baseline — every §N.M draft goes through it before commit, and the commit message cites the pass. Skipping it is how v1.1.0 Debt #7 happened.
 
+### L-67 — v1.2.1 patch release: Debt #8 resolution + publish-loop lesson `[patch ship]`
+
+- **Surfaced:** 2026-04-24, same day as v1.2.0. User said "Resolve debt move into the next phase" after v1.2.0 landed.
+- **Status:** `shipped`. v1.2.1 live on npm, tagged + released across all three repos.
+
+**Release artifacts:**
+
+| Repo | Tag | Commit | Notes |
+|---|---|---|---|
+| spec | `v1.2.1` | `2cde3c4` | CHANGELOG [1.2.1] entry + scripts/release-v1.2.1.mjs. MANIFEST byte-identical to v1.2.0. |
+| impl | `v1.2.1` | `fa43a07` | 11 packages bumped to 1.2.1; 4 scaffold template `start.mjs` files flipped runnerVersion "1.1" → "1.2". |
+| validate | `v1.2.1` | `e94aa62` | Snapshot tag. No validator code change. |
+
+**What was wrong:**
+
+`create-soa-agent` scaffold templates (4 variants: `runner-starter`, `runner-starter-mem0`, `runner-starter-zep`, `runner-starter-none`) hard-coded `runnerVersion: "1.1"` across 6-7 call-sites per template. v1.2.0 packages shipped at `@1.2.0` but scaffolded Runners still self-identified as `runner_version: "1.1"` at `/version`. SV-COMPAT-06 passed the semver-shape check but the value was stale. Same class as v1.1.0 Debt #7.
+
+**Fix:**
+
+Flipped every `runnerVersion: "1.1"` hardcode in the 4 templates to `runnerVersion: "1.2"`. No MANIFEST regen, no resigning — pure impl patch.
+
+**Publish-loop lesson (saved to auto-memory):**
+
+The v1.2.0 AND v1.2.1 ceremonies both shipped missing `@soa-harness/chat-ui` + `@soa-harness/cli` on the first manual-publish-loop pass. Root cause discovered in v1.2.1: the user's cached PowerShell `$pkgs` array carried the v1.1.0 loop (9 packages); the 2 new v1.2 packages weren't in it at all, so they never got a publish attempt. The loop ran cleanly through its 9 names, returned exit 0, and from the user's terminal it looked like everything completed — only an `npm view` audit surfaced the 404s.
+
+Filed as auto-memory: every release ceremony, before handing the manual publish loop to the user, verify the `$pkgs` array matches the `PACKAGES` list in the target `scripts/release-vX.Y.Z.mjs`. For v1.2.x+ that's 11 names. For v1.3+ re-derive from the release script.
+
+Durable fix: make the loop read from the release script's `PACKAGES` export rather than a hand-maintained string list. Filed as a v1.3.x concern if the EOTP workaround persists (real fix would be solving the token's 2FA setting so `scripts/release-vX.Y.Z.mjs` runs end-to-end).
+
+**End-to-end smoke (from real npm):**
+
+```bash
+npx create-soa-agent@1.2.1 smoke --demo
+cd smoke && npm install && node ./start.mjs &
+curl -s -H "Authorization: Bearer demo-bootstrap-bearer-replace-me" http://127.0.0.1:7700/version
+# → {"soaHarnessVersion":"1.0","supported_core_versions":["1.0"],
+#    "runner_version":"1.2","generated_at":"...",
+#    "spec_commit_sha":"c958bf984dc677cbb50f8c8be5e4edb18411ae31"}
+```
+
+`runner_version: "1.2"` ✓ (Debt #8 fix verified). `spec_commit_sha` byte-identical to v1.2.0 ✓ (confirming no spec-side changes). Debt #8 closed.
+
+**Pattern note:** L-67 closes the v1.2.1 patch cycle. v1.2.x is now at v1.2.1 HEAD with no open debts in the L-66 → L-67 ledger. L-68 will open against M9 (§17 A2A wire protocol, v1.3.0).
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
