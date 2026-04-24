@@ -377,7 +377,7 @@
       "section_title": "A2A Wire Protocol",
       "profile": "core+handoff",
       "severity": "moderate",
-      "assertion": "Receiver fetches caller's Agent Card and compares its JWS digest to the presented agent_card_etag; mismatch emits CardVersionDrift and responds JSON-RPC error -32051; etag cached ≤ 60 s."
+      "assertion": "Receiver fetches caller's Agent Card at sub URL, computes ETag per the §17.2.4 agent_card_etag formula (double-quoted hex SHA-256 of JCS(agent-card)) and compares to the presented agent_card_etag JWT claim. On mismatch: (a) emit CardVersionDrift §24 event; (b) respond JSON-RPC error -32051 HandoffRejected with error.data.reason byte-exact 'card-version-drift'. Disjoint from card-unreachable (step 2): card-version-drift applies only when the fetch succeeds and the ETag differs; fetch failures remain card-unreachable. Etag cache ≤ 60 s."
     },
     "SV-A2A-14": {
       "name": "A2A digest canonicalization",
