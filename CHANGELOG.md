@@ -6,6 +6,61 @@ Categories per entry: **Added** (new), **Changed** (modified), **Deprecated** (s
 
 ---
 
+## [1.3.0] — 2026-04-24
+
+Minor release — additive-minor per §19.4.1. Closes the M9 Agent2Agent (§17) profile with six coordinated spec additions, a schema extension, seven new / narrowed must-map assertions, and a ceremony-ordered pin bump across three repos.
+
+### Added — Core spec (normative)
+
+- **§17.2.1 HandoffStatus enum (v1.3).** Closed-enum with six values (`accepted`, `executing`, `completed`, `rejected`, `failed`, `timed-out`), monotonicity rule, `last_event_id` semantics per value, Runner-crash + resume carve-out, and explicit `rejected` vs `HandoffRejected` disambiguation. Test anchor: `SV-A2A-15`.
+- **§17.2.2 Per-method deadlines (v1.3).** Six normative default deadlines with six `SOA_A2A_*_DEADLINE_S` env overrides. Task-execution timeout emits `SessionEnd(stop_reason=MaxTurns)`. Test anchor: `SV-A2A-16`.
+- **§17.2.3 A2A capability advertisement + matching (v1.3).** New optional `a2a.capabilities` on the Agent Card. Five-row truth table. Byte-exact reason string `"no-a2a-capabilities-advertised"`. `capabilities_needed` validation (non-empty strings, order-preserving dedup, 256-element soft cap). Byte-exact UTF-8 comparison — no Unicode normalization. `error.data.missing_capabilities` on -32003. §17.2.3.1 Informative token registry. Test anchor: `SV-A2A-17`.
+- **§17.2.4 agent.describe result shape (v1.3).** Normative `{card, jws}` envelope. `result.jws` signs `JCS(result.card)` per §6.1.1. Five-step verification order. §19.4.1 additive-minor extensibility (unknown fields IGNORED). Schema vs signature error-class split. Card-rotation race carve-out. §17.1 step 4 `agent_card_etag` formula pinned. Test anchor: `SV-A2A-03` (narrowed).
+- **§17.1 step 4 clarified.** HandoffRejected response MUST carry byte-exact `reason: "card-version-drift"`. Disjointness with `card-unreachable` explicit. Test anchor: `SV-A2A-13` (narrowed).
+- **§17.2.5 Per-method digest recompute (v1.3).** Three-row matrix. Offer-state retention MUST tied to §17.2.2 transfer deadline. Restart-crash observability rule. `final_messages` vs `result` disambiguation. Test anchor: `SV-A2A-14` (narrowed).
+
+### Added — Schemas
+
+- **`schemas/agent-card.schema.json`** gains optional `a2a` object with nested `capabilities: string[]`.
+
+### Changed / Added — Must-map
+
+- `SV-A2A-03` narrowed to §17.2.4 result-envelope contract.
+- `SV-A2A-05` narrowed to -32003 error-code-membership (trigger conditions move to SV-A2A-17).
+- `SV-A2A-13` narrowed to name `card-version-drift` reason string.
+- `SV-A2A-14` narrowed to §17.2.5 per-method matrix.
+- `SV-A2A-15` NEW (critical) — HandoffStatus transition matrix + monotonicity.
+- `SV-A2A-16` NEW (moderate) — per-method deadlines + env-var overrides.
+- `SV-A2A-17` NEW (critical) — §17.2.3 truth table + reason string + error.data shape.
+
+### Changed — Reference implementation (`soa-harness-impl`)
+
+- All 11 packages bump 1.2.1 → 1.3.0. Four new `a2a` modules (`matching.ts`, `jwt.ts`, `signer-discovery.ts`, `digest-check.ts`). Test total 882/882 (up from 816).
+- `buildRunnerApp` accepts `a2a: { bearer, a2aCapabilities? }` option. When present, `POST /a2a/v1` mounts with a real §6.1.1-compliant signed Agent Card JWS in `agent.describe` results.
+- `A2aHandoffRejectedReason` vocabulary grows 9 → 10 (adds `card-version-drift`).
+- Scaffold `runnerVersion` 1.2 → 1.3; `@soa-harness/*` dep ranges `^1.2.1` → `^1.3.0`. `tools/vscode-extension` 1.2.1 → 1.3.0.
+
+### Changed — Conformance validator (`soa-validate`)
+
+- `soa-validate.lock` bumps c958bf9 → b87c2ff in lockstep with impl.
+- `internal/testrunner/handlers_a2a.go` forward-registers `SV-A2A-10..17` as skip-with-rationale handlers citing impl-unit-test coverage.
+
+### HARD-GATE exercise records
+
+Every normative spec commit passed the plan-evaluator gate at `docs/spec-change-checklist.md`:
+
+- §17.2.1 + §17.2.2 (W1): 3 critical + 8 moderate/minor addressed inline.
+- §17.2.3 (W2): 2 critical + 6 moderate addressed inline.
+- §17.2.4 (W2): 4 critical + 1 high + 6 moderate addressed inline.
+- §17.1 step 4 (W3-prep): 2 moderate addressed inline.
+- §17.2.5 (W4-prep): 3 critical + 4 moderate addressed inline.
+
+### Spec artifacts
+
+- `MANIFEST.json` / `MANIFEST.json.jws` regenerated at this commit. Signed with the v1.0 release key (fingerprint unchanged; no key rotation at v1.3).
+
+---
+
 ## [1.2.1] — 2026-04-24
 
 Patch release — editorial-class per §19.4. No spec changes. Fixes a scaffold-template wiring bug (Debt #8 from L-66) where `create-soa-agent` scaffolded Runners reported `runner_version: "1.2"` correctly in the field but `/version` still emitted "1.1" because the scaffold hard-codes `runnerVersion` across four `start.mjs` templates and we missed bumping it from the v1.1.1 patch set.
