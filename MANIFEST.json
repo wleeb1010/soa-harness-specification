@@ -1,6 +1,6 @@
 {
   "spec_version": "1.0",
-  "released_at": "2026-04-18T00:00:00Z",
+  "released_at": "2026-04-24T00:00:00Z",
   "publisher_kid": "soa-release-v1.0",
   "artifacts": {
     "seccomp": {
@@ -22,7 +22,7 @@
       {
         "name": "SOA-Harness Core Specification v1.0 (Final).md",
         "path": "SOA-Harness Core Specification v1.0 (Final).md",
-        "sha256": "08914a4b264ffd183e870daca040e2bdc6ddafee5f09b8ee607cfed19a68304c",
+        "sha256": "26a1ec089cded65e2166ab8607b5112033e858272ab8c2815fcc91d69946fdd9",
         "canonicalization": "raw-utf8"
       },
       {
@@ -40,7 +40,7 @@
       {
         "name": "soa-validate-must-map.json",
         "path": "soa-validate-must-map.json",
-        "sha256": "0c689fbd30d5564dfa3ed5d4463791c62a0cc3ea1148f29d27058e21b9365033",
+        "sha256": "03a322c5e06737877c87529a4fd080e80c8b5b0ff3abca0a359bbc7856d80e93",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -104,6 +104,12 @@
         "canonicalization": "JCS-RFC-8785"
       },
       {
+        "name": "dispatch-recent-response.schema.json",
+        "path": "schemas/dispatch-recent-response.schema.json",
+        "sha256": "bf97b4d8e233034ab2a01a3a46fe6a1dc46389a42777801e7287f38a418dff00",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
         "name": "events-recent-response.schema.json",
         "path": "schemas/events-recent-response.schema.json",
         "sha256": "d2bbfd9f32547cd100b0a2cf8c81cff5daed57d91f65f60add05b3ca1e3b28c8",
@@ -125,6 +131,18 @@
         "name": "initial-trust.schema.json",
         "path": "schemas/initial-trust.schema.json",
         "sha256": "50e21ad40d914d221971fafbaf911ea7be4343cab214227c5b38e4004766a93d",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "llm-dispatch-request.schema.json",
+        "path": "schemas/llm-dispatch-request.schema.json",
+        "sha256": "c97fb312dac304ac0a82eb527cc947f05cb488c50768c07b2df54018bd1f45e4",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "llm-dispatch-response.schema.json",
+        "path": "schemas/llm-dispatch-response.schema.json",
+        "sha256": "6a693d7afd19277cf1d0c2107e39f0b57f034a6e0f6cecd2c33ee48241cf68dc",
         "canonicalization": "JCS-RFC-8785"
       },
       {
@@ -161,6 +179,12 @@
         "name": "permissions-resolve-response.schema.json",
         "path": "schemas/permissions-resolve-response.schema.json",
         "sha256": "0d6e1a7ee350358997f31173947d84f61d490817b3a5fbc7e717450e463f1553",
+        "canonicalization": "JCS-RFC-8785"
+      },
+      {
+        "name": "release-gate-report.schema.json",
+        "path": "schemas/release-gate-report.schema.json",
+        "sha256": "b47be979c07d8cbbf57c8a3cbded4505bebbfce8948920dc7bd2c4b50df95e6c",
         "canonicalization": "JCS-RFC-8785"
       },
       {

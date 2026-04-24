@@ -137,9 +137,17 @@ const seccompSha = digestJson(path.join(DL, "soa-harness-profile-v1.json"));
 // a common placeholder convention). Replace with real digests when binaries ship.
 const placeholderSha = "0".repeat(64);
 
+// spec_version is the MANIFEST wire-schema version, NOT the release version.
+// It stays "1.0" across 1.x minor releases (§19.4 additive-only).
+// The release version itself is carried by the git tag + CHANGELOG + release
+// notes; MANIFEST encodes which schema it validates against.
+// publisher_kid also stays soa-release-v1.0 because v1.1.0 uses the same
+// Ed25519 release key (fingerprint l5TzOjMJfyyDTuEarut87i3T8KhGBV4AeLwOXo028vI=).
+// Key rotation was scheduled as v1.0.1 errata (hardware-backed), still
+// deferred at v1.1.0.
 const manifest = {
   spec_version: "1.0",
-  released_at: "2026-04-18T00:00:00Z",
+  released_at: "2026-04-24T00:00:00Z",
   publisher_kid: "soa-release-v1.0",
   artifacts: {
     seccomp: {

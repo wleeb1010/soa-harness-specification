@@ -6,7 +6,7 @@ Categories per entry: **Added** (new), **Changed** (modified), **Deprecated** (s
 
 ---
 
-## [1.1.0-dev] — unreleased (M7 in progress)
+## [1.1.0] — 2026-04-24
 
 Additive minor per §19.4. Everything below is wire-format-compatible with v1.0 conformance claims: a v1.0 adopter does not need to change existing code to keep passing — v1.1 adds capabilities without removing anything.
 
