@@ -1713,9 +1713,10 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 
 **Pattern note:** L-61 follows the L-52/L-56/L-60 milestone-kickoff cadence. Distinctive shape: M7+ is the FIRST milestone sequence that operates against a public, versioned, adopter-visible release (v1.0.0 shipped). Risk profile shifts from "ship the spec correctly" (M1-M6) to "evolve the spec additively without breaking adopters" — every future change routes through `docs/errata-policy.md` editorial/minor/major decision tree. The `v1.0-lts` branch exists precisely so adopters who don't want to track main get predictable security fixes.
 
-### L-62 — M7 week 0-3 night-shift execution record `[M7 kickoff execution]`
+### L-62 — M7 week 0-3 night-shift execution record `[M7 kickoff execution — shipped]`
 
 - **Surfaced:** 2026-04-23/24 overnight session. Operator delegated autonomous execution ("pull a night shift for me, making as many executive decisions as possible"). This entry records every commit, every non-trivial decision, and every queued follow-up so the operator can audit in the morning without reconstructing context.
+- **Status update (2026-04-24, post-L-64):** the work recorded in L-62 was SHIPPED as part of v1.1.0 — all commits referenced below are now ancestors of the `v1.1.0` tag on their respective repos, all impl tests ship in the published npm packages, and all validator probes ship in `soa-validate@v1.1.0`. Flipped from "executed" to "shipped" per the L-63 pre-M8 checklist.
 - **Scope executed:** M7 weeks 0-3 of the 6-week M7 milestone per L-61 revision 4. Three repos touched, seven commits, 977 impl tests green, 170 validator probes resolved (35 pass + 135 skip + 0 fail + 0 error on core profile).
 
 **Boundary contract with operator (declared before work started):**
@@ -2015,6 +2016,51 @@ Plus three morning-triage CI fix-forwards (not strictly debt but surfaced by the
 **Version impact:** §19.4 minor (v1.1 → v1.2). Additive only. Streaming mode is a new capability, not a wire-format break — the synchronous mode defined in v1.1 stays valid.
 
 **Pattern note:** L-63 differs from L-52/L-56/L-60/L-61 kickoffs in that it opens against an already-shipped prior milestone (v1.1.0) rather than against a rolling pre-release. The cadence is the same; the surface changes — adopter-facing work is now the dominant user of each new feature instead of internal tooling.
+
+### L-64 — v1.1.0 release ship record `[milestone closure]`
+
+- **Surfaced:** 2026-04-24, real-time during the ceremony. Written post-tag, post-publish, post-smoke-test.
+- **Status:** `shipped`. v1.1.0 is live on npm, tagged + released on all three GitHub repos, signed, and smoke-tested.
+
+**Release artifacts:**
+
+| Repo | Tag | Commit | Notes |
+|---|---|---|---|
+| spec | `v1.1.0` | `2184a32` | MANIFEST.json + MANIFEST.json.jws signed with v1.0 release key (fingerprint `l5TzOjMJfyyDTuEarut87i3T8KhGBV4AeLwOXo028vI=`); RELEASE-NOTES-v1.1.0.md narrative. |
+| impl | `v1.1.0` | `cac283e` | Lock bumped 68b34f1 → 2184a32. |
+| validate | `v1.1.0` | `0054ee2` | Lock bumped 68b34f1 → 2184a32. |
+
+**npm packages published (9 total, all at `1.1.0`):**
+
+`@soa-harness/schemas`, `@soa-harness/core`, `@soa-harness/runner`, `@soa-harness/memory-mcp-sqlite`, `@soa-harness/memory-mcp-mem0`, `@soa-harness/memory-mcp-zep`, `@soa-harness/langgraph-adapter`, **`@soa-harness/example-provider-adapter`** (new in v1.1), `create-soa-agent`.
+
+**Ceremony sequence (what actually happened vs. runbook):**
+
+1. **Prep commits (reversible):** impl `342b121` bumped all 9 package.json versions 1.0.0 → 1.1.0; spec `ffb26dc` landed CHANGELOG flip, MANIFEST regen (171 supplementary artifacts, three new dispatcher schemas), RELEASE-NOTES-v1.1.0.md, scripts/release-v1.1.mjs, build-manifest.mjs released_at bump.
+2. **Signing:** spec `815b671` committed the real JWS signature (same key as v1.0). Signed via `RELEASE_KEY_PASSPHRASE=... node scripts/sign-manifest.mjs --key ...`. Self-verified + independently re-verified against `keys/soa-release-v1.0.pub`.
+3. **Verdaccio dry-run:** surfaced a latent bug in `release-v1.1.mjs` — `execSync` with `stdio: "inherit"` returns null, crashing `tryRun`'s `.trim()` call. Every package reported `PUBLISH FAILED` even though the actual `+ @soa-harness/<pkg>@1.1.0` line had printed. Fixed in spec `2184a32` with a null-safe `run()` helper. Re-ran Verdaccio, 9/9 green in ~9.5s wall time.
+4. **npm auth gauntlet:** the granular access token created for release kept returning `EOTP` despite the user having disabled 2FA on writes at the account level. Regenerating the token didn't fix it — npm's 2FA policy appears to cache at token-creation time even for "automation" granular tokens. Tried `npm login --auth-type=web` (didn't help). Final resolution: user published 9 packages manually from their PowerShell terminal with the loop `foreach ($p in $pkgs) { cd packages/$p; pnpm publish ... }`, clicking the npm-provided web-auth URL for each publish.
+5. **Publish verification:** 8 of 9 packages visible on npm registry immediately; `@soa-harness/example-provider-adapter@1.1.0` had CDN propagation lag (version-specific GET returned 200 but package-metadata GET returned 404 for ~45 seconds). Polled `npm view` until it resolved.
+6. **Pin bumps (post-publish, ordering mistake — see Debt #7):** impl lock `cac283e` + validate lock `0054ee2` bumped to spec `2184a32`. This was done AFTER publish, which means the shipped packages carry a PINNED_SPEC_COMMIT that doesn't match the post-publish lock pin — a known bug tracked for v1.1.1 patch.
+7. **Tag + release:** spec + impl + validate all tagged `v1.1.0` on the same day, pushed, `gh release create` on each with cross-links. Spec release attached MANIFEST.json + MANIFEST.json.jws as release artifacts.
+8. **Smoke test:** fresh directory, `npm install @soa-harness/runner@1.1.0` (49 named exports), then `npx create-soa-agent@1.1.0 fresh-agent --demo`, `npm install`, `node ./start.mjs`, poll `/ready` → `{"status":"ready"}`, confirm `/version` + `/health` respond.
+9. **Cleanup:** release-scoped `~/.npmrc-release` deleted. User to manually revoke the npm granular token at `https://www.npmjs.com/settings/wleeb/tokens`.
+
+**Bugs surfaced during ceremony (all filed as debt, none blocking v1.1.0):**
+
+- **Debt #5** — impl + validate repos lack `.gitattributes`. Version-bump commits triggered CRLF warnings. Spec repo has `.gitattributes` from Debt #2 cleanup; siblings were never brought along. Resolve post-release.
+- **Debt #6** — `scripts/release-v1.0.mjs` has the same latent stdio-inherit bug that I fixed in release-v1.1.mjs. Editorial fix (v1.0.x errata-class).
+- **Debt #7** — `@soa-harness/schemas@1.1.0` carries `PINNED_SPEC_COMMIT = 68b34f1` (M7-week-1 pin), not `2184a32` (v1.1.0 release pin). `create-soa-agent@1.1.0` scaffold's `start.mjs` also doesn't wire `pinnedSpecCommit` into the Runner factory, so `/version` omits `spec_commit_sha` in demo mode. Validator `--check-pins` against a v1.1.0-scaffolded Runner will either find the field empty or a drifted value — `--allow-drift` works around it. v1.1.1 patch should: (a) bump `schemas/src/registry.ts` PINNED_SPEC_COMMIT to the target release SHA BEFORE build, (b) update scaffold template to pass pinnedSpecCommit, (c) rebuild + re-publish 9 packages @1.1.1. Process fix for future releases: **pin-bump soa-validate.lock BEFORE npm publish**, so PINNED_SPEC_COMMIT and the lock files converge.
+
+**Version impact:** §19.4 minor release. v1.1.0 is additive over v1.0.0 (new §16 dispatcher, StopReason enum extension, error taxonomy, three new schemas, deployment artifacts, docs-site MVP, new example-provider-adapter package). No breaking changes. v1.0 conformance claims remain valid with zero code changes.
+
+**Pattern note:** L-64 closes the v1.1.0 release cycle. L-65 will open against either (a) v1.1.1 patch release for Debt #7, or (b) M8 kickoff per L-63 roadmap. Calling this one "shipped" rather than "executed" per the L-62 addendum convention — `shipped` = artifacts public + irreversible; `executed` = code written + tests green but not yet published.
+
+**Retro note (for future release ceremonies):**
+1. Pin-bump soa-validate.lock as part of the release-prep commit, BEFORE npm publish. This gets PINNED_SPEC_COMMIT correct in the published tarballs.
+2. Always run Verdaccio dry-run before live publish. The stdio-inherit bug would have tanked the real publish if we hadn't caught it in staging.
+3. npm 2FA policy on granular tokens is sticky at creation time. Either (a) verify tokens work by running a dry-run against real npm before ceremony, or (b) plan for the manual-publish-with-browser-click fallback as Plan B.
+4. CDN propagation lag is real on new packages — the first-ever version of a new package name can take ~45s to appear in `npm view`, even though direct version-URL access returns 200 immediately. Poll via `npm view`, don't bail on the first 404.
 
 ## Authoring notes
 
