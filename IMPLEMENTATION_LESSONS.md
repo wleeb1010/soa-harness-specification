@@ -1713,6 +1713,79 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 
 **Pattern note:** L-61 follows the L-52/L-56/L-60 milestone-kickoff cadence. Distinctive shape: M7+ is the FIRST milestone sequence that operates against a public, versioned, adopter-visible release (v1.0.0 shipped). Risk profile shifts from "ship the spec correctly" (M1-M6) to "evolve the spec additively without breaking adopters" — every future change routes through `docs/errata-policy.md` editorial/minor/major decision tree. The `v1.0-lts` branch exists precisely so adopters who don't want to track main get predictable security fixes.
 
+### L-62 — M7 week 0-3 night-shift execution record `[M7 kickoff execution]`
+
+- **Surfaced:** 2026-04-23/24 overnight session. Operator delegated autonomous execution ("pull a night shift for me, making as many executive decisions as possible"). This entry records every commit, every non-trivial decision, and every queued follow-up so the operator can audit in the morning without reconstructing context.
+- **Scope executed:** M7 weeks 0-3 of the 6-week M7 milestone per L-61 revision 4. Three repos touched, seven commits, 977 impl tests green, 170 validator probes resolved (35 pass + 135 skip + 0 fail + 0 error on core profile).
+
+**Boundary contract with operator (declared before work started):**
+- ✅ Local commits on `main` only; NO pushes to any remote
+- ✅ NO `gh pr create`, NO `gh release create`, NO `npm publish`, NO dist-tag changes
+- ✅ NO destructive git ops (reset --hard, force push, branch delete)
+- ✅ NO edits to `v1.0-lts` branch; no public-facing sibling state changes
+- ✅ Per-commit gate: `pnpm -r build` + `pnpm -r test` green in impl; `go build ./...` + `go vet ./...` green in validate; JSON parse verify on spec-repo file edits
+- ✅ Stop rule: if any gate goes red and I can't resolve in ~3 attempts, stop committing and record the failure in L-62
+
+All boundaries held. No pushes, no public-state mutations, no broken-code commits. All gates passed before every commit.
+
+**Commits landed (chronological, by repo):**
+
+| Repo | SHA | Subject | What & why |
+|---|---|---|---|
+| spec | `9381556` | `Post-release tidy: expose --otp flag in release-v1.0.mjs` | Cleanup from release day; `--otp` was added mid-ceremony but never committed. Zero normative impact. |
+| spec | `e9608c8` | `Pre-M7: v1.0.0 perf baseline captured (L-61)` | Addresses L-61 evaluator Finding #9. Captures the regression line every M11+ SV-PERF-* test diffs against. 3 envs (Windows i9-13900K, WSL2 ext4, Ubuntu Xeon D-1541 LAN) × 8 metrics. Metrics 4/6/7/8/10 deferred with named later-milestone owners. |
+| spec | `68b34f1` | `M7 week 1: §16.3-.5 LLM Dispatcher + 3 schemas + SV-LLM-01..07 (v1.1 minor)` | Normative spec addition closing the §16.1 S3 "API call" gap. §16.3 request/response contract, §16.3.1 provider error taxonomy (7 rows), §16.4 `/dispatch/recent` observability, §16.5 reserved test IDs. §13.4 StopReason gains `DispatcherError`. §24 gains 7 numeric subcodes (-32100..-32105, -32110). Three new wire schemas. Graph delta 899n/1739e → 903n/1777e. |
+| spec | `cd2e638` | `M7 week 2: deployment artifacts (Dockerfile + compose + systemd)` | Addresses L-61 evaluator Finding #8. Ship minimal Runner-only deployment path at M7 so adopters aren't blocked on M11 Gateway. Dockerfile smoke-tested: `docker build` + `docker run` + `curl /ready` → 200. Includes systemd hardening per §25.3 guidance. |
+| impl | `9a13d97` | `Pin-bump to spec 68b34f1: adopt §16.3-.5 LLM Dispatcher + re-vendor schemas` | Lockstep pin-bump. spec_manifest_status flips placeholder → signed-v1.0. Re-vendor delta 30 → 33 validators. pnpm -r test 946/946 regression clean. |
+| impl | `2835355` | `M7 week 2/3: LLM Dispatcher skeleton in packages/runner/src/dispatch/` | New module: types.ts + errors.ts + adapter.ts + test-double.ts + dispatcher.ts + index.ts. 31 unit tests covering all 6 §16.3 MUST lifecycle steps + §16.3.1 error taxonomy + retry budget cap + schema round-trip. pnpm -r test 977/977 green (runner 712 → 743, +31). |
+| validate | `369f8f7` | `M7 week 1: pin-bump to spec 68b34f1 + SV-LLM-01/-02 vector probes` | Lockstep pin-bump mirroring impl's. Adds handlers_m7_llm.go with SV-LLM-01 (request schema +3 negatives) + SV-LLM-02 (response schema + 2 invariant-violation negatives via allOf/if). SV-LLM-03..07 registered as live-path skips with precise blocker (impl `/dispatch` HTTP route not yet shipped). Full validator run: 170 tests, 35 pass, 0 fail, 135 skip. |
+
+**Executive decisions made autonomously (morning audit points):**
+
+1. **Section placement for LLM dispatcher.** Before editing, queried `graphify-spec` — §16 already exists as "Runtime Execution Model and Cross-Interaction Matrix" (§16.1 State Machine + §16.2 Matrix). Decision: ADD §16.3/§16.3.1/§16.4/§16.5 as subsections rather than creating a new §26. Reasoning: (a) §16.1 S3 already refers to an undefined "API call" — dispatcher is the natural completion; (b) additive, no renumbering of §17..§25; (c) mirrors §13 (13.1-13.5) and §14 (14.1-14.3.1) subsectioning style. **Alternative rejected:** new §26 at end — would put dispatcher spatially far from the state machine that uses it.
+
+2. **StopReason enum minimalism.** §16.3.1 defines 7 provider error conditions. Naive impl: add 7 new StopReason members. Decision: add ONLY `DispatcherError` to §13.4 (single minor-bump addition); put the 7 fine-grained codes in a new `dispatcher_error_code` observability field that's nullable everywhere else. **Why this matters:** the StopReason enum is cited from sessions, from the state machine, from Runner-Runner handoff, from test vectors. Keeping it narrow minimizes normative blast radius while still surfacing operational detail via audit + `/dispatch/recent`.
+
+3. **Bench script home.** Pre-M7 perf bench script could live in impl or spec repo. Decision: spec repo `scripts/m7/bench-v1.0-baseline.mjs` with `--impl-root` flag mirroring `release-v1.0.mjs` pattern. Reasoning: the baseline doc lives in spec — colocating the harness keeps the reproduction recipe adjacent to the numbers it produced.
+
+4. **Baseline mode: `--npm-mode`.** Initially benched against local impl checkout. Switched all 3 envs to `--npm-mode` mid-execution (installs `@soa-harness/*@1.0.0` from npm, points harness at node_modules). Reasoning: tests the artifact adopters actually receive; more honest than benching against the pre-publish code tree that could theoretically differ (same code at v1.0.0 tag, but npm artifacts are the shipped truth).
+
+5. **Deferred metrics in v1.0 baseline.** Five metrics defined in methodology but not captured: CRL cache miss (4), permission resolve (6), session persist fsync (7), audit append fsync (8), RSS under load (10). Decision: ship baseline with the 5 capturable metrics + a table listing deferred metrics with a named future-milestone owner each. Reasoning: a partial honest baseline beats a complete faked one; every deferred metric has a clear pickup point (M10 replay / M11 Gateway / M12 observability) so nothing is orphaned.
+
+6. **Dispatcher scope: sync-only for v1.1.** `ProviderAdapter.dispatch()` returns `Promise<DispatchResponse>` (synchronous mode). Streaming mode (`StreamEvent` emit path) deliberately deferred. Reasoning: M7 goal is "prove the contract compiles + passes 31 unit tests"; M8 brings chat-UI and that's when streaming mode becomes load-bearing. Deferring now avoids half-baked streaming code that would be rewritten at M8 anyway.
+
+7. **`InMemoryTestAdapter` behavior DSL.** Decided on a compact string DSL: `"ok"` / `"error:<CODE>"` / `"flaky:N:<CODE>"` / `"never"`. Alternative rejected: full builder API (`.returnSuccess(usage: {...}).failAfter(2, 'ProviderRateLimited')`). Reasoning: the DSL is enough for 31 tests; builder API is premature abstraction given no external adapter implementors exist yet. If real adapters arrive needing more control, promote then.
+
+8. **Pin-bump across the release era.** spec pin jumped from `c862b79` (L-58/L-59 era) all the way to `68b34f1` — crossed v1.0.0 release + M6 closure + L-60 + L-61 + L-62. Decision: one big bump with a detailed pin_history entry, not a series of tiny bumps. Reasoning: the v1.0.0 release shipped with known pin drift (impl was still at c862b79 when MANIFEST.json regenerated at 10692f6); batching the bump aligns all three repos at a single coherent point.
+
+9. **SV-LLM-03..07 skip strategy.** Could have either (a) not registered them yet (wait for HTTP route) or (b) registered with live-path skip + precise blocker message. Decision: (b). Reasoning: reserved IDs appear in JUnit output with clear diagnostic text saying exactly what's missing. Operators reading release-gate output see "needs /dispatch HTTP route" rather than "SV-LLM-03 never ran, why."
+
+10. **Docker `--legacy` deploy flag.** pnpm v10 requires `inject-workspace-packages=true` or `--legacy` for `pnpm deploy`. This monorepo doesn't set the new flag. Decision: use `--legacy` in Dockerfile. Reasoning: reverting to pre-v10 behavior here matches everywhere else the workspace is used; adding `inject-workspace-packages=true` would be a monorepo-wide workflow change out of scope for M7.
+
+11. **Dockerfile smoke-test.** `docker build` + `docker run` + `curl /ready` from inside the container host. The run returned `{"status":"ready"}` — proves the image starts, Runner boots, `/ready` endpoint responds 200. Healthcheck wiring verified.
+
+**Known pre-existing issue not introduced here:**
+- Impl `scripts/dev-runner.sh` had an uncommitted edit from L-53 era (bootstrap bearer string change). NOT staged by my commits; left for operator review. Not related to night-shift work.
+
+**Queued follow-ups (next M7 session):**
+
+- **Impl**: wire `/dispatch` HTTP route → connects Dispatcher to Fastify. Small; unblocks SV-LLM-03..07 in validator.
+- **Impl**: `POST /sessions` integration so dispatcher-issued sessions flow through bracket-persist.
+- **Impl**: streaming mode on ProviderAdapter — `dispatch()` variant returning `AsyncIterable<StreamEvent>`. M8 prerequisite for chat UI.
+- **Impl**: real provider adapter scaffold (e.g., `packages/anthropic-adapter/` with a stub `AnthropicAdapter implements ProviderAdapter`) — NOT shipping a real adapter; just the scaffold pattern.
+- **Spec/Impl/Validate**: `/crl/refresh` operator endpoint (was placeholder in systemd timer).
+- **Spec**: Docusaurus MVP (M7 week 5-6 per L-61). Skipped tonight because lower-value than dispatcher code + deployment artifacts.
+
+**Verification artifacts (full regression across 3 repos, end of session):**
+- Spec: extract-citations.py + refresh-graph.py auto-ran on every commit; graph at 903n/1777e.
+- Impl: `pnpm -r build` clean; `pnpm -r test` → 977/977 across 8 packages.
+- Validate: `go build ./...` + `go vet ./...` clean; `/tmp/soa-validate.exe --profile core` → 170 tests, 35 pass, 0 fail, 135 skip, 0 error.
+- Docker: `docker build` + `docker run` + `curl /ready` → 200 + `{"status":"ready"}`.
+
+**Version impact:** §19.4 minor (v1.0 → v1.1). Wire-format additions: §13.4 StopReason enum, §24 error code taxonomy. Three new schemas (v1.1 $id namespace). Seven new test IDs. No breaking changes; all additive.
+
+**Pattern note:** L-62 is the first "autonomous night shift" record. Distinctive shape: operator delegated judgment calls on placement, scope, test strategy, and bench methodology with an explicit "make executive decisions, audit in morning" contract. The 11 decisions documented above are the substrate of that audit. Future night shifts should follow the same decision-log structure so morning review remains tractable.
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
