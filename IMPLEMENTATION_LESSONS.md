@@ -1626,23 +1626,60 @@ Per L-52 + L-53, M6 is the greenfield presentation refactor:
 - 2FA ceremony: temporarily disabled org-level "Require 2FA for publish" for pnpm -r publish, re-enabled immediately after.
 - Retrospective: two operator errors caught before impact — PowerShell `rm` destroyed first keypair pre-encryption (regenerated cleanly, no signing had occurred); npm token pasted into chat mid-setup (revoked + regenerated). Both patterns worth codifying for future rotations: use Git Bash not PowerShell for openssl workflows; never paste tokens into chat.
 
-**M7+ scope (revised 2026-04-23 for solo-only operation + full A2A impl + comprehensive admin UI, 36 weeks / ~9 months):**
-- Pre-M7 (done): `v1.0-lts` branches cut on all 3 repos, 48h Critical SLA formalized in `docs/m7/v1.0-lts-branch-policy.md`, organic-adopter support policy in `docs/m7/organic-adopter-support.md`, GOVERNANCE.md updated for solo-by-choice framing.
-- M7 (6 weeks): LLM dispatcher + Docker deploy + Docusaurus docs MVP + `SV-LLM-01..07` + `SV-COMPAT-01..04` → **v1.1.0**
-- M8 (6 weeks, parallel from wk 5): direct-to-Runner web UI (basic end-user chat) + admin-dashboard MVP (audit viewer + session list + perm log + memory viewer ONLY — full admin deferred to M13) + CLI + VS Code ext + `SV-ADMIN-01..04` + `UV-CMD-07..10` → **v1.2.0**
-- M9 (6 weeks, parallel from wk 9): SelfOptimizer (**Option A — experimental feature flag**) + `core+si` profile + session replay + `SV-SI-01..12` + internal threat model doc → **v1.3.0**. Ships with `SOA_ENABLE_SI=1` env-var gate, disabled by default, loud "experimental — sandbox has not been externally reviewed" disclaimer.
-- **M10 (4 weeks, parallel from wk 11): A2A wire protocol impl** — `packages/runner/src/a2a/` JSON-RPC over mTLS + JWT per §17.1; §17.2 methods (handoff, resume, etc.); §17.3 error codes; §17.4 state-transfer scope; existing `test-vectors/` consumed; validator `SV-A2A-*` tests activated; `core+handoff` profile claim becomes real impl (was spec-only at v1.0.0) → **v1.4.0**
-- M11 (10 weeks, parallel from wk 15): UI Gateway + OAuth/DPoP/WebAuthn + content-safety + tenant quotas + `SV-TENANT/CONTENT-*` → **v1.5.0**
-- M12 (8 weeks, parallel from wk 23): multi-agent conductor (on real A2A impl now) + tool marketplace + backup/restore + observability dashboards + migration guides → **v1.6.0**
-- **M13 (6-8 weeks, parallel from wk 29): first-rate admin UI + comprehensive controls** — multi-tenant admin views; user/role management; runtime config tuning UI; agent lifecycle controls (create/pause/resume/terminate); alerting rules; log search + export; backup/restore UI; tool marketplace integration UI; content-safety policy editor; rate-limit/quota management UI; audit-verify forensics with chain-integrity visualization; real-time stream viewer per session; Agent Card editor + signing UI; CRL + trust-anchor management UI → **v1.7.0 "Feature Complete (Self-Asserted)"**
-- **Bake-Off Verified track: DROPPED** (decision A). Label stays defined in GOVERNANCE.md as "available if a 2nd-party ever reimplements" but no scheduled work.
-- v1.0.x editorial track: continuous, bug-fix-only on `v1.0-lts` branch per 48h/5d Critical SLA.
+**M7+ scope (revised 2026-04-23 for solo-only operation + A2A impl + comprehensive admin UI + all 23 evaluator findings, 37 weeks / ~9 months):**
 
-**Calendar at-a-glance:** 36 weeks total. Parallelized impl streams (M8↔M9↔M10↔M11↔M12↔M13). Seven minor releases v1.1.0 through v1.7.0. "Feature Complete (Self-Asserted)" achieved at v1.7.0 when comprehensive admin UI ships.
+**Evaluator-driven changes applied in this revision:**
+- **Swapped M9↔M10:** A2A (now M9) before SelfOptimizer (now M10). Conductor depends on A2A; ordering matters.
+- **Dropped M8 admin-MVP entirely.** Pre-Gateway admin work would have been thrown away at M13 rebuild. All 14 admin areas consolidated to 10 and unified at M13.
+- **Added 2-week buffer** between M10 and M11 for slippage absorption, compat-test backfill, ERRATA updates.
+- **Deferred Docker compose/helm from M7 to M11** when Gateway is real and topology is production-shaped.
+- **Combined M11+M12 into single M11 (Gateway + conductor, 12 wk).** New M12 holds marketplace + backup + observability + migration.
+- **Consolidated 14 admin areas → 10** (audit+session+chain-integrity merged; crypto admin unified; log search + alerting + export merged).
+- **Releases: 7 → 6** (M9+M10 ship together as v1.3.0 since SI is experimental and A2A additive).
+- **Added per-milestone SV-COMPAT coverage** (not just M7): SV-COMPAT-05..08 at M8, SV-COMPAT-09..12 at M9+M10, etc. Budget ~4 compat tests per minor bump.
+- **Added load/stress test IDs** (`SV-PERF-*` new namespace): M11 Gateway + M12 observability + M13 admin UI each include load benchmarks.
+- **Added WCAG 2.1 AA conformance** (`UV-A11Y-*` extends existing UV-X): M8 chat UI + M13 admin UI both gated on AA pass.
+- **Added real-IdP integration test** to M11 Gateway (pick Auth0 OR Keycloak as reference; validator skips if endpoint unreachable).
+- **Added "first-rate" rubric for M13** (acceptance criteria): all 10 admin areas complete, WCAG AA pass, E2E Playwright green, per-area docs, load-test pass at 1k concurrent admin operations.
+- **Added CVE monitoring + key rotation drill** — M10 carries §9.7 seccomp CVE watch (quarterly check); M11 schedules first key-rotation rehearsal (no actual rotation, just the ceremony exercise).
+- **Added ERRATA.md cadence requirement** to v1.0-lts branch policy: every v1.0.x patch ships with a corresponding ERRATA.md entry. Enforced via v1.0-lts CI check.
+- **Added test velocity budget:** ~4-6 new test IDs per release documented as expected. Exceeding by >50% triggers scope review.
+- **Reduced parallelization overlap** from "wk 5 overlap" to "wk 7-9 overlap" throughout to reduce context-switching cost for solo maintainer.
+- **SI experimental flag kept (Option A)** but disclosure hardened: README + §9 header + `create-soa-agent` scaffold output all carry "sandbox has not been externally reviewed" language; operator acceptance required on first `SOA_ENABLE_SI=1` launch (stdin y/N prompt or explicit env var).
 
-**Why these two additions matter:**
-1. **A2A impl (M10)** — without it, `core+handoff` conformance profile has spec + test IDs but no reference runtime; v1.0.0's `SV-A2A-*` tests unexercisable. M12 multi-agent conductor depends on A2A being real, not spec-only.
-2. **Comprehensive admin UI (M13)** — M8's admin-dashboard is MVP (4 of 14 admin capability areas). "First-rate + comprehensive" per operator's explicit requirement needs the full 14: multi-tenant, user/role mgmt, runtime config, lifecycle, alerting, log search, backup UI, marketplace UI, content-safety editor, rate-limit UI, audit forensics, stream viewer, Agent Card editor, CRL mgmt. Without this, "Feature Complete" is a hollow claim.
+**Revised milestones:**
+- Pre-M7 (done): `v1.0-lts` branches, 48h Critical SLA, organic-adopter support, solo-by-choice governance.
+- **M7 (6 wk, weeks 1-6) → v1.1.0:** LLM dispatcher + `packages/dispatcher/` + Dockerfile.runner + systemd units + Docusaurus MVP + SV-LLM-01..07 + SV-COMPAT-01..04. Docker compose/helm DEFERRED to M11.
+- **M8 (6 wk, weeks 7-12, light overlap with M7) → v1.2.0:** Direct-to-Runner chat UI (end-user only, no admin) + CLI + VS Code ext + WCAG AA for chat UI (UV-A11Y-01..04) + SV-COMPAT-05..08 + UV-CMD-07..10. No admin work.
+- **M9 (4 wk, weeks 11-14) → v1.3.0 part 1:** A2A wire protocol impl — `packages/runner/src/a2a/` + JSON-RPC/mTLS/JWT per §17.1-17.4 + SV-A2A-* activated + `core+handoff` profile becomes real + SV-COMPAT-09..12.
+- **M10 (6 wk, weeks 13-18, 1-wk overlap with M9) → v1.3.0 part 2 (combined release):** SelfOptimizer experimental (Option A) + `core+si` + session replay + SV-SI-01..12 + honest unreviewed-sandbox disclosure + §9.7 CVE monitoring process + SV-COMPAT-13..16. Ship v1.3.0 at M10 end.
+- **Buffer (2 wk, weeks 19-20):** Slack budget for absorbed slippage, compat backfill, ERRATA.md for any v1.0.x patches queued.
+- **M11 (12 wk, weeks 21-32) → v1.4.0:** UI Gateway (OAuth/DPoP/WebAuthn + Redis replay cache) + `packages/auth-provider/` + `packages/content-safety/` (provider-agnostic) + `packages/rate-limiter/` + multi-agent conductor (on real A2A now) + Docker compose/helm artifacts + real-IdP integration test (Auth0 or Keycloak reference) + Gateway load/stress benchmarks (SV-PERF-01..04) + SV-TENANT-01..08 + SV-CONTENT-01..05 + SV-COMPAT-17..20 + first key-rotation drill rehearsal.
+- **M12 (8 wk, weeks 27-34, overlaps M11 late) → v1.5.0:** Tool marketplace + backup/restore + pre-built observability dashboards (Grafana/Datadog/OTel) + migration guides (LangChain/CrewAI/AutoGen) + observability load-test (SV-PERF-05..08) + SV-COMPAT-21..24.
+- **M13 (8 wk, weeks 30-37, overlaps M12 late) → v1.6.0 "Feature Complete (Self-Asserted)":** Comprehensive admin UI with **10 consolidated control areas** (down from 14):
+  1. Audit + Session + Chain-integrity forensics (unified viewer)
+  2. Permission management (log + decisions + autonomous handler)
+  3. Memory + consolidation viewer
+  4. Runtime config tuning (budgets, rate limits, quotas)
+  5. User/role management
+  6. Agent lifecycle (create/pause/resume/terminate)
+  7. Alerting + log search + export (unified ops pane)
+  8. Tool marketplace UI
+  9. Content-safety policy editor
+  10. Crypto admin (Agent Card editor + CRL + trust anchors unified)
+
+  Acceptance rubric: all 10 areas functional + WCAG 2.1 AA pass (UV-A11Y-05..20) + E2E Playwright green + per-area docs + admin UI load test at 1k concurrent ops (SV-PERF-09..12) + SV-COMPAT-25..28.
+
+- **Bake-Off Verified track: DROPPED** (prior decision).
+- v1.0.x editorial track: continuous, ERRATA.md entry per patch enforced by v1.0-lts CI check.
+
+**Calendar at-a-glance:** 37 weeks total (36 + 2-wk buffer - 1 wk saved from M7 Docker deferral). Six minor releases v1.1.0 → v1.6.0. "Feature Complete (Self-Asserted)" at v1.6.0. Test IDs grow 420 → ~600 across releases, paced at ~4-6 per release budget.
+
+**Residual risks (evaluator-flagged, accepted):**
+- Solo-maintainer 9-month focus still optimistic; 2-wk buffer is partial mitigation only. If maintainer illness/life-event hits, calendar slips 1:1.
+- SI sandbox remains unreviewed by external auditor; disclosure-hardened but reputation risk persists. Operator accepts per Option A.
+- Real-IdP testing picks ONE provider; other IdPs surface bugs post-release (documented as known coverage gap).
+- "Feature Complete (Self-Asserted)" claim remains self-asserted; no external validation absent Bake-Off partner.
 
 **Solo-operation rationale:** Operator confirmed no external reviewer, no recruited pilots, no 2nd-party partner. Timeline compresses from 32→28 weeks due to removed overhead (reviewer slack, weekly syncs). SelfOptimizer ships experimental (Option A) rather than deferred — preserves distinctive capability; operators audit at their own risk. "Full Featured" renamed to "Feature Complete (Self-Asserted)" for honesty.
 
