@@ -2361,6 +2361,58 @@ Pin bump landed BEFORE npm publish. `PINNED_SPEC_COMMIT` in `@soa-harness/schema
 
 **Version impact:** live-probe promotion is `core+handoff` profile conformance tightening — no normative text changes. Ship as v1.3.1 per §19.4.1 editorial-class patch-release.
 
+### L-70 execution record (appended post-completion, 2026-04-24 evening)
+
+All six slices delivered in a single autonomous post-ship day-shift run, in commit order:
+
+| Commit | Repo | Scope |
+|---|---|---|
+| `83fc287` | validate | Slice 1 — SV-A2A-17 bearer-mode live probe (3 truth-table assertions) |
+| `1c93a82` | validate | Slice 1 complete — SV-A2A-03 envelope + SV-A2A-04 accept live probes |
+| `387a040` + `0184bec` | validate | Slice 2 — SV-A2A-14 offer-then-transfer digest recompute live (3 assertions); 0184bec fixed a compile error 387a040 shipped — caught by the feedback_build_exit_check memory rule |
+| `f6859c2` | validate | Slice 4a — SV-A2A-10 JWT alg-allowlist live (no cooperating key needed; alg check fires pre-verify) |
+| `20ccc57` | validate | Slice 4b — SV-A2A-12 jti replay live (stdlib Ed25519 signing; register-after-verify invariant asserted) |
+| `0421b82` | validate | Slice 5 — SV-A2A-11 signing-key discovery live + SV-A2A-13 agent_card_etag drift live (mTLS x5t#S256 path intentionally out of scope) |
+| `f2d23cd` | validate | Slice 6a — SV-A2A-15 transition-matrix partial-live probe (6 assertions: unknown→-32052, status=accepted post-transfer, enum membership, last_event_id key, status=completed post-return, terminal monotonicity) |
+| `d6c2ff2` | impl | Slice 6b impl — §17.2.2 task-execution deadline enforcement in A2aTaskRegistry (computed-on-read synthesis; no background timers; 6 new tests bringing runner total to 888/888) |
+| `c35f942` | validate | Slice 6b validator — SV-A2A-16 deadline live probe (gated on Runner-side SOA_A2A_TASK_DEADLINE_S configuration) |
+
+**Final tally:** 10 of 10 live flips complete. SV-A2A-03/04/10/11/12/13/14/15(partial)/16/17 all dispatch to live probes. SV-A2A-01 (mTLS required) + SV-A2A-02 (generic JWT validation) remain skip — overlap with more scoped -10/-11/-12 coverage.
+
+**SV-A2A-15 partial-scope flag:** the probe covers 6 observable assertions today; the `accepted → executing` intermediate transition is NOT observable because the v1.3 Runner has no execute hook wired for destination tasks. That's Slice 6c — a Runner-side addition (likely a loopback test hook like SOA_A2A_AUTO_EXECUTE_AFTER_S, or a /a2a/v1/debug/advance endpoint) that crosses into new-wire-contract territory and requires plan-evaluator + HARD-RULE spec-first discipline. Queued for v1.3.2.
+
+**New §17.2.2 impl conformance:** d6c2ff2 closes a silent v1.3.0 conformance gap — the v1.3.0 Runner shipped without enforcing the §17.2.2 task-execution deadline ('Runners serving as destinations MUST enforce it'). That MUST was validated by unit tests but never actually implemented on the dispatch path. Closed here via synthetic on-read timed-out computation; eager-transition + SessionEnd emission stays deferred (requires session-level StreamEvent infra that a2a stub-session path doesn't touch).
+
+**Status: shipped to main branches on all three repos.** Ready for v1.3.1 release packaging per L-71 (following L-66/L-67 ship-record pattern).
+
+### L-71 — v1.3.1 patch release packaging `[kickoff]`
+
+- **Surfaced:** 2026-04-24 evening, post-L-70 Slice 6 completion.
+- **Status:** `kickoff-only`. Release packaging queued for next session.
+
+**Motivation:** L-70 Slice 6b (commit d6c2ff2) closed a v1.3.0 §17.2.2 conformance gap in @soa-harness/runner. Adopters pulling v1.3.0 from npm get a Runner that fails to enforce task-execution deadlines — a silent MUST violation. v1.3.1 ships the compliant Runner + the seven new validator live probes.
+
+**Scope:**
+
+- **Spec:** no normative changes. Pin stays at b87c2ff. CHANGELOG gains a [1.3.1] section under the [1.3.0] entry noting the impl-side conformance fix + validator live-probe promotions. RELEASE-NOTES-v1.3.1.md authored (concise: one §17.2.2 enforcement note + the L-70 live-flip table).
+- **Impl:** 11 packages bump 1.3.0 → 1.3.1 (only runner changed functionally; the others bump for parity per L-64's 6-way check). scaffold `runnerVersion: "1.3"` unchanged (minor.minor format stable across patch releases). scaffold `@soa-harness/*` dep ranges bump `^1.3.0` → `^1.3.1`. tools/vscode-extension bumps 1.3.0 → 1.3.1.
+- **Validate:** `soa-validate.lock` stays at b87c2ff (no spec change). 9 handler-registration promotions already on main (Slices 1-6b commits a-i above).
+- **Ceremony:** identical to v1.3.0's closure — MANIFEST byte-identical to v1.3.0's (spec pin unchanged), so MANIFEST.json.jws stays valid without re-signing per v1.2.0 → v1.2.1 precedent (L-66 Debt #8 patch pattern). L-64 "pin-bump BEFORE publish" rule still applies to the impl's soa-validate.lock (no-op in this case — pin unchanged).
+
+**Estimated ceremony:** ~30-45 min following the v1.2.1 → v1.3.0 pattern, minus the MANIFEST regen + signing steps since no spec artifacts changed.
+
+**Pre-L-71 checklist:**
+
+- v1.3.0 live on npm (done ✓)
+- L-70 all 10 slices shipped to main (done ✓ as of c35f942)
+- No open SV-A2A-* flake in local conformance run (pending validator dry-run)
+- docs/errata-policy.md decision tree confirms this is editorial-class patch (done ✓ — no wire format change, no schema change, no test-ID change, only impl catches up to spec MUST)
+
+**Not in scope:**
+
+- SV-A2A-15 Slice 6c (accepted→executing loopback hook) — defer to v1.3.2.
+- SessionEnd(MaxTurns) emission on timed-out transitions — requires session-layer infra, defer to v1.3.2 + companion spec commit IF §14.1 emission contract needs any clarification for the A2A-task case.
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
