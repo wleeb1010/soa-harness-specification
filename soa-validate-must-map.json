@@ -1915,11 +1915,36 @@
     },
     "SV-LLM-05": {
       "name": "Mid-stream cancellation at ContentBlockDelta boundary",
-      "section": "§16.3",
-      "section_title": "LLM Dispatcher",
+      "section": "§16.6.4",
+      "section_title": "Streaming Dispatcher — Mid-stream cancellation",
       "profile": "core",
       "severity": "critical",
-      "assertion": "With a fixture adapter streaming N≥5 ContentBlockDelta events, the Runner fires UserInterrupt after event 2. No ContentBlockDelta is emitted after the interrupt boundary; stop_reason is 'UserInterrupt'; the dispatch audit row records dispatcher_error_code=null (cancellation is not an error)."
+      "assertion": "With a fixture adapter streaming N≥5 ContentBlockDelta events, the Runner fires UserInterrupt after event 2. No ContentBlockDelta is emitted after the interrupt boundary; stop_reason is 'UserInterrupt'; the dispatch audit row records dispatcher_error_code=null (cancellation is not an error).",
+      "v1_2_note": "Flipped skip → live at v1.2 per §16.6. The streaming contract defined in §16.6 provides the ProviderAdapter.dispatchStream surface and the cancellation-endpoint wire needed to exercise this test live."
+    },
+    "SV-LLM-08": {
+      "name": "SSE framing — Content-Type + event/data/terminator",
+      "section": "§16.6.2",
+      "section_title": "Streaming Dispatcher — HTTP surface",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "A streamed dispatch returns HTTP 200 with Content-Type: text/event-stream; charset=utf-8, Cache-Control: no-cache, X-Accel-Buffering: no, and no Content-Length. Each frame is exactly 'event: <event.type>\\ndata: <JCS(event)>\\n\\n'. After MessageEnd the Runner emits a ': stream-done\\n\\n' comment line and closes the TCP connection."
+    },
+    "SV-LLM-09": {
+      "name": "Adapter-unsupported fallback — DispatcherStreamUnsupported",
+      "section": "§16.6.2",
+      "section_title": "Streaming Dispatcher — Adapter capability check",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "When a Runner configured with a sync-only ProviderAdapter receives POST /dispatch with Accept: text/event-stream, the Runner responds HTTP 406 Not Acceptable with body {dispatcher_error_code: 'DispatcherStreamUnsupported', detail: <non-empty>}. The /audit/tail row records stop_reason='DispatcherError' and the matching error code."
+    },
+    "SV-LLM-10": {
+      "name": "StreamEvent sequence invariants",
+      "section": "§16.6.3",
+      "section_title": "Streaming Dispatcher — Sequence invariants",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "A streamed dispatch emits exactly one MessageStart and exactly one MessageEnd; every ContentBlockDelta occurs between a matching ContentBlockStart and ContentBlockEnd (no orphan deltas); the per-session stream sequence number is strictly monotonic across the streamed events; MessageEnd.stop_reason is a §13.4 closed-enum value."
     },
     "SV-LLM-06": {
       "name": "Dispatch audit row presence + hash chain",
@@ -2282,7 +2307,10 @@
       "SV-LLM-04",
       "SV-LLM-05",
       "SV-LLM-06",
-      "SV-LLM-07"
+      "SV-LLM-07",
+      "SV-LLM-08",
+      "SV-LLM-09",
+      "SV-LLM-10"
     ],
     "SV-ADAPTER": [
       "SV-ADAPTER-01",
@@ -2933,7 +2961,7 @@
       ]
     },
     "§16.3#lifecycle-cancellation": {
-      "title": "Dispatcher mid-stream cancellation at ContentBlockDelta boundary (v1.1)",
+      "title": "Dispatcher mid-stream cancellation at ContentBlockDelta boundary (v1.1; superseded by §16.6.4 at v1.2)",
       "tests": [
         "SV-LLM-05"
       ]
@@ -2948,6 +2976,30 @@
       "title": "Dispatcher provider error taxonomy mapping (v1.1)",
       "tests": [
         "SV-LLM-07"
+      ]
+    },
+    "§16.6.2#sse-framing": {
+      "title": "Streaming Dispatcher SSE framing contract (v1.2)",
+      "tests": [
+        "SV-LLM-08"
+      ]
+    },
+    "§16.6.2#adapter-capability": {
+      "title": "Streaming Dispatcher adapter-capability check (v1.2) — sync-only adapter returns 406 DispatcherStreamUnsupported",
+      "tests": [
+        "SV-LLM-09"
+      ]
+    },
+    "§16.6.3#sequence-invariants": {
+      "title": "Streaming Dispatcher StreamEvent sequence invariants (v1.2)",
+      "tests": [
+        "SV-LLM-10"
+      ]
+    },
+    "§16.6.4#cancellation": {
+      "title": "Streaming Dispatcher mid-stream cancellation + dispatch-cancel endpoint (v1.2; superseding §16.3#lifecycle-cancellation)",
+      "tests": [
+        "SV-LLM-05"
       ]
     },
     "§17#a2a": {
@@ -3257,7 +3309,10 @@
           "SV-LLM-04",
           "SV-LLM-05",
           "SV-LLM-06",
-          "SV-LLM-07"
+          "SV-LLM-07",
+          "SV-LLM-08",
+          "SV-LLM-09",
+          "SV-LLM-10"
         ]
       },
       {

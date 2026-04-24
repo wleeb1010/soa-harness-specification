@@ -6,6 +6,46 @@ Categories per entry: **Added** (new), **Changed** (modified), **Deprecated** (s
 
 ---
 
+## [1.2.0-dev] — unreleased (M8 in progress)
+
+Additive minor per §19.4. Streaming dispatcher + chat UI + CLI + VS Code extension stub. Everything below is wire-format-compatible with v1.0 / v1.1 conformance claims: an implementation that only supports §16.3 synchronous dispatch stays v1.0-conformant. Streaming is an opt-in capability advertised via the `ProviderAdapter.dispatchStream?()` method.
+
+### Added — Core specification (§16.6)
+
+- **§16.6 Streaming Dispatcher (Normative)** — `ProviderAdapter.dispatchStream?()` extension, SSE response mode (`POST /dispatch` with `Accept: text/event-stream`), StreamEvent sequence invariants, mid-stream cancellation via `POST /dispatch/{correlation_id}/cancel`.
+- **§16.6.2** HTTP surface: `text/event-stream` content-type, `event: / data:` SSE framing with JCS-canonicalized event payload, `: stream-done` terminator comment.
+- **§16.6.3** sequence invariants: exactly one `MessageStart`/`MessageEnd`; `ContentBlockDelta` only between matching `ContentBlockStart`/`ContentBlockEnd`; strict per-session `sequence` monotonicity.
+- **§16.6.4** mid-stream cancellation normatively defined (supersedes the §16.3#lifecycle-cancellation anchor for `SV-LLM-05`).
+- **§16.6.5** reserves three new test IDs: `SV-LLM-08` (SSE framing), `SV-LLM-09` (adapter-unsupported fallback), `SV-LLM-10` (sequence invariants).
+
+### Added — §24 Dispatcher error codes
+
+- `DispatcherStreamUnsupported` (`-32111`) — `POST /dispatch` with `Accept: text/event-stream` against an adapter that lacks `dispatchStream`. Runner responds HTTP 406.
+- `DispatcherAdapterError` (`-32112`) — adapter-internal failure surfacing through a streaming dispatch.
+
+### Added — Must-map
+
+- `SV-LLM-05` flipped skip → active. Section reference updated `§16.3` → `§16.6.4`.
+- `SV-LLM-08..10` registered under the SV-LLM category. Phase-4 execution order extended.
+- Four new `must_coverage` anchors: `§16.6.2#sse-framing`, `§16.6.2#adapter-capability`, `§16.6.3#sequence-invariants`, `§16.6.4#cancellation`.
+
+### Planned — Reference implementation (`soa-harness-impl`)
+
+- `packages/runner/src/dispatch/stream.ts` — SSE plugin, abort-signal wiring, sequence invariant enforcement.
+- `@soa-harness/chat-ui` — new package. React + Vite, SSE consumer, permission prompt UI, audit tail viewer, WCAG 2.1 AA gate.
+- `@soa-harness/cli` — new package. `soa chat / status / audit tail / conform`.
+- `vscode-soa-harness` — VS Code extension stub. Reads `.soa/` workspace, sidebar Runner status, trigger dispatch from editor.
+
+### Planned — Validator (`soa-validate`)
+
+- `SV-LLM-05` live probe (streaming cancellation).
+- `SV-LLM-08..10` live probes.
+- `SV-COMPAT-05..08` compat probes (impl↔validator version surface).
+- `UV-CMD-07..10` CLI probes.
+- `UV-A11Y-01..04` WCAG accessibility probes.
+
+---
+
 ## [1.1.1] — 2026-04-24
 
 Patch release — editorial class per §19.4. No spec changes. Fixes two build-time wiring bugs in the v1.1.0 reference runtime + scaffold. v1.1.0 remains a valid release; v1.1.1 is the recommended upgrade for adopters using `soa-validate --check-pins`.

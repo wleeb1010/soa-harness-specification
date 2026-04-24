@@ -2889,6 +2889,80 @@ Implementations MUST anchor the following test IDs against §16.3 and §16.4 beh
 | `SV-LLM-06` | Dispatch audit row presence + hash chain. Every dispatch (success, cancellation, DispatcherError) produces exactly one row in `/audit/tail` whose `prev_hash` links correctly | §16.3 lifecycle step 6 |
 | `SV-LLM-07` | Provider-error taxonomy mapping. Test harness injects each of the 7 provider conditions and asserts the dispatcher maps to the correct `dispatcher_error_code` + `stop_reason` per §16.3.1 | §16.3.1 |
 
+### 16.6 Streaming Dispatcher (Normative, v1.2)
+
+§16.3 defined the synchronous dispatcher. §16.6 adds the streaming-mode contract so that `SV-LLM-05` (mid-stream cancellation at `ContentBlockDelta` boundary) can be exercised live and so that chat UIs can consume incremental model output as it's produced.
+
+v1.2 is additive per §19.4: an implementation that only supports §16.3 synchronous dispatch remains v1.0-conformant. Streaming is an opt-in capability advertised through the `ProviderAdapter` surface.
+
+#### 16.6.1 Adapter extension — `dispatchStream?()`
+
+The `ProviderAdapter` interface defined in §16.3.1 gains an optional method:
+
+```ts
+dispatchStream?(
+  request: LlmDispatchRequest,
+  signals: { abortSignal: AbortSignal }
+): AsyncIterable<StreamEvent>;
+```
+
+Semantics:
+
+1. **Optional at the type level.** An adapter MAY provide only `dispatch` (sync). Such an adapter does not advertise streaming.
+2. **Byte-for-byte event emission.** Every item yielded from the iterable MUST validate against `stream-event.schema.json` — i.e. it is one of the 27-value closed enum defined in §14.1. No other event shape is permitted.
+3. **Abort semantics.** When the supplied `AbortSignal` fires, the adapter MUST stop yielding new `ContentBlockDelta` events before the next delta is emitted. The adapter MAY yield a terminal `ContentBlockEnd` + `MessageEnd` pair after the abort to close any half-open block; after that pair, the adapter MUST stop iterating. Adapters that cannot abort cleanly MUST surface the abort as `DispatcherError` with `dispatcher_error_code = DispatcherAdapterError`.
+4. **One adapter call per dispatch.** Exactly as in synchronous mode, the dispatcher invokes `dispatchStream` at most once per logical request. Retries (rate-limit, 5xx, network) restart the stream from scratch after a fresh adapter call; partial streams from a prior attempt MUST NOT leak into a retried stream.
+
+#### 16.6.2 HTTP surface — `POST /dispatch` with `Accept: text/event-stream`
+
+When the incoming HTTP request carries `Accept: text/event-stream` AND the request body's `stream` field is `true` (the schema default), the Runner MUST:
+
+1. **Resolve streaming capability.** If the configured `ProviderAdapter` does not provide `dispatchStream`, the Runner MUST return HTTP `406 Not Acceptable` with a body `{ "dispatcher_error_code": "DispatcherStreamUnsupported", "detail": "adapter does not implement dispatchStream" }`. The `/dispatch` audit row records this as a failed dispatch with `stop_reason = "DispatcherError"` and the matching `dispatcher_error_code`.
+2. **Negotiate SSE.** On success, the Runner MUST set response headers `Content-Type: text/event-stream; charset=utf-8`, `Cache-Control: no-cache`, `X-Accel-Buffering: no` (defense against reverse-proxy buffering), and MUST NOT set `Content-Length`.
+3. **Emit the event stream.** Each `StreamEvent` yielded by the adapter is serialized to one SSE frame:
+
+   ```
+   event: <event.type>
+   data: <JCS(event)>
+   \n
+   ```
+
+   `event.type` is the `type` field of the StreamEvent (e.g. `MessageStart`, `ContentBlockDelta`). `JCS(event)` is the RFC 8785-canonicalized JSON of the full event object — the same bytes that feed `schemas/stream-event.schema.json` validation. The trailing blank line MUST be present (SSE frame delimiter).
+
+4. **Terminate the stream.** After the terminal `MessageEnd` event, the Runner MUST emit one additional SSE comment-line `: stream-done\n\n` and then close the TCP connection. Clients MAY treat either the comment or the connection close as the termination signal.
+
+When `Accept: text/event-stream` is NOT present — regardless of the body's `stream` field — the Runner MUST produce the synchronous response defined in §16.3 (HTTP `200` with `llm-dispatch-response.schema.json` body). This keeps §16.3 adopters byte-compatible with v1.0 even when their request payloads opt into `stream: true`.
+
+#### 16.6.3 StreamEvent sequence invariants
+
+A streamed dispatch's event sequence MUST satisfy the following invariants (all closed under the 27-value §14.1 enum):
+
+1. **Envelope.** Exactly one `MessageStart` opens the stream; exactly one `MessageEnd` closes it.
+2. **Block nesting.** Between `MessageStart` and `MessageEnd`, content blocks nest: `ContentBlockStart` → `ContentBlockDelta*` → `ContentBlockEnd`. Blocks MUST NOT overlap. `ContentBlockDelta` events outside an open block are a protocol violation.
+3. **Monotonic sequence.** StreamEvents carry the usual §14.1 `sequence` field; streaming mode preserves strict per-session monotonicity exactly as synchronous mode does.
+4. **Terminal `stop_reason`.** `MessageEnd.stop_reason` MUST be a value of the §13.4 closed enum. Streaming-specific values: `NaturalStop` on clean completion; `UserInterrupt` on an abort triggered by a §10.3 `PermissionDecision` or explicit cancellation endpoint; `DispatcherError` with matching `dispatcher_error_code` on adapter-surfaced failures.
+5. **Audit row.** Exactly one `/audit/tail` row is produced per streamed dispatch, exactly as in §16.3 synchronous mode. The row's `dispatcher_error_code` is `null` on `UserInterrupt` (cancellation is not an error) and non-null on `DispatcherError`.
+
+#### 16.6.4 Mid-stream cancellation (SV-LLM-05)
+
+`SV-LLM-05` is the streaming cancellation test. A live-path Runner MUST satisfy:
+
+1. **Trigger.** A `UserInterrupt` is raised by either (a) a `PermissionDecision` that denies the in-flight dispatch, or (b) a POST to the cancellation endpoint defined below.
+2. **Cancellation endpoint.** Runners MUST expose `POST /dispatch/{correlation_id}/cancel` with session-bearer auth. The endpoint returns `202 Accepted` with body `{ "cancelling": true }` and fires the abort signal on the in-flight `dispatchStream` iterator.
+3. **Emission boundary.** After the abort signal fires, the Runner MUST NOT emit any further `ContentBlockDelta` events for the in-flight dispatch. The Runner MAY emit one terminal `ContentBlockEnd` (if a block was open) and MUST emit `MessageEnd` with `stop_reason = "UserInterrupt"`.
+4. **Audit.** The dispatch's `/audit/tail` row carries `stop_reason = "UserInterrupt"` and `dispatcher_error_code = null`. The row's hash-chain linkage is identical to §16.3 audit rules.
+
+Implementations that prove the emission boundary under `SV-LLM-05` MUST treat any post-abort `ContentBlockDelta` as a conformance failure — the test asserts zero deltas after the interrupt observation, not fewer.
+
+#### 16.6.5 Reserved streaming test IDs (Normative)
+
+| Test ID | Exercises | MUST anchor |
+|---|---|---|
+| `SV-LLM-05` (live — v1.2) | Mid-stream cancellation at `ContentBlockDelta` boundary per §16.6.4. Fixture adapter yields 5 deltas; test fires cancel after delta 2; asserts exactly 0 additional deltas, terminal `MessageEnd` with `stop_reason == "UserInterrupt"` | §16.6.4 |
+| `SV-LLM-08` (new — v1.2) | SSE framing. Runner's response carries `Content-Type: text/event-stream; charset=utf-8`; each frame is `event: <type>\ndata: <JCS(event)>\n\n`; terminal `: stream-done` comment precedes TCP close | §16.6.2 step 3 |
+| `SV-LLM-09` (new — v1.2) | Adapter-unsupported path. Runner configured with a sync-only adapter responds `406 Not Acceptable` + `DispatcherStreamUnsupported` body when request carries `Accept: text/event-stream` | §16.6.2 step 1 |
+| `SV-LLM-10` (new — v1.2) | Sequence invariants. Streamed dispatch produces exactly one `MessageStart`/`MessageEnd`; every `ContentBlockDelta` falls between a matching `ContentBlockStart`/`ContentBlockEnd` pair; per-session `sequence` monotonicity holds across the streamed events | §16.6.3 |
+
 ---
 
 ## 17. Agent2Agent (A2A) Wire Protocol
@@ -3274,7 +3348,7 @@ Note: `PermissionPrompt` is a StreamEvent type, not an error code (§14.1); earl
 **Config**: `ConfigOverride`
 **Version**: `VersionNegotiationFailed`
 **Privacy**: `SubjectSuppression`
-**Dispatcher** *(v1.1 addition, §16.3.1)*: `DispatcherError` (single StopReason; dispatcher_error_code carried in audit row + `/dispatch/recent`)
+**Dispatcher** *(v1.1 addition, §16.3.1; v1.2 adds streaming codes per §16.6)*: `DispatcherError` (single StopReason; dispatcher_error_code carried in audit row + `/dispatch/recent`)
 
 The dispatcher subcodes are numeric JSON-RPC-aligned codes rather than string names, mirroring the `-32050` HandoffBusy convention:
 
@@ -3287,8 +3361,10 @@ The dispatcher subcodes are numeric JSON-RPC-aligned codes rather than string na
 | `ContentFilterRefusal`     | `-32104` | Provider-side safety refusal |
 | `ContextLengthExceeded`    | `-32105` | Provider signaled request too large |
 | `DispatcherRequestInvalid` | `-32110` | Dispatcher request failed its schema |
+| `DispatcherStreamUnsupported` *(v1.2)* | `-32111` | Streaming requested but adapter lacks `dispatchStream` (§16.6.2) |
+| `DispatcherAdapterError` *(v1.2)* | `-32112` | Adapter-internal failure (abort could not close cleanly, etc.) (§16.6.1) |
 
-A full JSON catalog is published at `https://soa-harness.org/errors/v1.0.json` (v1.1 extension catalog at `.../errors/v1.1.json`).
+A full JSON catalog is published at `https://soa-harness.org/errors/v1.0.json` (v1.1 extension catalog at `.../errors/v1.1.json`; v1.2 adds `.../errors/v1.2.json`).
 
 ### 24.1 UI-Surface Mappings (Informative)
 
