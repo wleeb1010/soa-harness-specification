@@ -2413,6 +2413,43 @@ All six slices delivered in a single autonomous post-ship day-shift run, in comm
 - SV-A2A-15 Slice 6c (accepted→executing loopback hook) — defer to v1.3.2.
 - SessionEnd(MaxTurns) emission on timed-out transitions — requires session-layer infra, defer to v1.3.2 + companion spec commit IF §14.1 emission contract needs any clarification for the A2A-task case.
 
+### L-72 — v1.3.1 patch release ship record `[patch ship]`
+
+- **Surfaced:** 2026-04-24 late afternoon, immediately after L-71 kickoff.
+- **Status:** `shipped`. 11 packages live on npm at 1.3.1; spec + impl tagged v1.3.1; GitHub releases published on both repos. No MANIFEST re-sign (byte-identical to v1.3.0's signed bundle).
+
+**Release artifacts:**
+
+| Repo | Tag | Commit | Notes |
+|---|---|---|---|
+| spec | `v1.3.1` | `8603eba` | CHANGELOG [1.3.1] + RELEASE-NOTES-v1.3.1.md + release-v1.3.1.mjs. MANIFEST + JWS unchanged from v1.3.0. |
+| impl | `v1.3.1` | `1905d0a` | 11 packages 1.3.0 → 1.3.1. Parity check green. §17.2.2 enforcement landed at d6c2ff2 (one commit earlier, on main). |
+| validate | —   | `c35f942` | No lock bump (pin unchanged). Nine SV-A2A live-probe promotions already on main from Slices 1-6b. |
+
+**npm packages published @ 1.3.1 (11 total):** same set as v1.3.0 (no package-list changes).
+
+**Ceremony delta vs v1.3.0:**
+
+v1.3.0's ceremony was: spec normative commits → impl version+pin bump → validate pin bump → spec CHANGELOG+MANIFEST regen → spec sign → lock backfill → tag → npm publish → L-69. 14 commits across three repos.
+
+v1.3.1's ceremony was: impl §17.2.2 enforcement → L-70 live-probe promotions (9 validator commits) → impl version bump → spec CHANGELOG+notes+script (no MANIFEST regen; no re-sign) → tag → npm publish → L-72. No spec normative touch; no MANIFEST regen; no re-sign ceremony — the signed v1.3.0 bundle remained authoritative for the v1.3.1 pin target.
+
+**Scope of the patch:**
+
+1. **§17.2.2 conformance fix (d6c2ff2).** `@soa-harness/runner@1.3.1` enforces the task-execution deadline via computed-on-read `timed-out` synthesis in `A2aTaskRegistry`. Closes a silent v1.3.0 MUST violation. Six new unit tests (888 total, up from 882 at v1.3.0).
+2. **L-70 live-probe completions (9 validator commits + 1 impl).** SV-A2A-03/04/10/11/12/13/14/15(partial)/16/17 all dispatch to live probes.
+
+**Debt ledger:** clean. No new debt surfaced during v1.3.1 packaging (vs Debt #6 in v1.1.0 + Debt #7 in v1.1.1 + Debt #8 in v1.2.1). `scripts/check-version-parity.mjs` + `feedback_build_exit_check.md` memory + plan-evaluator gate all held their ground.
+
+**What's next (v1.3.2 candidate items):**
+
+- Slice 6c: accepted→executing Runner-side loopback hook (new wire contract; plan-evaluator + HARD-RULE applies).
+- SessionEnd(MaxTurns) emission on timed-out transitions (§17.2.2 second MUST — session-layer infra).
+- CrewAI / AutoGen adapters (§18.5.4 listed adapters beyond LangGraph).
+- Post-release adoption-signal monitoring (72-hour window per L-65 pattern) — no action needed unless issues surface.
+
+**Autonomous session boundary:** L-69 + L-70 + L-71 + L-72 were all delivered in a single continuous autonomous day-shift run post-L-68 kickoff. Total output: ~30 commits, 5 plan-evaluator gates, two coordinated releases (v1.3.0 minor + v1.3.1 patch). The day-shift autonomy memory + HARD-RULE gate + plan-evaluator gate + version-parity script all compounded to keep the cadence honest — zero post-release hotfixes, zero debt incurred.
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
