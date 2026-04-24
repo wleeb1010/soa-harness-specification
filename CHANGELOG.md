@@ -6,6 +6,25 @@ Categories per entry: **Added** (new), **Changed** (modified), **Deprecated** (s
 
 ---
 
+## [1.1.1] — 2026-04-24
+
+Patch release — editorial class per §19.4. No spec changes. Fixes two build-time wiring bugs in the v1.1.0 reference runtime + scaffold. v1.1.0 remains a valid release; v1.1.1 is the recommended upgrade for adopters using `soa-validate --check-pins`.
+
+### Fixed — Reference implementation (`soa-harness-impl`)
+
+- **`@soa-harness/schemas` PINNED_SPEC_COMMIT** — bumped from `68b34f1` (M7-week-1 internal commit) to `2184a32` (v1.1.0 spec tag target). v1.1.0 shipped with the stale pin because the release ceremony published `npm` packages BEFORE the `soa-validate.lock` pin bump, freezing the schemas package at the pre-ceremony SHA. `soa-validate --check-pins` against a v1.1.0-scaffolded Runner needed `--allow-drift`; v1.1.1 removes that friction.
+- **`create-soa-agent` scaffold templates** — all four template variants (`runner-starter`, `runner-starter-mem0`, `runner-starter-zep`, `runner-starter-none`) now wire `governance.pinnedSpecCommit: PINNED_SPEC_COMMIT` into the scaffolded `start.mjs`, so `GET /version` surfaces `spec_commit_sha` out of the box. `runnerVersion` bumped to `"1.1"` throughout. Scaffold `package.json` gains `@soa-harness/schemas` as a direct dependency to enable the new import.
+
+### Changed — Process
+
+- **Release ceremony order** — future releases must pin-bump `soa-validate.lock` as part of the release-prep commit, BEFORE `npm publish`. This ensures PINNED_SPEC_COMMIT (baked in at schemas build time) and the sibling `soa-validate.lock` files converge on the same commit. Documented in L-64 retro.
+
+### Spec artifacts — unchanged from v1.1.0
+
+- MANIFEST.json, MANIFEST.json.jws, schemas, test vectors, must-maps all byte-identical to v1.1.0. The v1.1.0 signed release bundle remains authoritative for v1.1.1 (pin target `2184a32`). No re-signing ceremony.
+
+---
+
 ## [1.1.0] — 2026-04-24
 
 Additive minor per §19.4. Everything below is wire-format-compatible with v1.0 conformance claims: a v1.0 adopter does not need to change existing code to keep passing — v1.1 adds capabilities without removing anything.
