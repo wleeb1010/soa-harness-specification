@@ -1863,6 +1863,44 @@ No pushes. No broken commits. No destructive ops. No edits to v1.0-lts.
 - Gateway MVP — M11 (biggest single chunk)
 - Admin UI — M13
 
+### L-63 — M8 kickoff: streaming dispatcher + end-user chat surface `[milestone kickoff]`
+
+- **Surfaced:** 2026-04-23 end of M7 week 4 night-shift-2. M7 weeks 1-4 closed against the exit-criteria doc (`docs/m7/exit-criteria.md`) with 3 soft-gate items deferred; M8 scope opens.
+- **Status:** planning-only — no code commits; M8 kickoff execution begins the next session.
+
+**M8 scope per L-61 revision 4:**
+
+- **6 weeks** (calendar weeks 7-12 of the 39-week M7+ arc)
+- **Release:** `v1.2.0`
+- **New test IDs expected:** `SV-COMPAT-05..08` (4) + `UV-CMD-07..10` (4) + `UV-A11Y-01..04` (4) = 12 new. Plus `SV-LLM-05` flips skip → live.
+- **Adjacent deliverables (non-normative):** direct-to-Runner chat UI + CLI + VS Code extension stub + WCAG 2.1 AA conformance for chat UI.
+
+**M8 gate sequence (proposed):**
+
+1. **Week 1 — Streaming dispatcher.** Add `dispatchStream?()` to `ProviderAdapter`. Dispatcher routes `request.stream=true` to streaming path when the adapter implements it; falls back to sync mode otherwise. Streaming path emits §14.1 `MessageStart` + `ContentBlockStart` + N × `ContentBlockDelta` + `ContentBlockEnd` + `MessageEnd`. Mid-stream cancellation at `ContentBlockDelta` boundary (SV-LLM-05 flips to live). Integration tests via `app.inject()`. POST `/dispatch` HTTP surface adds SSE response mode when `Accept: text/event-stream` is set.
+2. **Week 2-3 — Chat UI (direct-to-Runner).** Minimal React-based single-session chat that connects to a Runner, streams dispatcher output, shows permission prompts, surfaces audit tail. No Gateway (that's M11). No OAuth (that's M11). Direct session-bearer auth. WCAG 2.1 AA conformance gate.
+3. **Week 3-4 — CLI.** `soa` CLI tool: `soa chat`, `soa status`, `soa audit tail`, `soa conform`. Thin wrapper around the HTTP surface + `soa-validate`.
+4. **Week 4-5 — VS Code extension stub.** Reads `.soa/` in a workspace root, surfaces Runner status in the sidebar, lets developers trigger a dispatch against their local agent from the editor. Stub-level only — full IDE integration is later.
+5. **Week 5-6 — Conformance + release.** SV-COMPAT-05..08 (compat probes), UV-CMD-07..10 (CLI probes), UV-A11Y-01..04 (WCAG probes) + v1.2.0 coordinated release.
+
+**Kill criteria (per L-61 revision 4 Structural C):**
+
+- If streaming dispatcher proves too complex to ship cleanly in week 1 → v1.2.0 ships WITHOUT streaming + SV-LLM-05 stays skip; push to v1.2.1.
+- If VS Code extension hits a blocker (marketplace review, Electron issue) → ship v1.2.0 without it; bundle with M9 or later.
+- If WCAG AA gate doesn't pass for chat UI → ship v1.2.0 with AA-compliant subset + document the gaps in RELEASE-NOTES; full AA compliance is a v1.2.1 patch.
+
+**Pre-M8 checklist (to verify before starting M8 week 1):**
+
+- All M7 hard-gate items complete per `docs/m7/exit-criteria.md`
+- `v1.1.0` actually released (npm publish + Go release binary + GitHub releases + MANIFEST signed)
+- Pin-drift check green on both siblings against the v1.1.0 spec tag
+- `soa-validate --check-pins` succeeds against a running v1.1.0 Runner
+- L-62 closes with a "shipped" marker vs current "executed" framing
+
+**Version impact:** §19.4 minor (v1.1 → v1.2). Additive only. Streaming mode is a new capability, not a wire-format break — the synchronous mode defined in v1.1 stays valid.
+
+**Pattern note:** L-63 differs from L-52/L-56/L-60/L-61 kickoffs in that it opens against an already-shipped prior milestone (v1.1.0) rather than against a rolling pre-release. The cadence is the same; the surface changes — adopter-facing work is now the dominant user of each new feature instead of internal tooling.
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
