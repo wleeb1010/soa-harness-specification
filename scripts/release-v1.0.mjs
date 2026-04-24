@@ -63,6 +63,7 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a === "--impl-root") args.implRoot = argv[++i];
     else if (a === "--registry") args.registry = argv[++i];
+    else if (a === "--otp") args.otp = argv[++i];
     else if (a === "--dry-run") args.dryRun = true;
     else if (a === "--help" || a === "-h") {
       console.log(readFileSync(fileURLToPath(import.meta.url), "utf8").match(/\/\*\*([\s\S]*?)\*\//)[0]);
@@ -155,7 +156,8 @@ function publishPackage(pkg, args) {
   const cwd = join(args.implRoot, pkg.dir);
   const registryFlag = args.registry ? `--registry ${args.registry}` : "";
   const dryFlag = args.dryRun ? "--dry-run" : "";
-  const cmd = `pnpm publish --tag latest --no-git-checks ${registryFlag} ${dryFlag}`.trim();
+  const otpFlag = args.otp ? `--otp ${args.otp}` : "";
+  const cmd = `pnpm publish --tag latest --no-git-checks ${registryFlag} ${dryFlag} ${otpFlag}`.trim();
 
   console.log(`\n=== ${pkg.name} ===`);
   console.log(`cd ${cwd}`);
