@@ -6,6 +6,38 @@ Categories per entry: **Added** (new), **Changed** (modified), **Deprecated** (s
 
 ---
 
+## [1.3.2] — 2026-04-24
+
+Patch release — closes the SV-A2A-15 accepted→executing partial-scope flag from v1.3.1. Adds a new `§17.2.2.1 Destination execute hook` Normative-Testability subsection with a loopback-guarded env var that schedules synthetic destination-side transitions for conformance testing. Additive-normative; existing adopters see zero behavioral change.
+
+### Added — Core spec (normative)
+
+- **§17.2.2.1 Destination execute hook (Normative — Testability, v1.3.2).** Runners MAY honor `SOA_A2A_AUTO_EXECUTE_AFTER_S=N` to schedule `accepted → executing` at N seconds and `executing → completed` at 2N seconds per `handoff.transfer`. Honoring the hook is a **conformance-MUST** for passing `SV-A2A-15` but a **deployment-MAY** for production Runners (loopback-guarded; Runners MUST refuse startup when the env is set on a non-loopback listener OR when `2N ≥ SOA_A2A_TASK_DEADLINE_S`). `handoff.return` cancels any pending scheduled transition. Duplicate `handoff.transfer` for the same `task_id` MUST NOT reschedule. Hook-scheduled transitions are not §12 bracket-persisted — a post-restart row stays at `accepted` until the §17.2.2 deadline fires. Test anchor: `SV-A2A-15` (partial-scope flag retired).
+
+### Changed — Must-map
+
+- `SV-A2A-15` entry extended with the §17.2.2.1 hook-honoring assertion alongside the six observable-today assertions. Closes the v1.3.1 partial-scope flag.
+
+### Changed — Reference implementation (`soa-harness-impl`)
+
+- `@soa-harness/runner@1.3.2` — `A2aTaskRegistry` gains `scheduleAutoExecute(taskId, afterS)` + `cancelAutoExecute(taskId)`. Timers use `.unref()` so they don't block event-loop shutdown. `handleHandoffTransfer` schedules when `autoExecuteAfterS` is configured; `handleHandoffReturn` cancels any pending schedule before recording terminal. `buildRunnerApp` reads `SOA_A2A_AUTO_EXECUTE_AFTER_S` and throws at startup on non-positive-integer values, deadline-collision (`2N ≥ SOA_A2A_TASK_DEADLINE_S`), or non-loopback `opts.a2a.boundHost` — fail-closed per §17.2.2.1 MUST. 893/893 runner tests green (up from 888 at v1.3.1 via 5 new execute-hook tests).
+- All 11 packages bump `1.3.1` → `1.3.2` for parity. Scaffold deps bump `^1.3.1` → `^1.3.2`; `runnerVersion: "1.3"` unchanged. `tools/vscode-extension` bumps `1.3.1` → `1.3.2`.
+
+### Changed — Conformance validator (`soa-validate`)
+
+- `soa-validate.lock` bumps `b87c2ff` → `8f8bdb4` in lockstep with impl.
+- `SV-A2A-15` live probe (commit `39cd1d3` on main pre-bump) gains a seventh env-gated assertion: when `SOA_A2A_PROBE_EXECUTE_HOOK_N_S` is set on the validator AND the Runner under test is booted with matching `SOA_A2A_AUTO_EXECUTE_AFTER_S`, the probe fires a fresh offer+transfer, waits N+1 seconds, asserts `status==executing`, waits another N seconds, asserts `status==completed` — closing the full `accepted→executing→completed` transition loop.
+
+### HARD-GATE exercise record
+
+- §17.2.2.1: plan-evaluator pass, verdict "targeted fixes"; 2 critical + 5 moderate addressed inline. Loopback-guard wording aligned with §11.3.1 / §10.6.2 / §11.2.1 precedent (fail-closed at boot, not "env ignored"). Deadline-collision guard added. Duplicate-transfer behavior + restart-crash observability + conformance-vs-deployment scope clarified inline. Four minor findings noted in the commit message; two deferred to L-NN editorial polish.
+
+### Spec artifacts
+
+- `MANIFEST.json` regenerated. Signed with the v1.0 release key (fingerprint unchanged). `soa-validate.lock.spec_manifest_sha256` on impl + validate backfilled from `PENDING_V1_3_2_MANIFEST_REGEN` to the signed digest post-ceremony.
+
+---
+
 ## [1.3.1] — 2026-04-24
 
 Patch release — editorial-class per §19.4.1. No spec changes; spec pin stays at `b87c2ff`. Closes a silent v1.3.0 §17.2.2 conformance gap in the reference Runner + promotes seven validator probes from skip to live.
