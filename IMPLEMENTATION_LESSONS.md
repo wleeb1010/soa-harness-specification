@@ -2475,6 +2475,33 @@ v1.3.1's ceremony was: impl §17.2.2 enforcement → L-70 live-probe promotions 
 
 **Out of scope for v1.3.2:** §17.2.3.2 reserved-tokens registry (v1.4+), caller-side `result_digest` attestation contract (v1.4+), mTLS x5t#S256 live-probe path (needs CA/cert-rotation test fixtures).
 
+### L-74 — v1.3.2 patch release ship record `[patch ship]`
+
+- **Surfaced:** 2026-04-24 evening, immediately after L-73 Track 1 closure.
+- **Status:** `shipped`. 11 packages live on npm at 1.3.2; spec + impl tagged `v1.3.2`; GitHub releases published on both repos; MANIFEST.json re-signed with v1.0 release key (fingerprint unchanged).
+
+**Release artifacts:**
+
+| Repo | Tag | Commit | Notes |
+|---|---|---|---|
+| spec | `v1.3.2` | `88bbec8` | MANIFEST.json regenerated + re-signed (JCS digest `4bd9e208f5b4b3...c687c67`). CHANGELOG [1.3.2] + RELEASE-NOTES-v1.3.2.md + scripts/release-v1.3.2.mjs. |
+| impl | `v1.3.2` | `44ff3e7` | 11 packages at 1.3.2. Pin bumped b87c2ff → 8f8bdb4. Runner gains A2aTaskRegistry.scheduleAutoExecute + cancelAutoExecute + buildRunnerApp fail-closed startup guards per §17.2.2.1. 893/893 tests green (+5 for execute-hook). |
+| validate | —   | `9f8d06f` | Lock bumped to 8f8bdb4. SV-A2A-15 live probe extended with env-gated execute-hook assertion at `39cd1d3`. |
+
+**npm packages published @ 1.3.2 (11 total):** same set as v1.3.0 / v1.3.1.
+
+**Scope delta vs v1.3.1:** v1.3.1 was a no-re-sign patch; v1.3.2 required a re-sign because §17.2.2.1 added new core-spec markdown. Same release key fingerprint (`l5TzOjMJfyyDTuEarut87i3T8KhGBV4AeLwOXo028vI`), no rotation. MANIFEST digest `4bd9e208f5b4b3...c687c67` (distinct from v1.3.0's `b386f5cc9ab6...628f1b`).
+
+**Plan-evaluator record:** single pass on §17.2.2.1 — verdict "targeted fixes"; 2 critical + 5 moderate addressed inline; 4 minor cited. Loopback-guard wording aligned with §11.3.1 / §10.6.2 / §11.2.1 precedent (fail-closed at boot). Deadline-collision guard added per evaluator critical.
+
+**L-70 closure status:** 10 of 10 live flips + the partial-scope flag retired. SV-A2A-15 fully-live when cooperating env is set on both sides.
+
+**Debt ledger:** clean. Version-parity + build-exit-check + HARD-RULE + plan-evaluator gate all held.
+
+**What's next (v1.3.3 / v1.4.0 candidates per L-73 Track 2+3):** §17.2.2 SessionEnd(MaxTurns) emission (Track 2; likely minor v1.4.0 given session-contract clarification need) and CrewAI adapter (Track 3; impl-only, own milestone).
+
+**Autonomous session boundary:** L-69 → L-74 delivered in one continuous autonomous run post-L-68 kickoff. Total span: ~40 commits across three repos, 6 plan-evaluator gates, three coordinated releases (v1.3.0 minor + v1.3.1 + v1.3.2 patches). Zero post-release hotfixes. Zero unresolved debt.
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
