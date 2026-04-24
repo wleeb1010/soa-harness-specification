@@ -1946,6 +1946,38 @@
       "severity": "critical",
       "assertion": "A streamed dispatch emits exactly one MessageStart and exactly one MessageEnd; every ContentBlockDelta occurs between a matching ContentBlockStart and ContentBlockEnd (no orphan deltas); the per-session stream sequence number is strictly monotonic across the streamed events; MessageEnd.stop_reason is a §13.4 closed-enum value."
     },
+    "SV-COMPAT-05": {
+      "name": "Runner /version surfaces spec_commit_sha",
+      "section": "§19.4",
+      "section_title": "Version negotiation — v1.2 compat probe",
+      "profile": "core",
+      "severity": "moderate",
+      "assertion": "GET /version on a v1.2-conformant Runner MUST include a spec_commit_sha field carrying the exact 40-char-hex commit that the Runner's bundled @soa-harness/schemas was pinned to. Downstream tools (soa-validate --check-pins) depend on this field's presence and accuracy."
+    },
+    "SV-COMPAT-06": {
+      "name": "/version runner_version tracks package version",
+      "section": "§19.4",
+      "section_title": "Version negotiation — v1.2 compat probe",
+      "profile": "core",
+      "severity": "moderate",
+      "assertion": "GET /version runner_version MUST be the dotted major.minor string of the @soa-harness/runner package that boots the Runner (e.g. '1.2' for 1.2.x). Adopters use this for compat routing. Hard-coded stale values (e.g. always-'1.0') are a conformance failure."
+    },
+    "SV-COMPAT-07": {
+      "name": "v1.1 adopter stays conformant under v1.2 Runner (additive-minor invariant)",
+      "section": "§19.4",
+      "section_title": "Version negotiation — additive-minor compat invariant",
+      "profile": "core",
+      "severity": "critical",
+      "assertion": "A v1.1 client (no Accept: text/event-stream header, body.stream=false, no /dispatch/{cor_id}/cancel calls) against a v1.2 Runner MUST receive synchronous §16.3 responses byte-identical to what a v1.1 Runner would have produced. No streaming-mode side effects leak into the sync path."
+    },
+    "SV-COMPAT-08": {
+      "name": "MessageEnd payload stop_reason is optional (forward-compat)",
+      "section": "§14.1.1",
+      "section_title": "StreamEvent MessageEnd payload — v1.2 schema extension",
+      "profile": "core",
+      "severity": "moderate",
+      "assertion": "MessageEnd payload with only {message_id, usage} (no stop_reason, no dispatcher_error_code) MUST validate against the v1.2 schema. v1.1 producers don't know about the v1.2 field additions; their output must stay valid."
+    },
     "SV-LLM-06": {
       "name": "Dispatch audit row presence + hash chain",
       "section": "§16.3",
@@ -2317,6 +2349,12 @@
       "SV-ADAPTER-02",
       "SV-ADAPTER-03",
       "SV-ADAPTER-04"
+    ],
+    "SV-COMPAT": [
+      "SV-COMPAT-05",
+      "SV-COMPAT-06",
+      "SV-COMPAT-07",
+      "SV-COMPAT-08"
     ]
   },
   "must_coverage": {
