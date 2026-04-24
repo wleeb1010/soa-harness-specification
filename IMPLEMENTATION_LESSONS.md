@@ -2549,8 +2549,35 @@ Three adopter paths for a CrewAI-on-SOA-Harness deployment:
 ### Remaining autonomously-shippable items
 
 - `§17.2.3.2` reserved-capability-tokens registry **structural draft** (format regex, addition process, collision policy) with an **empty initial token list**. Ships as spec-only v1.4 minor. Requires plan-evaluator gate. Specific token values need community input; structural draft can move forward without that.
-- `mTLS x5t#S256` live-probe **feasibility scoping** — determine whether a test CA + cert-rotation fixture is reasonable to build in-repo or whether this stays skip-with-rationale indefinitely. Deliverable: a short design note, not impl.
+- ~~mTLS `x5t#S256` live-probe feasibility scoping~~ — executed 2026-04-24 evening; see L-78.
 - ~~Post-release adoption monitoring~~ — executed 2026-04-24 evening; see L-77.
+
+### L-78 — mTLS `x5t#S256` live-probe feasibility note `[design note, feasible]`
+
+- **Surfaced:** 2026-04-24 evening, post-L-77.
+- **Status:** `feasible; queued for v1.4.x when a test-CA fixture is bundled`. Not a blocker for v1.3.x.
+
+**Context.** §17.1 step 2 has two signing-key discovery paths: (a) Agent-Card-kid resolution via the caller's `.well-known/agent-card.jws`, and (b) mTLS `x5t#S256` discovery that binds the JWT signing key to the SHA-256 thumbprint of the caller's mTLS client certificate. The impl's `buildPeerCertResolver` at `soa-harness-impl/packages/runner/src/a2a/signer-discovery.ts` implements path (b) with unit coverage at `a2a-signer-discovery.test.ts` (4 assertions — match, missing x5t, missing peer cert, thumbprint mismatch). The validator's `SV-A2A-11` at `soa-validate/internal/testrunner/handlers_a2a.go` live-probes only path (a); path (b) is explicitly out-of-scope per Slice 5's scoping.
+
+**What a live probe would need:**
+
+1. **Test CA**: a Go-generated self-signed root certificate with a known key, committed to `soa-validate/test-vectors/mtls-ca/` under a dedicated subfolder (or Go-generated per-probe-run via `crypto/x509.CreateCertificate` for freshness). Deterministic-per-run is simpler; no fixture leak risk.
+2. **Server cert for the Runner under test**: Runner must be booted with a TLS listener using a cert chained to the test CA. Conformance-test env convention: `SOA_A2A_MTLS_SERVER_CERT_PEM` + `SOA_A2A_MTLS_SERVER_KEY_PEM` + `SOA_A2A_MTLS_CA_PEM` (the CA the Runner trusts for client-cert verification).
+3. **Client cert for the validator**: Go `crypto/tls.Config` with a `Certificates[0]` entry built from a validator-generated client cert chained to the same test CA. `JWT header.x5t#S256` computed as `base64url-no-pad(SHA-256(DER(client_cert)))` matches the TLS handshake's peer-cert thumbprint.
+4. **Probe flow**: sign a JWT with the validator's client-key, attach it with Authorization: Bearer, dial the Runner over mTLS, assert 200 with result member. The Runner's `buildPeerCertResolver` fires on the successful TLS handshake + JWT `x5t#S256` match, extracts the SPKI, verifies the JWT. Then also test `x5t#S256` mismatch → `HandoffRejected(reason=key-not-found)`.
+
+**Effort estimate.** ~1-2 days in-repo: the CA + cert-generation helpers go in `soa-validate/internal/mtls/testca.go` (~150 LOC using stdlib `crypto/x509`). The probe handler lands in `handlers_a2a.go` as `handleSVA2A11Mtls` (~100 LOC). The Runner-side server.ts change is modest — add an `a2a.mtlsServerConfig` option that configures the Fastify TLS listener.
+
+**Feasibility verdict: YES, with caveats.**
+
+- **In-repo is fine** for Go-generated ephemeral CAs; committed-to-repo CAs are a supply-chain smell (even clearly-marked "TEST ONLY" keys leak via copy-paste into production configs — Debt #7 / #8 pattern).
+- **Fastify TLS**: works out of the box (`https: { key, cert, ca, requestCert: true, rejectUnauthorized: true }`). No server.ts architectural change needed.
+- **Go mTLS client**: `crypto/tls.Config.Certificates` + `RootCAs`. Stdlib-only. No external dependencies.
+- **Cross-platform risk**: cert generation uses stdlib crypto; no platform-specific path. Windows + Linux + macOS CI all work without per-platform fixture duplication.
+
+**Not-a-blocker rationale.** SV-A2A-11 already live for the Agent-Card-kid path (Slice 5); the mTLS path is an alternative discovery route, not a separate normative requirement. Deployments that don't use mTLS are unaffected. Deployments that DO use mTLS inherit path-(a) coverage via their caller's Agent Card regardless of cert handshake. Live-probing path (b) hardens conformance testing for mTLS-enabled deployments specifically — valuable but not urgent.
+
+**Recommendation:** queue this as a v1.4.x item bundled with any future §17-touching work (e.g., §17.2.3.2 tokens registry, or Track 3 CrewAI adapter once that unblocks). Ships as `SV-A2A-11b` companion test ID (the original SV-A2A-11 stays live for Agent-Card-kid path; the mTLS variant is additive).
 
 ### L-77 — Post-v1.3.x adoption-signal snapshot `[monitoring, clean]`
 
