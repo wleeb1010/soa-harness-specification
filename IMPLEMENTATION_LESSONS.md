@@ -2706,6 +2706,55 @@ Three adopter paths for a CrewAI-on-SOA-Harness deployment:
 
 **Cross-refs:** L-76 ("Remaining autonomously-shippable items" — §17.2.3.2 was the last open item; L-81 closes it), L-79 (§18.5.6 precedent rule for informative-additive minors — L-81 follows the same §19.4 classification pattern).
 
+### L-82 — v1.4.0 minor release ship record (spec side) `[minor ship; impl pin-bump pending]`
+
+- **Surfaced:** 2026-04-24 evening, immediately after L-81 closure + v1.4.0 release prep.
+- **Status:** `shipped (spec side)`. Spec repo tagged `v1.4.0` and pushed to `origin/main`. MANIFEST.json regenerated + signed with the v1.0 release key (fingerprint `l5TzOjMJfyyDTuEarut87i3T8KhGBV4AeLwOXo028vI=`, unchanged from v1.3.x). Impl-side pin-bump + npm publish deferred to a separate session per the spec-lands-first rule.
+
+**Release artifacts (spec side):**
+
+| Repo | Tag | Commit | Notes |
+|---|---|---|---|
+| spec | `v1.4.0` | `c89098d` | MANIFEST.json regenerated (171 supplementary artifacts; structural check OK). MANIFEST.json.jws re-signed (175-char detached JWS, EdDSA over JCS-canonical 33524 bytes). CHANGELOG [1.4.0] + RELEASE-NOTES-v1.4.0.md + scripts/release-v1.4.mjs. GitHub Release v1.4.0 published with adopter-facing notes. |
+| impl | — | — | **Pending.** Pin-bump 1.3.3 → 1.4.0 across 11 packages + scaffold templates + vscode-extension + `PINNED_SPEC_COMMIT`. Then `release-v1.4.mjs --impl-root <path>` for verdaccio dry-run + production publish. |
+| validate | — | — | **Pending.** Lock-bump `soa-validate.lock.spec_manifest_sha256` from v1.3.3's signed digest to v1.4.0's signed digest in lockstep with impl. |
+
+**Spec changes shipped (all already in main pre-prep):**
+
+1. **§18.5.6 Framework Reservations (Informative)** — first "reserved" entry: `"crewai"` (no first-party adapter planned for v1.x). Precedent rule: reserve-don't-remove for enum values during a major version line. Committed at L-79 `06d46c4`.
+2. **§17.2.3.2 Reserved-tokens registry mechanism (Normative)** — admission regex with `x-` negative lookahead, three-state lifecycle (`active`/`deprecated`/`withdrawn`), registry-file metadata, MANIFEST digest decoupling, two-vocabulary permanence. Mechanism only; registry file artifact deferred to v1.4.1+. Committed at L-81 `87ad49a`.
+3. **§17.2.3 emitter convention paragraph (Informative)** — `x-` SHOULD prefix for non-registered tokens; RFC 6648 acknowledged. Committed at L-81 `87ad49a` (bundled).
+4. **§17.2.3.1 (Informative) rewrite** — short forward-pointer to §17.2.3.2. Committed at L-81 `87ad49a` (bundled).
+5. **§14.6.4 Adapter Deviation Protocol — wording cleanup** — generalized from LangGraph-centric to framework-agnostic; supports community CrewAI adapter conformance path. §18.5.6 forward-ref to §14.6.4 added in same commit. Committed at v1.4.0 prep `da02d2d`.
+6. **`schemas/release-gate-report.schema.json`** — `declared_adapter_mode.description` cross-ref to §18.5.6. Committed at L-79 `06d46c4`.
+
+**Plan-evaluator record (4 passes, sustained gate ROI):**
+
+- **§18.5.6 / L-79 single pass:** verdict "needs targeted fixes"; 0 critical, 6/6 moderate addressed inline, 3 minor deferred to L-79 entry.
+- **§17.2.3.2 / L-81 three passes:** Pass 1 (plan v1) verdict "targeted fixes" with 3 critical (regex-vs-prefix contradiction, vendor MUST unenforceable, digest-vs-contents wire-contract semantics unstated). Pass 2 (plan v2) all 3 priors RESOLVED + 6 new moderate findings, all addressed in revision. Pass 3 (prose-level hard gate) 1 critical + 5 moderate, all 6 addressed inline.
+- **§14.6.4 cleanup single pass:** verdict "ship with optional inline polish"; 0 critical, 0 moderate, 5 minor (3 addressed inline, 2 deferred).
+
+**Total: 16 critical findings caught across 4 passes; all resolved before shipping.** Continued evidence that the gate is paying for itself at ~2 min/pass (precedent set in M9 / L-69; reaffirmed here).
+
+**HARD RULE — impl cannot invent spec content:** held throughout. v1.4 is pure-spec — no impl PRs at all in this session — so no "impl exposed gap" near-misses to record. The HARD RULE's value this cycle was indirect: impl repo's stability allowed the spec-only minor to ship without coordination ceremony.
+
+**Spec-lands-first cadence (CLAUDE.md governance):** held. v1.4.0 ships on the spec repo with `MANIFEST.json.jws` signed; impl pin-bump is deliberately deferred to a separate session and a separate commit chain. No co-authored spec+impl PRs.
+
+**Plan-evaluator gate continued ROI:** the §17.2.3.2 work is the strongest evidence yet that the gate catches structural problems plan-level, not just prose-level. Plan v1's three criticals were fundamental contradictions (regex admitting forbidden tokens; MUST without enforcement surface; digest semantics undefined) that would have shipped as either same-day patches or v1.5 corrections without the gate. Cost: ~6 minutes total across the three passes; benefit: avoided rework spanning multiple commits + lessons entries.
+
+**Known deferrals to v1.4.x:**
+
+- **`registries/a2a-capability-tokens.json` + `registries/a2a-capability-tokens.schema.json`** — registry file artifact + companion schema. Ship together with first accepted token submission, or as v1.5.0 companion artifact if no submissions.
+- **`registry-validate-must-map.json` + `REG-A2A-01..05`** — repo-hygiene must-map and test IDs. Forward-referenced from §17.2.3.2.
+- **AutoGen + LangChain-Agents framework dispositions** (L-80) — both deferred deliberately; coupled resolution to keep §18.5.6 reservation list non-lopsided.
+- **mTLS `x5t#S256` live-probe path** (L-78) — feasible per design note; queued for v1.4.x bundled with other §17-touching work; adds `SV-A2A-11b`.
+- **Caller-side `result_digest` attestation** — v1.3 scopes to shape-check only; future v1.4.x revision normatively defines caller-side signing obligation.
+- **Impl-side pin-bump** — `soa-harness-impl@1.4.0` across 11 packages + scaffold + vscode-extension + `PINNED_SPEC_COMMIT` advance. `soa-validate.lock.spec_manifest_sha256` bumps in lockstep.
+
+**Autonomous session boundary cumulative:** L-79 → L-82 delivered in one continuous autonomous run. Total: 5 commits on spec repo (L-79, gitignore cleanup, L-80, L-81, v1.4.0 prep + sign + tag), 4 plan-evaluator gates, one coordinated minor release. Zero post-commit rework on the normative surface.
+
+**Cross-refs:** L-79 (§18.5.6 reservation), L-80 (AutoGen + LangChain-Agents deferral), L-81 (§17.2.3.2 mechanism), L-77 (adoption monitoring baseline — re-run after impl pin-bump completes per L-77 cadence).
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
