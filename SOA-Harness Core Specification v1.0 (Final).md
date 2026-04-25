@@ -3102,6 +3102,8 @@ The `{accept:false, reason:"no-a2a-capabilities-advertised"}` string is a normat
 
 **Comparison (Normative).** Capability tokens are compared by byte equality over the UTF-8 encoding of each string. Receivers MUST NOT apply Unicode normalization (NFC, NFD, NFKC, NFKD), case folding, whitespace trimming, or any other transformation before matching. Caller and receiver coordinate on token identity out-of-band or by convention (suggested: `lowercase-hyphenated` ASCII tokens such as `summarize-document`, `extract-entities`, `translate-en-de`); the spec imposes no pattern constraint on the tokens themselves in v1.3, and implementations MUST NOT reject any well-formed string for failing such a convention.
 
+**Convention for non-registered tokens (Informative).** Emitters SHOULD prefix vendor-specific, private, or experimental tokens with `x-` (e.g., `x-acme-compress`, `x-acme-experimental-v2`) to avoid collision with future §17.2.3.2 registry entries. This is a convention for emitters only; receivers MUST continue to treat `x-`-prefixed tokens identically to any other well-formed token per the byte-equality rule above (no pattern-based rejection on the wire). The `x-` convention is retained in SOA-Harness A2A despite RFC 6648's deprecation of the `X-` prefix for HTTP headers. RFC 6648's stated scope is HTTP message headers and MIME parameters, not general application-protocol namespaces.
+
 **Error data shape (Normative).** When -32003 fires from §17.2.3 matching, the JSON-RPC error object MUST include `error.data: { missing_capabilities: string[] }` listing every token from `capabilities_needed` (after deduplication) that is NOT a member of the receiver's `a2a.capabilities` set, in first-occurrence order. §17.3's error-code table is updated in the same commit to document this field.
 
 **Scope.** §17.2.3 governs capability matching at `handoff.offer` only. `handoff.transfer` MAY also return -32003 `CapabilityMismatch` if capability state drifts between offer and transfer (e.g., the destination Runner restarted and re-advertised a narrower surface); the same `error.data.missing_capabilities` contract applies.
@@ -3110,7 +3112,68 @@ Test anchor: `SV-A2A-17` (reserved at this commit) verifies the truth-table matr
 
 ##### 17.2.3.1 Token registry (Informative, v1.3)
 
-v1.3 does not ship a global capability token registry. Implementations MAY coordinate via adapter-specific documentation, shared vocabulary files, or bilateral agreements. A reserved-tokens Normative successor (§17.2.3.2) lands in v1.4+ if a cross-ecosystem vocabulary emerges.
+§17.2.3.2 below defines the reserved-tokens registry mechanism (v1.4). Implementations that need out-of-band coordination for tokens — registered or not — remain free to use adapter-specific documentation, shared vocabulary files, or bilateral agreements.
+
+##### 17.2.3.2 Reserved-tokens registry mechanism (Normative, v1.4)
+
+This subsection defines the mechanism by which capability tokens MAY be admitted to a reserved SOA-Harness registry. Registry membership is **non-normative for runtime matching**: §17.2.3's UTF-8 byte-equality rule remains the sole matching contract, and registered tokens and unregistered well-formed tokens are equivalent on the wire. The registry exists for out-of-band coordination, collision avoidance, and tooling (diagnostic logs, admin-UI suggestions, typo detection).
+
+The registry file artifact (`registries/a2a-capability-tokens.json` and its companion schema `registries/a2a-capability-tokens.schema.json`) is NOT shipped in v1.4.0. The mechanism below becomes operationally relevant when the artifact ships alongside the first accepted token submission, or when an empty-file convention is established as a companion artifact. The timing of the first artifact release is a governance decision, not a spec commitment.
+
+**Admission regex (Normative).** A capability token is eligible for admission to the registry if and only if it matches:
+
+```
+^(?!x-)[a-z][a-z0-9]*(-[a-z0-9]+)*$
+```
+
+with UTF-8 byte length in the closed range `[3, 64]`. The negative lookahead excludes `x-`-prefixed tokens (see §17.2.3's emitter convention for non-registered tokens). Registry schemas SHOULD encode the constraint as a parallel `"not": {"pattern": "^x-"}` clause alongside `"pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"` to remain compatible with JSON Schema validators that do not support ECMA-262 lookahead.
+
+Tokens that do not match the admission regex remain **wire-legal per §17.2.3** but are **ineligible for registry admission**. Examples of wire-legal but admission-ineligible tokens: `Summarize_Document` (uppercase), `summarize.document` (dot character), `x-vendor-compress` (`x-` vendor prefix), `qa` (length < 3).
+
+**Registry entry shape (Normative).** When the registry file ships, each entry in its `tokens` array MUST be an object with the following fields:
+
+- `token` (string, required): the capability token. MUST match the admission regex. MUST be unique within the registry (first-accepted wins on collision).
+- `description` (string, required): human-readable short definition. UTF-8 length in `[10, 500]` bytes.
+- `sponsor` (string, required): GitHub handle or organization identifier serving as the contact of record for deprecation or clarification questions.
+- `added_in` (string, required): spec version tag at which the entry was first admitted, matching `^v\d+\.\d+\.\d+$`. MUST be a released spec version tag at the time of merge.
+- `status` (enum, required, default `"active"`): one of `"active"`, `"deprecated"`, or `"withdrawn"`.
+- `deprecated_in` (string, required iff `status == "deprecated"`): spec version tag at which the entry moved to `"deprecated"`.
+- `deprecation_note` (string, required iff `status == "deprecated"`): rationale for deprecation.
+- `withdrawn_in` (string, required iff `status == "withdrawn"`): spec version tag at which the entry was withdrawn.
+- `withdrawn_reason` (string, required iff `status == "withdrawn"`): rationale for withdrawal (e.g., `"clerical error"`).
+
+Entries MUST NOT be removed from the registry file once merged. `"deprecated"` and `"withdrawn"` are the sole lifecycle exits. A `"withdrawn"` entry remains in the file for audit purposes but is NOT a registered token for tooling or diagnostic purposes; tooling implementations SHOULD treat `"withdrawn"` entries as if they had never been admitted.
+
+**Registry file metadata (Normative).** When the registry file ships, it MUST carry:
+
+- `registry_version` (string, required): semver identifier for the registry file itself. MUST bump patch on every addition, minor on additive schema changes, and major on breaking schema changes. This version is independent of the spec version; equality with a spec version is coincidental and permitted.
+- `tokens` (array, required): zero or more entries conforming to the entry shape above.
+
+**Lifecycle rules (Normative).**
+
+1. **First-accepted wins.** Once an entry with a given `token` string is merged, subsequent submissions with the same `token` MUST be rejected as duplicates by whatever review process the project operates; in the absence of a documented process, the `git log` merge order is the tie-breaker of record.
+2. **Permanence.** Merged entries persist in the file indefinitely. `status` transitions are the sole lifecycle: `"active"` → `"deprecated"` or `"active"` → `"withdrawn"`. An entry at `"deprecated"` or `"withdrawn"` MUST NOT transition back to `"active"`.
+3. **Wire decoupling.** Lifecycle state does NOT affect §17.2.3 wire matching. A token with `status: "deprecated"` is matched on the wire exactly as any other well-formed token per the byte-equality rule. Lifecycle state affects only out-of-band tooling semantics.
+
+**MANIFEST digest semantics (Normative).** When the registry file ships, it becomes a MANIFEST-pinned artifact. Its digest will change on every addition. Implementations:
+
+- MUST NOT pin a specific registry-file digest as a conformance requirement.
+- MUST NOT reject or warn solely on registry-file digest drift across patch releases.
+- MAY cache the registry file contents keyed by digest for performance.
+
+These MUSTs govern conformance claims and implementation documentation, not wire bytes; enforcement is by review of conformance assertions rather than by runtime testing. Runtime behavior is governed by §17.2.3 exclusively; the registry-file digest is NOT a wire contract.
+
+**Governance (Normative delegation; Informative guidance).** Registry administration is delegated to the project maintainer per `GOVERNANCE.md`. This spec does NOT enumerate a specific submission or review flow; implementations submitting tokens SHOULD expect review latencies consistent with the project's stated single-maintainer posture. A governance companion document (e.g., `docs/registry-governance.md`) MAY be published when `GOVERNANCE.md` evolves to define delegate or fallback roles; no such companion document is required to ship in v1.4.0.
+
+**Version bump rules (Normative).**
+
+- **Adding an entry to the registry file:** MUST bump `registry_version` patch. Spec version is unaffected unless the addition requires spec-prose changes.
+- **Additive schema changes** (new optional fields in the entry shape, new optional metadata fields): MUST bump `registry_version` minor; spec version is incremented per §19.4 if spec prose changes.
+- **Breaking registry-schema changes** (field removal, required-field addition, regex tightening): MUST align with a spec minor or major release (never a patch). Breaking registry-schema changes are treated as a minor spec bump per §19.4 unless they have wire-format implications (none expected, since the registry is non-normative for wire matching); `registry_version` bumps major concurrently.
+
+**Two-vocabulary permanence (Clarification).** v1.3 wire compatibility is permanent. Any token well-formed under §17.2.3's wire rules remains wire-legal in all future v1.x releases. The admission regex in this subsection constrains future curated registry entries only; it does NOT retroactively invalidate or deprecate tokens in use today. The two vocabularies — wire-legal tokens (superset) and registered tokens (subset) — coexist permanently.
+
+**Test anchors (informative forward-reference).** When the registry file ships, a repo-hygiene must-map (`registry-validate-must-map.json`, separate from the runtime-conformance `soa-validate-must-map.json`) carries `REG-A2A-01..05`: (01) schema validates registry file, (02) every `token` matches admission regex, (03) no duplicate `token` values, (04) lifecycle coherence (`"deprecated"` implies `deprecated_in` + `deprecation_note`; `"withdrawn"` implies `withdrawn_in` + `withdrawn_reason`), (05) `registry_version` monotonicity across commits. The `registry-validate-must-map.json` file is not shipped in v1.4.0; it ships when the registry artifact ships. No new runtime-conformance test family is added; registry membership is non-normative for §17.2.3 matching.
 
 #### 17.2.5 Digest recompute obligations (Normative, v1.3)
 

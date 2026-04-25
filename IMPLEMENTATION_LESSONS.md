@@ -2550,9 +2550,11 @@ Three adopter paths for a CrewAI-on-SOA-Harness deployment:
 
 ### Remaining autonomously-shippable items
 
-- `§17.2.3.2` reserved-capability-tokens registry **structural draft** (format regex, addition process, collision policy) with an **empty initial token list**. Ships as spec-only v1.4 minor. Requires plan-evaluator gate. Specific token values need community input; structural draft can move forward without that.
+- ~~`§17.2.3.2` reserved-capability-tokens registry **structural draft**~~ — executed 2026-04-24 evening; see L-81.
 - ~~mTLS `x5t#S256` live-probe feasibility scoping~~ — executed 2026-04-24 evening; see L-78.
 - ~~Post-release adoption monitoring~~ — executed 2026-04-24 evening; see L-77.
+
+**All three L-76 autonomously-shippable items are now closed.** Track 3 (CrewAI adapter) was separately closed by L-79 with disposition = not pursuing.
 
 ### L-78 — mTLS `x5t#S256` live-probe feasibility note `[design note, feasible]`
 
@@ -2670,6 +2672,39 @@ Three adopter paths for a CrewAI-on-SOA-Harness deployment:
 **When to close L-80:** when both AutoGen and LangChain-Agents have concrete dispositions (first-party adapter shipped, or §18.5.6 reservation added, or explicit "no action planned" recorded in a successor L-NN entry). Until then this stays open as a reminder that the silence on these two values is deliberate, not oversight.
 
 **Cross-refs:** L-76 (CrewAI + AutoGen + LangChain-Agents considered as adapter paths), L-79 (§18.5.6 precedent rule + CrewAI reservation).
+
+### L-81 — §17.2.3.2 reserved-tokens registry mechanism shipped (v1.4 spec draft) `[closed]`
+
+- **Surfaced:** 2026-04-24 evening, completing the last open autonomously-shippable item from L-76.
+- **Status:** `closed, ship record`. v1.4 spec draft landed; the mechanism is normative, the artifact is deferred.
+- **Scope shipped:** §17.2.3.2 subsection defining admission regex, entry shape, lifecycle (three-state: `active`/`deprecated`/`withdrawn`), registry-file metadata, MANIFEST digest semantics, governance delegation, version-bump rules, and a forward-reference to the `REG-A2A-01..05` test family. §17.2.3 gained a new "Convention for non-registered tokens (Informative)" paragraph documenting the `x-` prefix convention for emitters + explicit RFC 6648 acknowledgement. §17.2.3.1 rewritten as a short forward-pointer to §17.2.3.2.
+- **Scope NOT shipped (deferred to v1.4.1+ artifact release):** the `registries/a2a-capability-tokens.json` file, the companion `registries/a2a-capability-tokens.schema.json`, the `registry-validate-must-map.json` repo-hygiene must-map, and the `REG-A2A-*` test IDs. All four ship together when the first real token submission arrives, or as a v1.5.0 companion artifact if no submissions materialize.
+
+**Design decisions recorded:**
+
+- **Mechanism-without-artifact** — the spec defines a registry that does not yet exist as a file. Novel precedent for this repo (every prior Normative subsection shipped with its artifact). Accepted because (a) an empty-file artifact would need its schema revised on first real submission, (b) the mechanism is the load-bearing contract, (c) the artifact adds MANIFEST re-sign ceremony per addition which should not begin until there is something to add.
+- **Three-state lifecycle (`active`/`deprecated`/`withdrawn`)** — `withdrawn` is the escape hatch for clerical errors or malformed submissions that slip past review; it keeps the "merged entries are permanent" rule coherent while providing a safety valve. Distinct from `deprecated` which is planned EOL.
+- **Admission regex `^(?!x-)[a-z][a-z0-9]*(-[a-z0-9]+)*$`** — negative lookahead excludes `x-`-prefixed tokens at schema level, resolving plan-v1 critical #1 (regex-vs-prefix contradiction). Registry schemas SHOULD also encode the constraint as a parallel `"not"` clause for ECMA-262-lookahead-incompatible validators.
+- **`x-` convention moved from §17.2.3.2 to §17.2.3** — the emitter convention is a §17.2.3 wire-adjacent concern, not a §17.2.3.2 registry-admission concern (even though they interact). Placing it in §17.2.3 resolves plan-v1 critical #2 (unenforceable MUST on vendors).
+- **Registry-digest decoupling from wire contract** — MANIFEST-pinned artifact whose digest changes on every addition is explicitly NOT a conformance requirement. MUSTs against pinning govern implementation documentation, not wire bytes; enforcement is by review of conformance assertions. Resolves plan-v1 critical #3 (digest-vs-contents semantics unstated).
+- **Two-vocabulary permanence** — wire-legal tokens (superset, defined by §17.2.3) and registry-admissible tokens (subset, defined by §17.2.3.2 regex) coexist permanently in v1.x. The registry does not retroactively invalidate anything.
+- **Governance minimal + in-spec** — no external `docs/registry-governance.md` ships in v1.4.0 because single-maintainer + "absent-maintainer fallback" (which an external governance doc would naturally want to address) is contradictory without a `GOVERNANCE.md` delegate update first. Governance embedded in §17.2.3.2 delegates to `GOVERNANCE.md` and acknowledges the single-maintainer review-latency posture.
+
+**Version bump — v1.4.0 minor (§19.4 classification rationale):** This change introduces one new Normative subsection (§17.2.3.2), one in-place Informative rewrite (§17.2.3.1), and one additive Informative paragraph (§17.2.3 emitter convention). All additive; no wire behavior changes; no existing MUST obligations altered. Per §19.4, this pattern is a minor (same classification as L-79's §18.5.6 addition).
+
+**Plan-evaluator gate — THREE passes (per repo CLAUDE.md mandatory gate + the revision cycles it triggered):**
+
+- **Pass 1 (plan-level, v1):** verdict = targeted fixes. 3 criticals surfaced: (a) admission regex `^[a-z][a-z0-9]*(-[a-z0-9]+)*$` admitted `x-foo`, contradicting "vendor MUST use `x-`, NEVER accepted"; (b) "vendor MUST use `x-`" had no enforcement surface given §17.2.3's MUST-NOT-reject rule; (c) digest-vs-contents wire-contract semantics unstated. Plan revised.
+- **Pass 2 (plan-level, v2):** verdict = targeted fixes. All 3 prior criticals RESOLVED. 6 new moderate findings: single-maintainer + absent-maintainer-fallback contradiction, `registry_version` invariant without test, schema-evolution coupling to major boundaries only, `sponsor` optional + deprecation-contact orphan risk, §17.2.3.1 phrasing dating to one release, missing escape hatch for erroneous merges. Plan revised again.
+- **Pass 3 (prose-level, hard gate per CLAUDE.md):** verdict = targeted fixes. 1 critical (256-entry claim unsourced), 4 moderates (MUST-NOT-pin unenforceable; first-accepted-wins depends on undefined process; breaking-schema §19.4 classification ambiguous; lookahead MUST targeted at wrong party), 1 moderate (`_schema.json` filename off-convention). All 6 addressed inline in the committed prose.
+
+**Minor findings deferred to a follow-up commit on the same PR before merge (per CLAUDE.md Moderate → follow-up rule):** Finding 3 (§17.2.3.1 Informative tag preservation — verified inline, tag preserved), Finding 5 ("misinterpreting" soft verbiage replaced with review-enforcement clause inline), Finding 10 ("Two-vocabulary permanence" label novelty — kept; it's now a named concept in this spec), Finding 15 ("wire privileges" metaphor retained for readability). Structural reorder suggestions (lifecycle → version bump → digest → tests → governance → permanence) deferred to v1.4.x polish commit; current order is sensible even if not optimal.
+
+**Impact on must-map / schemas / test vectors / MANIFEST:** None in v1.4.0. No test IDs added or removed; `soa-validate-must-map.json` untouched; `schemas/` directory untouched; no MANIFEST regeneration (no pinned-artifact digest change). `REG-A2A-01..05` is a forward-reference only; ships with the artifact in a later release.
+
+**Precedent recorded:** L-79 established "reserve, don't remove" as the §18.5.6 pattern. L-81 adds "mechanism before artifact" as a companion pattern for §17.2.3.2-style registries. A future maintainer facing a similar registry-shaped problem has both precedents available.
+
+**Cross-refs:** L-76 ("Remaining autonomously-shippable items" — §17.2.3.2 was the last open item; L-81 closes it), L-79 (§18.5.6 precedent rule for informative-additive minors — L-81 follows the same §19.4 classification pattern).
 
 ## Authoring notes
 
