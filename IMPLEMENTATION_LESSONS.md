@@ -2646,6 +2646,31 @@ Three adopter paths for a CrewAI-on-SOA-Harness deployment:
 
 **Cross-refs:** L-76 (design-decision point, now closed by this entry).
 
+### L-80 — AutoGen + LangChain-Agents dispositions: deliberately deferred `[open, tracked]`
+
+- **Surfaced:** 2026-04-24 evening, immediately after L-79. Recording so the deferral is visible rather than silent.
+- **Status:** `open, tracked`. No spec action this cycle.
+
+**Context.** L-79 established §18.5.6 "Framework Reservations (Informative)" and reserved `"crewai"` under it. The §18.5.1 closed enum contains three other non-default values — `"autogen"`, `"langchain-agents"`, `"custom"` — each of which could in principle be considered for the same reservation treatment. This entry records the maintainer's position on each to prevent them from becoming implicit-promise debt (Debt #N pattern).
+
+**AutoGen — disposition = open (no §18.5.6 entry).**
+
+- **Reason for staying open:** AutoGen has experimental JS bindings (`@autogen/core`). Unlike CrewAI, shipping a first-party `@soa-harness/autogen-adapter` does NOT require a second packaging ecosystem — it fits the existing npm monorepo + existing GitHub Actions + existing release signing. The binding maturity is the uncertainty, not the packaging cost.
+- **Trigger for a future reservation:** if `@autogen/core` is abandoned by its upstream maintainers, or if adapter-wrapper exploration reveals a blocking incompatibility, AutoGen would become a §18.5.6 candidate. Not now.
+- **Trigger for a first-party adapter:** user-surfaced demand + acceptable binding stability. Tracked but not committed to.
+
+**LangChain-Agents — disposition = deferred (no §18.5.6 entry).**
+
+- **Reason for deferral:** LangChain-Agents has been effectively superseded by LangGraph; LangChain upstream recommends migration. A "reserved" disposition is defensible on supersession grounds alone.
+- **Reason NOT to reserve now:** adding a second entry to §18.5.6 while AutoGen sits undecided would produce a lopsided reservation list (two out of four non-custom values reserved, one undecided, one shipped). That reads as structural inconsistency in the §18.5.6 table until AutoGen is resolved.
+- **Coupled trigger:** when AutoGen's disposition resolves (either direction), revisit LangChain-Agents and decide both together so §18.5.6 converges to a coherent state rather than accreting one entry at a time.
+
+**`"custom"` — disposition = permanent, never reserved.** `"custom"` is the escape hatch for frameworks not yet enumerated. It cannot be reserved without breaking the §18.5.1 enum contract. Out of scope for §18.5.6.
+
+**When to close L-80:** when both AutoGen and LangChain-Agents have concrete dispositions (first-party adapter shipped, or §18.5.6 reservation added, or explicit "no action planned" recorded in a successor L-NN entry). Until then this stays open as a reminder that the silence on these two values is deliberate, not oversight.
+
+**Cross-refs:** L-76 (CrewAI + AutoGen + LangChain-Agents considered as adapter paths), L-79 (§18.5.6 precedent rule + CrewAI reservation).
+
 ## Authoring notes
 
 - **When to add an entry:** any time a sibling-session STATUS.md flags a gap, any time a paste-handoff block encodes a rule that isn't in the spec, any time I ( Claude / spec-session ) find myself explaining a contract the spec should already state.
