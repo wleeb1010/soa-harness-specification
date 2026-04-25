@@ -6,6 +6,55 @@ Categories per entry: **Added** (new), **Changed** (modified), **Deprecated** (s
 
 ---
 
+## [1.4.0] — 2026-04-24
+
+Minor release — additive-minor per §19.4.1. Closes the last open autonomously-shippable item from the L-76 backlog (§17.2.3.2 reserved-tokens registry mechanism), formalizes the CrewAI adapter disposition (§18.5.6 framework reservations), and cleans up §14.6.4's LangGraph-centric framing. No wire behavior changes; v1.0 / v1.1 / v1.2 / v1.3 conformance claims remain valid with zero code changes.
+
+### Added — Core spec (normative)
+
+- **§17.2.3.2 Reserved-tokens registry mechanism (Normative, v1.4).** Defines admission regex `^(?!x-)[a-z][a-z0-9]*(-[a-z0-9]+)*$` (length 3–64 UTF-8 bytes, negative-lookahead excludes `x-` vendor prefix). Registry entry shape (token, description, sponsor required; added_in; three-state lifecycle `active`/`deprecated`/`withdrawn`; lifecycle-conditional fields). First-accepted-wins on collision; merged entries are permanent (deprecated/withdrawn are the sole exits). MANIFEST digest semantics — implementations MUST NOT pin a specific registry-file digest as a conformance requirement (governs conformance claims, not wire bytes; enforcement is review-time). Two-vocabulary permanence: wire-legal tokens (superset per §17.2.3) and registered tokens (subset per admission regex) coexist permanently. Registry membership is **non-normative for runtime matching** — §17.2.3's UTF-8 byte-equality rule remains the sole matching contract. Closes L-76's last open autonomously-shippable item; ship record at L-81.
+- **§18.5.6 Framework Reservations (Informative, v1.4).** Defines `"reserved"` as a named concept for the §18.5.1 `adapter_notes.host_framework` closed enum. First reservation: `"crewai"` (no first-party adapter planned for v1.x line; rationale = parallel pypi packaging exceeds single-maintainer capacity per `GOVERNANCE.md`). Adopter paths: community adapter declaring `"crewai"` per §18.5.1–§18.5.4 + §14.6.4 deviation protocol, OR `"custom"` declaration with `host_framework_details: "CrewAI"`. Precedent rule: reserve-don't-remove for enum values during a major version line; enum removal deferred to major boundaries. Closes the L-76 Track 3 design-blocked item; ship record at L-79.
+
+### Added — Core spec (informative)
+
+- **§17.2.3 emitter convention paragraph.** New "Convention for non-registered tokens (Informative)" paragraph: emitters SHOULD prefix vendor-specific, private, or experimental tokens with `x-` to avoid collision with future §17.2.3.2 registry entries. Receivers MUST continue to treat `x-`-prefixed tokens identically to any other well-formed token per byte-equality (no pattern-based rejection). RFC 6648 acknowledged: its scope (HTTP message headers + MIME parameters) does not extend to general application-protocol namespaces; SOA-Harness A2A retains `x-` as the emitter convention.
+
+### Changed — Core spec
+
+- **§17.2.3.1 (Informative).** Body rewritten as a forward pointer to §17.2.3.2 (replaces the v1.3 "v1.3 does not ship" placeholder).
+- **§14.6.4 Adapter Deviation Protocol — wording cleanup.** Generalized from LangGraph-centric framing to framework-agnostic. Bullet 1 now distinguishes LangGraph-based deviation (specific events) from non-LangGraph substitution (complete host-framework-event → SOA StreamEvent mapping). Chapeau and bullet 2 similarly generalized. No normative force change; pure wording polish to support §18.5.6's community-CrewAI-adapter conformance path. Per L-79 follow-up rec #4.
+
+### Changed — Schemas
+
+- `schemas/release-gate-report.schema.json` — `declared_adapter_mode.description` gains a one-line cross-reference to §18.5.6 noting that `"crewai"` is reserved in v1.x (no first-party adapter; community adapters declaring it remain conformant).
+
+### Deferred to v1.4.x
+
+- `registries/a2a-capability-tokens.json` + `registries/a2a-capability-tokens.schema.json` — the §17.2.3.2 registry file artifact and its schema. Ship together with the first accepted token submission or as a v1.5.0 companion artifact if no submissions materialize.
+- `registry-validate-must-map.json` + `REG-A2A-01..05` — repo-hygiene must-map and test IDs for the registry file. Forward-referenced from §17.2.3.2; ship with the artifact.
+
+### Package versions (11 total + 1 private)
+
+All 11 npm packages bump `1.3.3` → `1.4.0` (impl-side pin-bump ships as a separate commit on `soa-harness-impl` per spec-lands-first rule). Scaffold `@soa-harness/*` dep ranges bump `^1.3.3` → `^1.4.0`. Scaffold `runnerVersion: "1.4"` (major.minor advances at minor boundary). Private `tools/vscode-extension` bumps `1.3.3` → `1.4.0`.
+
+### Spec artifacts
+
+- `MANIFEST.json` regenerated. Signed with the v1.0 release key (fingerprint unchanged from v1.3.x). `soa-validate.lock.spec_manifest_sha256` on impl + validate sides backfilled from the placeholder to the signed digest post-ceremony.
+- `PINNED_SPEC_COMMIT` in `@soa-harness/schemas@1.4.0` advances to the v1.4.0 spec commit SHA.
+
+### HARD-GATE exercise records
+
+- **§18.5.6 (L-79):** plan-evaluator pass, verdict "needs targeted fixes"; 0 critical, 6/6 moderate addressed inline (synonyms→single canonical term "reserved", v2.0-removal ambiguity→explicit deferred-disposition note, community-adapter-conformance verification gap→full SV-ADAPTER-* audit + §14.6.4 citation, §19.4 precedent gap→L-79 records rule + §18.5.6 encodes it, Option D enumerated as recommended v1.x adopter pattern, "reserved" defined once instead of inlined). 3 minor deferred to L-79.
+- **§17.2.3.2 (L-81):** three plan-evaluator passes. Pass 1 (plan v1): 3 critical surfaced — admission regex admitted `x-foo` contradicting vendor-prefix rule, vendor MUST had no enforcement surface, digest-vs-contents wire-contract semantics unstated. Pass 2 (plan v2): all 3 priors RESOLVED; 6 new moderate findings (single-maintainer + absent-fallback contradiction, sponsor-as-deprecation-contact orphan, §17.2.3.1 phrasing dating, missing escape-hatch for erroneous merges, registry_version invariant without test, schema evolution coupled to majors). Pass 3 (prose-level hard gate): 1 critical (256-entry claim unsourced) + 5 moderate (MUST-NOT-pin unenforceable; first-accepted-wins depends on undefined process; breaking-schema §19.4 ambiguous; lookahead MUST wrong target; `_schema.json` off-convention filename) — all addressed inline. Minor findings deferred per CLAUDE.md follow-up rule.
+- **§14.6.4 cleanup (this release prep):** plan-evaluator pass, verdict "ship with optional inline polish"; 0 critical, 0 moderate, 5 minor (AutoGen example dropped + §18.5.6 forward-ref added inline, parenthetical redundancy trimmed inline, SV-ADAPTER-03 backticking + field-name semantic strain deferred).
+
+### Closes
+
+- L-76 "Remaining autonomously-shippable items" entirely (all three: L-77 monitoring, L-78 mTLS feasibility, L-81 registry mechanism).
+- L-76 Track 3 (CrewAI adapter — closed by L-79 with disposition = not pursuing).
+
+---
+
 ## [1.3.3] — 2026-04-24
 
 Patch release — editorial-class per §19.4.1. No spec changes; spec pin stays at `8f8bdb4`. Ships the last silent §17 MUST violation closure: `@soa-harness/runner` now emits `SessionEnd(stop_reason=MaxTurns)` on the destination session when the §17.2.2 task-execution deadline elapses without `handoff.return`.

@@ -2616,13 +2616,13 @@ The test vector `test-vectors/langgraph-adapter/simple-agent-trace.json` enumera
 
 #### 14.6.4 Adapter Deviation Protocol
 
-An adapter that cannot honor §14.6.1 exactly MUST:
+An adapter whose event mapping diverges from §14.6.1's default LangGraph table — whether by deviating on specific events (LangGraph-based adapter) or by substituting an entirely different host-framework event source (non-LangGraph adapter, e.g. a community `crewai`-declaring adapter per §18.5.6) — MUST:
 
-1. Document the specific LangGraph events that deviate from the table in its own `README.md`.
-2. Publish a test vector showing the adapter's emission under a fixture trace.
+1. Document the deviation in its own `README.md`. A LangGraph-based adapter documents the specific events that diverge from §14.6.1's table; a non-LangGraph adapter documents its complete host-framework-event → SOA StreamEvent mapping as the substitute.
+2. Publish a test vector showing the adapter's emission under a fixture trace from its host framework's event source.
 3. Declare the deviation in its Agent Card under an `adapter_notes.event_mapping_deviations` field (informative; §6.2 schema permits additional properties on this object under the adapter-conformance profile).
 
-Deviations do NOT automatically invalidate SV-ADAPTER-03 — a conforming validator consults the adapter's declared mapping when computing the expected event set. Silent deviation (no README, no Agent Card declaration, no test vector) IS non-conformant.
+Deviations do NOT automatically invalidate `SV-ADAPTER-03` — a conforming validator consults the adapter's declared mapping when computing the expected event set. Silent deviation (no README documentation, no Agent Card declaration, no paired test vector) IS non-conformant.
 
 ---
 
@@ -3379,7 +3379,7 @@ A **reserved framework** is a value in the §18.5.1 `adapter_notes.host_framewor
 **Current reservations:**
 
 - **`"crewai"` (reserved; v1.x).** The SOA-Harness maintainers will NOT publish a first-party `@soa-harness/crewai-adapter` during the v1.x line. Rationale: CrewAI is Python-only, so a first-party adapter would require a parallel packaging and signing pipeline (pypi + Python CI + Python signing equivalent) that exceeds single-maintainer capacity (see `GOVERNANCE.md`). Adopters who wish to run CrewAI under SOA-Harness MAY:
-  1. Build and distribute a **community CrewAI adapter** that declares `adapter_notes.host_framework: "crewai"` and satisfies every §18.5.1–§18.5.4 requirement. Because `SV-ADAPTER-03` defaults to a LangGraph fixture (`test-vectors/langgraph-adapter/simple-agent-trace.json`), a non-LangGraph adapter MUST use the §14.6.4 deviation protocol — declare `adapter_notes.event_mapping_deviations`, publish a paired CrewAI→StreamEvent test vector, and reference it from the Card and README. Under these conditions the community adapter is conformant on the same terms as any other adapter.
+  1. Build and distribute a **community CrewAI adapter** that declares `adapter_notes.host_framework: "crewai"` and satisfies every §18.5.1–§18.5.4 requirement. Because `SV-ADAPTER-03` defaults to a LangGraph fixture (`test-vectors/langgraph-adapter/simple-agent-trace.json`), a non-LangGraph adapter MUST use the §14.6.4 Adapter Deviation Protocol — declare `adapter_notes.event_mapping_deviations`, publish a paired CrewAI→StreamEvent test vector, and reference it from the Card and README; §14.6.4's wording in v1.4+ explicitly accommodates non-LangGraph adapters whose deviation is total rather than differential. Under these conditions the community adapter is conformant on the same terms as any other adapter.
   2. Declare `adapter_notes.host_framework: "custom"` with `adapter_notes.host_framework_details: "CrewAI"`. This is the *preferred v1.x path* for adopters who do not intend to publish their adapter for community conformance testing, and avoids any dependency on the reserved value.
 
 **Disposition at v2.0.** The treatment of reserved enum values at the next major version boundary is a §19.4 decision; this subsection does not commit v2.0 to either retention or removal.
