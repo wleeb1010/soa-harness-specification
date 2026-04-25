@@ -3,3 +3,6 @@ graphify-out/
 
 # Per-session local state (Claude Code)
 .claude/
+
+# Stray artifacts from sibling impl-repo release scripts (verdaccio test runs)
+release-log.json
