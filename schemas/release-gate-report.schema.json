@@ -45,7 +45,7 @@
     },
     "declared_adapter_mode": {
       "type": "string",
-      "description": "§18.5.5 --adapter flag value (langgraph | crewai | autogen | langchain-agents | custom). Empty string = native Runner mode."
+      "description": "§18.5.5 --adapter flag value (langgraph | crewai | autogen | langchain-agents | custom). Empty string = native Runner mode. Per §18.5.6, 'crewai' is reserved in v1.x (no first-party adapter); community adapters declaring it remain conformant."
     },
     "memory_backend": {
       "type": "string",

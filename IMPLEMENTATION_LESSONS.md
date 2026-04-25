@@ -2527,7 +2527,7 @@ v1.3.1's ceremony was: impl §17.2.2 enforcement → L-70 live-probe promotions 
 
 **Post-ship v1.3.3 smoke verification (2026-04-24 evening).** Fresh `npx create-soa-agent@1.3.3` → `npm install` → boot on alt ports (PORT=37700, SOA_MEMORY_MCP_PORT=38001, bypassing a stale 7700 Runner in the dev environment) succeeded end-to-end. `/version` returned `{soaHarnessVersion: "1.0", runner_version: "1.3", spec_commit_sha: "8f8bdb465fc2d6063eaabd5185728d471f1fa65f"}`; `/ready` returned `{status: "ready"}`; first audit row written. Confirms the Debt #7/#8 regression guard held through the full publish → install → boot chain for v1.3.3. Opportunistic cleanup landed at impl commit `09e8cbf` (server.ts §17.2.2.1 loopback-guard dead-code removal — zero behavioral delta; 896/896 tests still green).
 
-### L-76 — Track 3 CrewAI adapter: design decision required `[open]`
+### L-76 — Track 3 CrewAI adapter: design decision required `[closed; see L-79]`
 
 - **Surfaced:** 2026-04-24 evening, while attempting to scope Track 3 execution.
 - **Status:** `open, design-blocked`. Unilateral autonomous driving is not appropriate until the adopter design decision below is made.
@@ -2545,6 +2545,8 @@ Three adopter paths for a CrewAI-on-SOA-Harness deployment:
 **Recommendation:** option (1) if CrewAI adoption is a real user-surfaced request; option (3) if the goal is "more adapters for §18.5 coverage" and CrewAI isn't specifically required. Option (2) is the worst of both — IPC bugs + npm-only distribution limits + doesn't really demonstrate the adapter pattern beyond LangGraph.
 
 **Blocking on user direction.** A unilateral autonomous choice here is not appropriate — the packaging-ecosystem decision is strategic, not mechanical.
+
+**Closed 2026-04-24 evening.** User direction received: abandon first-party CrewAI adapter support for the v1.x line. Disposition recorded in L-79; spec action encoded in new §18.5.6 "Framework Reservations (Informative)".
 
 ### Remaining autonomously-shippable items
 
@@ -2605,6 +2607,44 @@ Three adopter paths for a CrewAI-on-SOA-Harness deployment:
 **Adopter-surface implication.** 500+ weekly `@soa-harness/runner` downloads and 600+ weekly `create-soa-agent` scaffolds, paired with zero reported issues, supports the adopter-hygiene invariant that the release pipeline (plan-evaluator + HARD-RULE + version-parity + ceremony-order) is holding. Post-release hotfix count for the entire v1.3.x arc: **zero**.
 
 **Monitoring cadence going forward:** re-run this snapshot on the next release cycle (v1.3.4 / v1.4.0 ship record) or at week-of-month cadence if no release fires. Baseline is established.
+
+### L-79 — Track 3 CrewAI adapter: disposition = not pursuing `[closed]`
+
+- **Surfaced:** 2026-04-24 evening, closing the open decision from L-76 (Track 3 CrewAI adapter, design-blocked).
+- **Decision:** The SOA-Harness maintainers will NOT publish a first-party CrewAI adapter during the v1.x line. CrewAI is deferred indefinitely.
+- **Rationale:** CrewAI is Python-only. A first-party `@soa-harness/crewai-adapter` would require standing up a parallel packaging + CI + signing pipeline for pypi — a scope expansion that exceeds single-maintainer capacity (`GOVERNANCE.md` explicitly acknowledges the single-maintainer posture; this decision honors it rather than papering over it).
+
+**Alternatives considered:**
+
+1. **Option A — Hard removal** of `"crewai"` from the §18.5.1 closed enum + §18.5.5 `--adapter` flag + release-gate schema description + must-map. *Rejected:* closed-enum narrowing is a §19.4 major (v2.0) wire-format change with zero practical benefit — no conformant CrewAI adapter declares the value today.
+2. **Option B — Soft deprecate (adopted as spec mechanism):** keep the enum value, introduce an informative "reservation" concept.
+3. **Option C — Close roadmap only; touch no spec.** *Rejected:* the enum value would dangle as an implicit promise — exactly the Debt #N pattern documented under v1.1.0 / v1.2.1 impl drift where an uncodified expectation became a same-day patch.
+4. **Option D — Promote `"custom"` as the canonical v1.x CrewAI declaration path** (with `host_framework_details: "CrewAI"`) while deferring enum removal to v2.0. *Adopted inside §18.5.6* as the recommended adopter pattern for non-publishing deployments, not as a replacement for Option B.
+
+**Spec action:**
+
+- New **§18.5.6 "Framework Reservations (Informative)"** defines `"reserved"` as a named concept once and lists `"crewai"` as its first (only) entry.
+- Four forward-references added pointing to §18.5.6: §18.5 motivation paragraph, §18.5.1 enum paragraph, §18.5.2 bullet 2 (CrewAI `Task.execute` example), §18.5.5 `--adapter` paragraph.
+- `schemas/release-gate-report.schema.json` `declared_adapter_mode.description` gains a one-line cross-reference to §18.5.6.
+- §18.5.1 closed enum values, §18.5.5 CLI accepted values, SV-ADAPTER-01 must-map assertion, all test vectors, and historical RELEASE-NOTES files are deliberately unchanged.
+
+**Version bump — v1.4.0 minor (§19.4 classification rationale):** This change introduces new informative spec language (the "reserved framework" concept) and establishes a reusable pattern for future framework reservations. Stronger than pure errata (which would be v1.3.4 patch) and weaker than a wire-format change (which would require a major). Per §19.4, substantive non-breaking additions that define new concepts are minors.
+
+**Precedent for future reservations:** §18.5.6 itself now encodes the rule — *reserve, don't remove* for framework enum values during a major version line. A future maintainer facing the same question for (e.g.) `"langchain-agents"` can append to the §18.5.6 list as a minor without restructuring §18.5.1 and without forcing a major bump. Enum removal remains a major and is explicitly deferred to major-version boundaries.
+
+**Community adapter path (audit-verified against SV-ADAPTER-01..04 + §18.5.3 + §18.5.4):** A community CrewAI adapter can achieve full §18.5 Core conformance. `SV-ADAPTER-01/02/04` are framework-agnostic. `SV-ADAPTER-03` defaults to a LangGraph fixture (`test-vectors/langgraph-adapter/simple-agent-trace.json`), but the §14.6.4 Adapter Deviation Protocol allows any adapter to substitute a declared mapping + paired test vector. §18.5.6 explicitly references §14.6.4 so community authors know the path.
+
+**Pre-existing wording follow-up (NOT rolled into this commit):** §14.6.4 bullet 1 uses LangGraph-specific language ("the specific LangGraph events that deviate"). A non-LangGraph adapter's deviation is total, not differential. Reworking §14.6.4 to neutralize its LangGraph framing is a separate spec-hygiene item — tracked here as a v1.4.x candidate. Not addressed in this commit because it would expand scope beyond the cited evaluator pass.
+
+**Plan-evaluator minor findings deferred to this entry:**
+
+- The "does not alter any normative MUST" defensive wording (evaluator #9) was replaced by §18.5.6's direct statement that reservation "does NOT remove the value from the enum, deprecate it, or alter any normative MUST in §18.5.1–§18.5.5."
+- The unbound AutoGen-tractability comparison (evaluator #10) is dropped from this entry — AutoGen disposition is a separate future decision, not a foregone conclusion.
+- Graphify-spec node addressability (evaluator #12) — §18.5.6 is a numbered subsection, so it receives its own graph node on `refresh-graph.py`; no special action required.
+
+**Impact on must-map / schemas / test vectors:** None beyond the one-line schema description cross-ref. No test IDs added or removed; no test vectors added or removed; `SV-ADAPTER-01` continues to accept `"crewai"` declarations.
+
+**Cross-refs:** L-76 (design-decision point, now closed by this entry).
 
 ## Authoring notes
 

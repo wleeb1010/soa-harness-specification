@@ -3236,7 +3236,7 @@ Exit code `0` means all required tests passed. Non-zero indicates failures enume
 
 ### 18.5 Adapter Conformance (Normative)
 
-**Motivation.** Many SOA-Harness deployments begin life as agents built on a third-party orchestration framework (LangGraph, CrewAI, AutoGen, LangChain Agents). An *adapter* is a module that wraps such a framework so the resulting runtime satisfies SOA-Harness wire contracts (§5 bootstrap, §6 Agent Card, §10 permission, §14 StreamEvent, §15 hooks). Adapters are orthogonal to the Conformance Levels defined in §18.3 — an adapter MAY claim Core, Core+SI, Core+Handoff, or Full conformance, but its qualification as an adapter (as distinct from a native Runner implementation) imposes the additional normative requirements in this subsection. §14.6 provides the informative event-mapping companion for LangGraph-based adapters.
+**Motivation.** Many SOA-Harness deployments begin life as agents built on a third-party orchestration framework (LangGraph, CrewAI, AutoGen, LangChain Agents). An *adapter* is a module that wraps such a framework so the resulting runtime satisfies SOA-Harness wire contracts (§5 bootstrap, §6 Agent Card, §10 permission, §14 StreamEvent, §15 hooks). Adapters are orthogonal to the Conformance Levels defined in §18.3 — an adapter MAY claim Core, Core+SI, Core+Handoff, or Full conformance, but its qualification as an adapter (as distinct from a native Runner implementation) imposes the additional normative requirements in this subsection. §14.6 provides the informative event-mapping companion for LangGraph-based adapters. §18.5.6 enumerates any enum values currently marked *reserved* (no first-party adapter planned).
 
 #### 18.5.1 Adapter Definition (Normative)
 
@@ -3244,7 +3244,7 @@ A runtime is an **SOA-Harness Adapter** if and only if:
 
 1. It delegates model dispatch, tool execution, or graph state management to an external orchestration framework ("host framework"), AND
 2. It exposes the §5 Required Stack HTTP surface (`/.well-known/agent-card.json`, `/.well-known/agent-card.jws`, `/health`, `/ready`, and at least one StreamEvent emission channel per §14.5) such that `soa-validate` can drive conformance tests against it at a network boundary, AND
-3. It declares `adapter_notes.host_framework` in its Agent Card under the adapter-conformance profile with values drawn from the closed set `{"langgraph","crewai","autogen","langchain-agents","custom"}` (case-insensitive; `"custom"` permitted with free-form `adapter_notes.host_framework_details` for frameworks not yet enumerated).
+3. It declares `adapter_notes.host_framework` in its Agent Card under the adapter-conformance profile with values drawn from the closed set `{"langgraph","crewai","autogen","langchain-agents","custom"}` (case-insensitive; `"custom"` permitted with free-form `adapter_notes.host_framework_details` for frameworks not yet enumerated; see §18.5.6 for enum values marked *reserved*).
 
 A runtime that implements §5 without delegating to a host framework is a **native Runner** and is NOT subject to §18.5. Native Runners pass `soa-validate` via the existing `SV-*` tests only; `SV-ADAPTER-*` tests are not executed against native Runners.
 
@@ -3258,7 +3258,7 @@ Permission enforcement for adapters is the single hardest correctness invariant 
    c. Emit a `PermissionPrompt` StreamEvent per §14.1.1,
    d. Block the host framework's tool dispatcher until a `PermissionDecision` is available, AND
    e. Cancel or bypass the dispatch when the decision is `deny`.
-2. **Hook pipeline ordering.** The §15.4 ordering within the execution step (permission → PreToolUse hooks → tool → PostToolUse hooks → audit + stream + persist) MUST be preserved by the adapter. The adapter MAY implement this by wrapping the host framework's tool-dispatch entry point (e.g., LangGraph's `ToolNode.invoke`, LangChain's `AgentExecutor._call_tool`, CrewAI's `Task.execute`) or by substituting a permission-aware tool executor at host-framework registration time; either approach is conformant.
+2. **Hook pipeline ordering.** The §15.4 ordering within the execution step (permission → PreToolUse hooks → tool → PostToolUse hooks → audit + stream + persist) MUST be preserved by the adapter. The adapter MAY implement this by wrapping the host framework's tool-dispatch entry point (e.g., LangGraph's `ToolNode.invoke`, LangChain's `AgentExecutor._call_tool`, CrewAI's `Task.execute`) or by substituting a permission-aware tool executor at host-framework registration time; either approach is conformant. The CrewAI reference is retained as informative guidance for community adapter authors; see §18.5.6 for the reservation status of `"crewai"` in v1.x.
 3. **No post-dispatch regression.** An adapter MUST NOT implement permission enforcement by inspecting a tool's output after execution (post-dispatch "undo" is not conformant). A permission denial after execution cannot un-do side effects of a `Mutating` or `Destructive` tool; the permission check MUST fire pre-dispatch.
 4. **Fallback: advisory mode (permitted, documented).** An adapter that cannot guarantee pre-dispatch interception against its host framework MAY operate in **advisory mode** with the following requirements: (a) the Agent Card declares `adapter_notes.permission_mode: "advisory"`, (b) every tool-invocation event carries a §14 `PermissionDecision` synthesized after-the-fact for audit purposes only, (c) the adapter MUST NOT advertise `implementation_capabilities` containing `"core"` (advisory-mode adapters are non-conformant against Core profile), and (d) the README clearly warns that advisory mode is unsuitable for tools with side effects. Conformance validators MUST treat advisory-mode adapters as failing `SV-ADAPTER-02`.
 5. **Observability.** The adapter MUST emit `PermissionPrompt` and `PermissionDecision` StreamEvents on its §14.5 observability channel so that `SV-ADAPTER-02` can verify pre-dispatch ordering by subscribing to the channel and asserting `PermissionPrompt.occurred_at < tool.invoke.occurred_at < PermissionDecision.occurred_at`.
@@ -3307,7 +3307,21 @@ soa-validate --agent-url https://adapter.example.com \
              --report report.json
 ```
 
-The `--adapter` flag (values: `langgraph`, `crewai`, `autogen`, `langchain-agents`, `custom`) enables `SV-ADAPTER-*` test execution and substitutes the adapter-declared event mapping into `SV-ADAPTER-03` expectations. Omitting `--adapter` skips `SV-ADAPTER-*` tests (native Runner mode). A Runner that declares `adapter_notes.host_framework` in its Agent Card but is invoked without `--adapter` fails `SV-ADAPTER-01` (card-vs-invocation-mismatch).
+The `--adapter` flag (values: `langgraph`, `crewai`, `autogen`, `langchain-agents`, `custom`) enables `SV-ADAPTER-*` test execution and substitutes the adapter-declared event mapping into `SV-ADAPTER-03` expectations. Omitting `--adapter` skips `SV-ADAPTER-*` tests (native Runner mode). A Runner that declares `adapter_notes.host_framework` in its Agent Card but is invoked without `--adapter` fails `SV-ADAPTER-01` (card-vs-invocation-mismatch). Certain enum values MAY be marked *reserved* per §18.5.6; reservation does not alter §18.5.1 enum membership or the `--adapter` flag's accepted values.
+
+#### 18.5.6 Framework Reservations (Informative)
+
+A **reserved framework** is a value in the §18.5.1 `adapter_notes.host_framework` closed enum for which the SOA-Harness maintainers have declared that no first-party adapter will ship during the current major version line. Reservation is a *scoping* statement about maintainer plans; it does NOT remove the value from the enum, deprecate it, or alter any normative MUST in §18.5.1–§18.5.5. A reserved value remains legal on the wire (in Agent Cards and in the `--adapter` CLI flag) for the life of the current major version.
+
+**Current reservations:**
+
+- **`"crewai"` (reserved; v1.x).** The SOA-Harness maintainers will NOT publish a first-party `@soa-harness/crewai-adapter` during the v1.x line. Rationale: CrewAI is Python-only, so a first-party adapter would require a parallel packaging and signing pipeline (pypi + Python CI + Python signing equivalent) that exceeds single-maintainer capacity (see `GOVERNANCE.md`). Adopters who wish to run CrewAI under SOA-Harness MAY:
+  1. Build and distribute a **community CrewAI adapter** that declares `adapter_notes.host_framework: "crewai"` and satisfies every §18.5.1–§18.5.4 requirement. Because `SV-ADAPTER-03` defaults to a LangGraph fixture (`test-vectors/langgraph-adapter/simple-agent-trace.json`), a non-LangGraph adapter MUST use the §14.6.4 deviation protocol — declare `adapter_notes.event_mapping_deviations`, publish a paired CrewAI→StreamEvent test vector, and reference it from the Card and README. Under these conditions the community adapter is conformant on the same terms as any other adapter.
+  2. Declare `adapter_notes.host_framework: "custom"` with `adapter_notes.host_framework_details: "CrewAI"`. This is the *preferred v1.x path* for adopters who do not intend to publish their adapter for community conformance testing, and avoids any dependency on the reserved value.
+
+**Disposition at v2.0.** The treatment of reserved enum values at the next major version boundary is a §19.4 decision; this subsection does not commit v2.0 to either retention or removal.
+
+**Precedent.** Additional reservations under this subsection are permitted as informative additions (§19.4 minor). Removing a reserved value from the §18.5.1 enum remains a wire-format narrowing and is a §19.4 major.
 
 ---
 
